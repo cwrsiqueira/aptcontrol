@@ -16,3 +16,20 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+
+Auth::routes();
+
+Route::resource('/orders', 'OrderController');
+Route::resource('/products', 'ProductController');
+Route::resource('/clients', 'ClientController');
+Route::resource('/reports', 'ReportController');
+Route::resource('/integrations', 'IntegrationController');
+
+Route::get('/logout', function(){
+    Auth::logout();
+    return redirect()->route('home');
+});
