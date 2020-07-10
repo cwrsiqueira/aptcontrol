@@ -5,7 +5,15 @@
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
         <h2>Adicionar Pedido</h2>
-
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <form action="{{route('orders.store')}}" method="post">
             @csrf
                 <table class="table">
@@ -15,7 +23,7 @@
                             <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$client->name}}"><input type="hidden" name="client_id" id="client_id" value="{{$client->id}}"></th>
                         </tr>
                         <tr>
-                            <th colspan="1">Pedido Nr.: <input class="form-control" type="text" name="order_number" id="order_number"></th>
+                            <th colspan="1">Pedido Nr.: <input class="form-control @error('order_number') is-invalid @enderror" type="text" name="order_number" id="order_number"></th>
                             <th colspan="3">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order"></th>
                         </tr>
                         <tr style="text-align: center;">

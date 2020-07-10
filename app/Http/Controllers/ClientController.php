@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Client;
+use App\Product;
+use App\Order;
+use App\Order_product;
 
 
 class ClientController extends Controller
@@ -36,6 +40,38 @@ class ClientController extends Controller
         return view('clients', [
             'user' => Auth::user(),
             'clients' => $clients
+        ]);
+    }
+
+    public function cc_client($id) 
+    {
+        $client = Client::find($id);
+        $orders = Order::select('order_number')->where('client_id', $id)->get();
+        $data = Order_product::whereIn('order_id', $orders)
+        ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
+        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+        ->paginate(10);
+
+        foreach ($orders as $key => $value) {
+            $total_product[$value->order_number] = DB::table('order_products')
+            ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->addSelect(DB::raw('sum(quant) as quant_total'))
+            ->where('order_id', $value->order_number)
+            ->groupBY('product_id')
+            ->get();
+            
+            foreach ($total_product as $number => $products) {
+                foreach ($products as $item) {
+                    @$product_total[$item->product_name] += $item->quant_total;
+                }
+            }
+        }
+
+        dd($product_total);
+
+        return view('cc_client', [
+            'data' => $data,
+            'client' => $client,
         ]);
     }
 

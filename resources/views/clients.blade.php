@@ -40,6 +40,7 @@
                         <td><?php echo $item['contact']; ?></td>
                         <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('clients.edit', ['client' => $item->id]) }}">Editar</a></td>
                         <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('orders.create', ['client' => $item['id']]) }}">Efetuar Pedido</a></td>
+                        <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_client', ['id' => $item->id]) }}">C/C</a></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

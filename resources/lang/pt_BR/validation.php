@@ -177,7 +177,8 @@ return [
         'year'      => 'ano',
         'description' => 'descrição',
         'password_confirmation' => 'confirmação da senha',
-        'forecast' => 'previsão'
+        'forecast' => 'previsão',
+        'order_number' => 'número do pedido'
     ],
 
 ];

@@ -9,3 +9,24 @@
     border-radius: .25rem;
     transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
+.searchresults {
+	background-color:#FFF;
+	position:absolute;
+	border:1px solid #CCC;
+	z-index: 1;
+}
+.si {
+	height:30px;
+	line-height: 30px;
+	padding-left:10px;
+	cursor:pointer;
+}
+.si a {
+	color:#000;
+	text-decoration: none;
+	display:block;
+	z-index: 999;
+}
+.si:hover {
+	background-color:#EEE;
+}

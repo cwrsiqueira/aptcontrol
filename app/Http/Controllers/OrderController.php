@@ -101,7 +101,7 @@ class OrderController extends Controller
                 "order_date" => [],
                 "client_name" => [],
                 "client_id" => [],
-                "order_number" => [],
+                "order_number" => ['unique:orders'],
                 "total_order" => [],
                 "product_name1" => [],
                 "quant1" => [],

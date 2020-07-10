@@ -9,12 +9,22 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th colspan="1">Data: <input readonly class="form-control" type="date" name="order_date" id="order_date" value="{{$order->order_date}}"></th>
-                    <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$order->name_client}}"><input type="hidden" name="client_id" id="client_id" value="{{$order->id}}"></th>
+                    <th colspan="1">Data: <input readonly class="form-control" type="date" name="order_date" id="order_date" value="{{$order->order_date}}"><input type="hidden" name="order_id" id="order_id" value="{{$order->id}}"></th>
+                    <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$order->name_client}}"></th>
                 </tr>
                 <tr>
                     <th colspan="1">Pedido Nr.: <input readonly class="form-control" type="text" name="order_number" id="order_number" value="{{$order->order_number}}"></th>
-                    <th colspan="3">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order" value="R$ {{number_format($order->order_total, 2, ',', '.')}}"></th>
+                    <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order" value="R$ {{number_format($order->order_total, 2, ',', '.')}}"></th>
+                    <th>
+                        <label for="payment">Pagamento:</label>
+                        <form id="form_payment" method="post">
+                            <select class="form-control" name="payment" id="payment">
+                                <option @if ($order->payment === 'Total') selected @endif value="Total">Total</option>
+                                <option @if ($order->payment === 'Parcial') selected @endif value="Parcial">Parcial</option>
+                                <option @if ($order->payment === 'Aberto') selected @endif value="Aberto">Aberto</option>
+                            </select>
+                        </form>
+                    </th>
                 </tr>
                 <tr style="text-align: center;">
                     <th style="width: 250px;">Produto</th>
@@ -51,5 +61,28 @@
         </table>
 
     </main>
+    
 @endsection
 
+@section('js')
+    <script>
+
+        $(function(){
+            $('#payment').change(function(){
+                let payment = $(this).val();
+                let id = $('#order_id').val();
+                
+                $.ajax({
+                    url:"{{route('edit_payment')}}",
+                    type:'get',
+                    data:{payment:payment, id:id},
+                    dataType:'json',
+                    success:function(json){
+                        alert(json);
+                    },
+                });
+            })
+        })
+        
+    </script>
+@endsection

@@ -42,6 +42,7 @@
                         <td><?php echo number_format($item['daily_production_forecast'], 0, '', '.'); ?></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'add_estock']) }}">+ Estoque</a></td>
+                        <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_product', ['id' => $item->id]) }}">C/C</a></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

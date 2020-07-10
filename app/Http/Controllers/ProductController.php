@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Product;
+use App\Order;
+use App\Client;
+use App\Order_product;
 use App\Stockmovement;
 
 class ProductController extends Controller
@@ -36,6 +40,30 @@ class ProductController extends Controller
         return view('products', [
             'user' => Auth::user(),
             'products' => $products
+        ]);
+    }
+
+    public function cc_product($id) 
+    {
+        $product = Product::find($id);
+        $data = Order_product::where('product_id', $id)
+            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
+            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
+            ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
+            ->orderBy('delivery_date')
+            ->paginate(10);
+        $quant_total = Order_product::select(DB::raw("(select sum(quant) from order_products where order_products.product_id = '$id') as quant_total"))->first();
+        $days_necessary = ((intval($quant_total->quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+        if ($days_necessary <= 0) {
+            $days_necessary = 0;
+        }
+        $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.($days_necessary+1).' days'));
+
+        return view('cc_product', [
+            'data' => $data,
+            'product' => $product,
+            'quant_total' => $quant_total,
+            'delivery_in' => $delivery_in
         ]);
     }
 
