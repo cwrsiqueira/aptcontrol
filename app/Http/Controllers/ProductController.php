@@ -32,6 +32,7 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::paginate(5);
+        $q = '';
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
             $products = Product::where('name', 'LIKE', '%'.$q.'%')->paginate(5);
@@ -39,7 +40,8 @@ class ProductController extends Controller
         
         return view('products', [
             'user' => Auth::user(),
-            'products' => $products
+            'products' => $products,
+            'q' => $q
         ]);
     }
 
@@ -53,11 +55,17 @@ class ProductController extends Controller
             ->orderBy('delivery_date')
             ->paginate(10);
         $quant_total = Order_product::select(DB::raw("(select sum(quant) from order_products where order_products.product_id = '$id') as quant_total"))->first();
-        $days_necessary = ((intval($quant_total->quant_total)) - $product->current_stock) / $product->daily_production_forecast;
-        if ($days_necessary <= 0) {
-            $days_necessary = 0;
+
+        if (!empty($quant_total)) {
+            $days_necessary = ((intval($quant_total->quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+            
+            if ($days_necessary <= 0) {
+                $days_necessary = 0;
+            }
+            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)+1).' days'));
+        } else {
+            $delivery_in = date('Y-m-d');
         }
-        $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.($days_necessary+1).' days'));
 
         return view('cc_product', [
             'data' => $data,
@@ -91,9 +99,13 @@ class ProductController extends Controller
             'forecast',
             'file',
         ]);
-
-        $data['stock'] = str_replace('.', '', $data['stock']);
-        $data['forecast'] = str_replace('.', '', $data['forecast']);
+        
+        if (!empty($data['stock'])) {
+            $data['stock'] = str_replace('.', '', $data['stock']);
+        }
+        if (!empty($data['forecast'])) {
+            $data['forecast'] = str_replace('.', '', $data['forecast']);
+        }
 
         $validator = Validator::make(
             $data,

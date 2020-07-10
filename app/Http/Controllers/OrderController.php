@@ -30,11 +30,31 @@ class OrderController extends Controller
     public function index()
     {
         $orders = Order::addSelect(['name_client' => Client::select('name')
-            ->whereColumn('id', 'Orders.client_id')])->paginate(5);
+        ->whereColumn('id', 'Orders.client_id')])->paginate(5);
+        $q = '';
+        if (!empty($_GET['q'])) {
+            $q = $_GET['q'];
+            
+            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->get();
+            $client_group = array();
+            foreach ($clients as $item ) {
+                $client_group[] = $item->id;
+            }
+            
+            $orders = Order::addSelect(['name_client' => Client::select('name')
+            ->whereColumn('clients.id', 'Orders.client_id')])
+            ->where('orders.order_number', 'LIKE', '%'.$q.'%')
+            ->orWhere('orders.order_date', 'LIKE', '%'.$q.'%')
+            ->orwhereIn('orders.client_id', $client_group)
+            ->paginate(5);
+            // ->toSql();
+            // dd($orders);
+        }
         
         return view('orders', [
             'user' => Auth::user(),
-            'orders' => $orders
+            'orders' => $orders,
+            'q' => $q
         ]);
     }
 
@@ -73,6 +93,7 @@ class OrderController extends Controller
             "client_id",
             "order_number",
             "total_order",
+            "withdraw",
             "product_name1",
             "quant1",
             "unit_val1",
@@ -103,6 +124,7 @@ class OrderController extends Controller
                 "client_id" => [],
                 "order_number" => ['unique:orders'],
                 "total_order" => [],
+                "withdraw" => [],
                 "product_name1" => [],
                 "quant1" => [],
                 "unit_val1" => [],
@@ -134,10 +156,14 @@ class OrderController extends Controller
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
         $order->order_total = $order_total;
+        $order->payment = 'Aberto';
+        $order->withdraw = $data['withdraw'];
         $order->save();
 
         for ($i=1; $i < 5; $i++) { 
             if (!empty($data['product_name'.$i])) {
+
+                $quant = str_replace('.', '', $data['quant'.$i]);
 
                 $unit_price = str_replace('.', '', $data['unit_val'.$i]);
                 $unit_price = str_replace(',', '.', $unit_price);
@@ -148,7 +174,7 @@ class OrderController extends Controller
                 $order_prod = new Order_product();
                 $order_prod->order_id = $data['order_number'];
                 $order_prod->product_id = $data['product_name'.$i];
-                $order_prod->quant = $data['quant'.$i];
+                $order_prod->quant = $quant;
                 $order_prod->unit_price = $unit_price;
                 $order_prod->total_price = $total_price;
                 $order_prod->delivery_date = $data['delivery_date'.$i];

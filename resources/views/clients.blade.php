@@ -13,7 +13,10 @@
                 <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addcliente">Cadastrar Cliente</button>
 
                 <form method="get" class="d-flex align-items-center">
-                    <input type="search" class=" form-control" name="q" id="q" placeholder="Procurar Cliente">
+                    @if(!empty($q))
+                    <a class="btn btn-sm btn-secondary m-3" href="{{route('clients.index')}}">Limpar Busca</a>
+                    @endif
+                    <input type="search" class=" form-control" name="q" id="q" placeholder="Procurar Cliente" value="{{$q ?? 0}}">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-default">
                             <i class="fas fa-search"></i>
@@ -45,7 +48,7 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            {{$clients->links()}}
+            {{$clients->appends(['q' => $q ?? ''])->links()}}
         </div>
 
         

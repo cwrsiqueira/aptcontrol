@@ -22,6 +22,19 @@ class AjaxController extends Controller
         }
     }
 
+    public function edit_withdraw() {
+        if (!empty($_GET['withdraw'])) {
+            $withdraw = $_GET['withdraw'];
+            $id = $_GET['id'] ;
+
+            $order = Order::find($id);
+            $order->withdraw = $withdraw;
+            $order->save();
+
+            echo json_encode('Alterado com sucesso para entrega '.$withdraw.'!');
+        }
+    }
+
     public function search() {
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];

@@ -25,6 +25,13 @@
                         <tr>
                             <th colspan="1">Pedido Nr.: <input class="form-control @error('order_number') is-invalid @enderror" type="text" name="order_number" id="order_number"></th>
                             <th colspan="3">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order"></th>
+                            <th colspan="1">
+                                Recebimento do Material:
+                                <select class="form-control" name="withdraw" id="withdraw">
+                                    <option value="Entregar">Entregar</option>
+                                    <option value="Retirar">Retirar</option>
+                                </select>
+                            </th>
                         </tr>
                         <tr style="text-align: center;">
                             <th style="width: 250px;">Produto</th>
@@ -35,7 +42,7 @@
                         </tr>
                     </thead>
                     <tbody>
-
+                        {{-- LINHA 1 --}}
                         <tr style="text-align: center;">
                             <td style="padding: 5px;">
                                 <select class="form-control product_name1" style="width: 100%;" name="product_name1">
@@ -46,19 +53,20 @@
                                 </select>
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control quant1" style="width: 100%;" type="text" name="quant1">
+                                <input class="form-control quant1 qt_mask" style="width: 100%;" type="text" name="quant1">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control unit_val1" style="width: 100%;" type="text" name="unit_val1">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control total_val1" style="width: 100%;" type="text" name="total_val1">
+                                <input class="form-control total_val1" style="width: 100%;" type="text" name="total_val1" readonly>
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control delivery_date1" style="width: 100%;" type="date" name="delivery_date1">
                             </td>
                         </tr>
-
+                        {{--  --}}
+                        {{-- LINHA 2 --}}
                         <tr style="text-align: center;">
                             <td style="padding: 5px;">
                                 <select class="form-control product_name2" style="width: 100%;" name="product_name2">
@@ -69,18 +77,20 @@
                                 </select>
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control quant2" style="width: 100%;" type="text" name="quant2">
+                                <input class="form-control quant2 qt_mask" style="width: 100%;" type="text" name="quant2">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control unit_val2" style="width: 100%;" type="text" name="unit_val2">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control total_val2" style="width: 100%;" type="text" name="total_val2">
+                                <input class="form-control total_val2" style="width: 100%;" type="text" name="total_val2" readonly>
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control delivery_date2" style="width: 100%;" type="date" name="delivery_date2">
                             </td>
                         </tr>
+                        {{--  --}}
+                        {{-- LINHA 3 --}}
                         <tr style="text-align: center;">
                             <td style="padding: 5px;">
                                 <select class="form-control product_name3" style="width: 100%;" name="product_name3">
@@ -91,18 +101,20 @@
                                 </select>
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control quant3" style="width: 100%;" type="text" name="quant3">
+                                <input class="form-control quant3 qt_mask" style="width: 100%;" type="text" name="quant3">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control unit_val3" style="width: 100%;" type="text" name="unit_val3">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control total_val3" style="width: 100%;" type="text" name="total_val3">
+                                <input class="form-control total_val3" style="width: 100%;" type="text" name="total_val3" readonly>
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control delivery_date3" style="width: 100%;" type="date" name="delivery_date3">
                             </td>
                         </tr>
+                        {{--  --}}
+                        {{-- LINHA 4 --}}
                         <tr style="text-align: center;">
                             <td style="padding: 5px;">
                                 <select class="form-control product_name4" style="width: 100%;" name="product_name4">
@@ -113,18 +125,19 @@
                                 </select>
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control quant4" style="width: 100%;" type="text" name="quant4">
+                                <input class="form-control quant4 qt_mask" style="width: 100%;" type="text" name="quant4">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control unit_val4" style="width: 100%;" type="text" name="unit_val4">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control total_val4" style="width: 100%;" type="text" name="total_val4">
+                                <input class="form-control total_val4" style="width: 100%;" type="text" name="total_val4" readonly>
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control delivery_date4" style="width: 100%;" type="date" name="delivery_date4">
                             </td>
                         </tr>
+                        {{--  --}}
                     </tbody>
                 </table>
                 <hr>
@@ -138,6 +151,7 @@
             var total = 0;
 
             $('.unit_val1').mask('000.000,00', {reverse:true});
+            $('.qt_mask').mask('000.000.000', {reverse:true});
 
             $('.unit_val1').blur(function(){
                 let tirar_ponto = $(this).val().replace('.', '');

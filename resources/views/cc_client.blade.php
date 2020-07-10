@@ -10,10 +10,9 @@
                 <div class="card-header"><span>{{$client->name}}</span></div>
                 <div class="card-body">
                     <ul>
-                        <li>Total do Produto Tal: 123</li>
-                        <li>Total do Produto Tal: 123</li>
-                        <li>Total do Produto Tal: 123</li>
-                        <li>Total do Produto Tal: 123</li>
+                        @foreach ($product_total as $key => $value)
+                            <li>Total de {{$key}}: {{number_format($value, 0, '', '.')}}</li>
+                        @endforeach
                     </ul>
                 </div>
             </div>
@@ -41,7 +40,7 @@
                         <td>{{date('d/m/Y', strtotime($item->order_date))}}</td>
                         <td>{{$item->order_id}}</td>
                         <td>{{$item->product_name}}</td>
-                        <td>{{$item->quant}}</td>
+                        <td>{{number_format($item->quant, 0, '', '.')}}</td>
                         <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
                     </tr>
                 @endforeach

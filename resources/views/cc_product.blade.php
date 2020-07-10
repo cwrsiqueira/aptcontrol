@@ -9,7 +9,7 @@
             <div class="card col-md-6 m-3">
                 <div class="card-header"><span>{{$product->name}}</span></div>
                 <div class="card-body">
-                    Total a entregar: {{$quant_total->quant_total}} <br>
+                    Total a entregar: {{number_format($quant_total->quant_total ?? 0, 0, '', '.') ?? 0}} <br>
                     Entregas a partir de: {{date('d/m/Y', strtotime($delivery_in))}} <br>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                         <td>{{date('d/m/Y', strtotime($item->order_date))}}</td>
                         <td>{{$item->client_name}}</td>
                         <td>{{$item->order_id}}</td>
-                        <td>{{$item->quant}}</td>
+                        <td>{{number_format($item->quant, 0, '', '.')}}</td>
                         <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
                     </tr>
                 @endforeach

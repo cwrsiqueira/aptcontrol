@@ -31,7 +31,8 @@ class ClientController extends Controller
      */
     public function index()
     {
-        $clients = Client::paginate(5);
+        $clients = Client::orderBy('name')->paginate(5);
+        $q = '';
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
             $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(5);
@@ -39,7 +40,8 @@ class ClientController extends Controller
         
         return view('clients', [
             'user' => Auth::user(),
-            'clients' => $clients
+            'clients' => $clients,
+            'q' => $q
         ]);
     }
 
@@ -59,19 +61,25 @@ class ClientController extends Controller
             ->where('order_id', $value->order_number)
             ->groupBY('product_id')
             ->get();
-            
-            foreach ($total_product as $number => $products) {
+        }
+
+        $product_total = array();
+        if (!empty($total_product)) {
+            foreach ($total_product as $products) {
                 foreach ($products as $item) {
-                    @$product_total[$item->product_name] += $item->quant_total;
+                    if (!isset($product_total[$item->product_name])) {
+                        $product_total[$item->product_name] = $item->quant_total;
+                    } else {
+                        $product_total[$item->product_name] += $item->quant_total;
+                    }
                 }
             }
         }
 
-        dd($product_total);
-
         return view('cc_client', [
             'data' => $data,
             'client' => $client,
+            'product_total' => $product_total
         ]);
     }
 

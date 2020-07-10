@@ -33,6 +33,7 @@ Route::get('/products/cc_products/{id}', 'ProductController@cc_product')->name('
 Route::get('/clients/cc_clients/{id}', 'ClientController@cc_client')->name('cc_client');
 
 Route::get('/edit_payment', 'AjaxController@edit_payment')->name('edit_payment');
+Route::get('/edit_withdraw', 'AjaxController@edit_withdraw')->name('edit_withdraw');
 Route::get('/search', 'AjaxController@search')->name('search');
 
 Route::get('/logout', function(){
