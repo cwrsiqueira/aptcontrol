@@ -9,7 +9,7 @@
         <form method="get" class="d-flex justify-content-between">
             <div class="form-check m-3">
                 <label class="form-check-label">
-                    <input onclick="this.form.submit();" type="checkbox" class="form-check-input" name="comp" @if(@$_GET['comp'] === 'on') checked @endif>Mostrar Pedidos Concluídos
+                    <input onclick="this.form.submit();" type="checkbox" class="form-check-input" name="comp" @if(@$_GET['comp'] === '1') checked @endif value="1">Mostrar Pedidos Concluídos
                 </label>
             </div>
 
@@ -53,7 +53,11 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            {{$orders->appends(['q' => $q ?? ''])->links()}}
+            @if ($comp === 1)
+                {{$orders->appends(['q' => $q ?? ''])->appends(['comp' => $comp])->links()}}
+            @else
+                {{$orders->appends(['q' => $q ?? ''])->links()}}
+            @endif
         </div>
     </main>
 @endsection

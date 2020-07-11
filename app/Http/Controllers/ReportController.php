@@ -42,6 +42,8 @@ class ReportController extends Controller
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
             ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
+            ->join('orders', 'order_number', 'order_id')
+            ->where('complete_order', 0)
             ->get();
         }
         

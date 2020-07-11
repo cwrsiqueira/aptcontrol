@@ -52,10 +52,16 @@ class ProductController extends Controller
             ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
             ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
+            ->join('orders', 'order_number', 'order_id')
+            ->where('complete_order', 0)
             ->orderBy('delivery_date')
             ->paginate(10);
-        $quant_total = Order_product::select(DB::raw("(select sum(quant) from order_products where order_products.product_id = '$id') as quant_total"))->first();
-
+        $quant_total = Order_product::select('*')
+        ->join('orders', 'order_number', 'order_id')
+        ->where('order_products.product_id', $id)
+        ->where('orders.complete_order', 0)
+        ->sum('quant');
+        
         if (!empty($quant_total)) {
             $days_necessary = ((intval($quant_total->quant_total)) - $product->current_stock) / $product->daily_production_forecast;
             
@@ -66,7 +72,7 @@ class ProductController extends Controller
         } else {
             $delivery_in = date('Y-m-d');
         }
-
+        
         return view('cc_product', [
             'data' => $data,
             'product' => $product,

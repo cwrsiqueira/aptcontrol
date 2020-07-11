@@ -52,6 +52,8 @@ class ClientController extends Controller
         $data = Order_product::whereIn('order_id', $orders)
         ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
         ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+        ->join('orders', 'order_number', 'order_id')
+        ->where('complete_order', 0)
         ->paginate(10);
 
         foreach ($orders as $key => $value) {
@@ -59,6 +61,8 @@ class ClientController extends Controller
             ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_number)
+            ->join('orders', 'order_number', 'order_id')
+            ->where('complete_order', 0)
             ->groupBY('product_id')
             ->get();
         }

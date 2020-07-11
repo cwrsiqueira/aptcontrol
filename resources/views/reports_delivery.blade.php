@@ -40,7 +40,7 @@
                         <td>{{$item->order_id}}</td>
                         <td>{{$item->client_name}}</td>
                         <td>{{$item->product_name}}</td>
-                        <td>{{$item->quant}}</td>
+                        <td>{{number_format($item->quant, 0, '', '.')}}</td>
                         <td>{{$item->client_address}}</td>
                     </tr>
                 @endforeach

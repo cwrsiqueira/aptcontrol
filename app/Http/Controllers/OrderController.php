@@ -39,30 +39,59 @@ class OrderController extends Controller
         ->whereColumn('id', 'Orders.client_id')])->where('complete_order', $comp)->orderBy('order_date')->paginate(5);
 
         if (!empty($_GET['q'])) {
-            $q = $_GET['q'];
+
+            $q = \DateTime::createFromFormat('d/m/Y', $_GET['q']);
+            if($q && $q->format('d/m/Y') === $_GET['q']){
+                $q = $_GET['q'];
+                $q = explode('/', $q);
+                $q = array_reverse($q);
+                $q = implode('-', $q);
+                // A consulta É por data
+                $orders = Order::where('complete_order', $comp)
+                ->where('order_date', $q)
+                ->addSelect(['name_client' => Client::select('name')
+                ->whereColumn('clients.id', 'Orders.client_id')])
+                ->orderBy('order_date')
+                ->paginate(5);
+
+                $q = date('d/m/Y', strtotime($q));
+
+            } else {
+                $q = $_GET['q'];
+                // A consulta NÃO é por data
+
+                if (ctype_alpha($q)) {
+                    $clients = Client::where('name', 'LIKE', '%'.$q.'%')->get();
+                    $client_group = array();
+                    foreach ($clients as $item ) {
+                        $client_group[] = $item->id;
+                    }
+
+                    $orders = Order::where('complete_order', $comp)
+                    ->whereIn('client_id', $client_group)
+                    ->addSelect(['name_client' => Client::select('name')
+                    ->whereColumn('clients.id', 'Orders.client_id')])
+                    ->orderBy('order_date')
+                    ->paginate(5);
+                } else {
+                    $orders = Order::where('complete_order', $comp)
+                    ->where('order_number', 'LIKE', '%'.$q.'%')
+                    ->addSelect(['name_client' => Client::select('name')
+                    ->whereColumn('clients.id', 'Orders.client_id')])
+                    ->orderBy('order_date')
+                    ->paginate(5);
+                }
+            }
+
         } else {
             $q = '';
         }
-            
-        $clients = Client::where('name', 'LIKE', '%'.$q.'%')->get();
-        $client_group = array();
-        foreach ($clients as $item ) {
-            $client_group[] = $item->id;
-        }
-        
-        $orders = Order::where('complete_order', $comp)
-        ->addSelect(['name_client' => Client::select('name')
-        ->whereColumn('clients.id', 'Orders.client_id')])
-        ->where('orders.order_number', 'LIKE', '%'.$q.'%')
-        ->orWhere('orders.order_date', 'LIKE', '%'.$q.'%')
-        ->orwhereIn('orders.client_id', $client_group)
-        ->orderBy('order_date')
-        ->paginate(5);
         
         return view('orders', [
             'user' => Auth::user(),
             'orders' => $orders,
-            'q' => $q
+            'q' => $q,
+            'comp' => $comp
         ]);
     }
 
