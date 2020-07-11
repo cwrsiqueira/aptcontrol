@@ -122,7 +122,7 @@ class ClientController extends Controller
         $prod->full_address = $data['address'];
         $prod->save();
 
-        return redirect()->route('clients.index');
+        return redirect()->route("clients.index", ['q' => $prod->name]);
 
     }
 

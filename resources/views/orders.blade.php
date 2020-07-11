@@ -6,23 +6,25 @@
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
         <h2>Pedidos</h2>
 
-        <div class="d-flex justify-content-between">
+        <form method="get" class="d-flex justify-content-between">
+            <div class="form-check m-3">
+                <label class="form-check-label">
+                    <input onclick="this.form.submit();" type="checkbox" class="form-check-input" name="comp" @if(@$_GET['comp'] === 'on') checked @endif>Mostrar Pedidos Concluídos
+                </label>
+            </div>
 
-            <div></div>
-            
-            <form method="get" class="d-flex align-items-center m-3">
+            <div class="d-flex align-items-center">
                 @if(!empty($q))
-                <a class="btn btn-sm btn-secondary m-3" href="{{route('orders.index')}}">Limpar Busca</a>
+                <a class="btn btn-sm btn-secondary mr-3" href="{{route('orders.index')}}">Limpar Busca</a>
                 @endif
-                <input type="search" class="form-control m-3" name="q" id="q" placeholder="Procurar Pedido" value="{{$q}}">
+                <input type="search" class="form-control" name="q" id="q" placeholder="Procurar Pedido" value="{{$q}}">
                 <div class="input-group-append">
                     <button type="submit" class="btn btn-default">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
-            </form>
-
-        </div>
+            </div>
+        </form>
 
         <div>
             
@@ -46,6 +48,7 @@
                         <td>{{$item['payment']}}</td>
                         <td>{{$item['withdraw']}}</td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Visualizar</a></td>
+                        <td><button class="btn btn-sm btn-secondary complete_order" data-id="{{$item->id}}">Concluir</button></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -53,4 +56,25 @@
             {{$orders->appends(['q' => $q ?? ''])->links()}}
         </div>
     </main>
+@endsection
+
+@section('js')
+    <script>
+        $(function(){
+            $('.complete_order').click(function(){
+                let id = $(this).attr('data-id');
+                
+                $.ajax({
+                    url:"{{route('edit_complete_order')}}",
+                    type:'get',
+                    data:{id:id},
+                    dataType:'json',
+                    success:function(json){
+                        alert(json);
+                        window.location.href = 'orders';
+                    },
+                });
+            })
+        })
+    </script>
 @endsection

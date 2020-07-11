@@ -54,7 +54,7 @@
                         {{$item->product_name}}
                     </td>
                     <td style="padding: 5px;" id="quant_prod">
-                        {{$item->quant}}
+                        {{number_format($item->quant, 0, '', '.')}}
                     </td>
                     <td style="padding: 5px;">
                         R$ {{number_format($item->unit_price, 2, ',', '.')}}

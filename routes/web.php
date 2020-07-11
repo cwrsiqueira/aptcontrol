@@ -34,7 +34,10 @@ Route::get('/clients/cc_clients/{id}', 'ClientController@cc_client')->name('cc_c
 
 Route::get('/edit_payment', 'AjaxController@edit_payment')->name('edit_payment');
 Route::get('/edit_withdraw', 'AjaxController@edit_withdraw')->name('edit_withdraw');
+Route::get('/edit_complete_order', 'AjaxController@edit_complete_order')->name('edit_complete_order');
 Route::get('/search', 'AjaxController@search')->name('search');
+
+Route::get('/report_delivery', 'ReportController@report_delivery')->name('report_delivery');
 
 Route::get('/logout', function(){
     Auth::logout();

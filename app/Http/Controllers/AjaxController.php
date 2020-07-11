@@ -35,6 +35,18 @@ class AjaxController extends Controller
         }
     }
 
+    public function edit_complete_order() {
+        if (!empty($_GET['id'])) {
+            $id = $_GET['id'];
+
+            $order = Order::find($id);
+            $order->complete_order = 1;
+            $order->save();
+
+            echo json_encode('Pedido '.$order->order_number.' Concluído com sucesso!');
+        }
+    }
+
     public function search() {
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];

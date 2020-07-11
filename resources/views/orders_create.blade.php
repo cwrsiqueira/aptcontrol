@@ -56,7 +56,7 @@
                                 <input class="form-control quant1 qt_mask" style="width: 100%;" type="text" name="quant1">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control unit_val1" style="width: 100%;" type="text" name="unit_val1">
+                                <input class="form-control unit_val1" style="width: 100%;" type="text" name="unit_val1" value="0">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control total_val1" style="width: 100%;" type="text" name="total_val1" readonly>
@@ -80,7 +80,7 @@
                                 <input class="form-control quant2 qt_mask" style="width: 100%;" type="text" name="quant2">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control unit_val2" style="width: 100%;" type="text" name="unit_val2">
+                                <input class="form-control unit_val2" style="width: 100%;" type="text" name="unit_val2" value="0">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control total_val2" style="width: 100%;" type="text" name="total_val2" readonly>
@@ -104,7 +104,7 @@
                                 <input class="form-control quant3 qt_mask" style="width: 100%;" type="text" name="quant3">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control unit_val3" style="width: 100%;" type="text" name="unit_val3">
+                                <input class="form-control unit_val3" style="width: 100%;" type="text" name="unit_val3" value="0">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control total_val3" style="width: 100%;" type="text" name="total_val3" readonly>
@@ -128,7 +128,7 @@
                                 <input class="form-control quant4 qt_mask" style="width: 100%;" type="text" name="quant4">
                             </td>
                             <td style="padding: 5px;">
-                                <input class="form-control unit_val4" style="width: 100%;" type="text" name="unit_val4">
+                                <input class="form-control unit_val4" style="width: 100%;" type="text" name="unit_val4" value="0">
                             </td>
                             <td style="padding: 5px;">
                                 <input class="form-control total_val4" style="width: 100%;" type="text" name="total_val4" readonly>

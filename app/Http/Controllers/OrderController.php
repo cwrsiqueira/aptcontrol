@@ -29,27 +29,35 @@ class OrderController extends Controller
      */
     public function index()
     {
+        if (isset($_GET['comp'])) {
+            $comp = 1;
+        } else {
+            $comp = 0;
+        }
+
         $orders = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'Orders.client_id')])->paginate(5);
-        $q = '';
+        ->whereColumn('id', 'Orders.client_id')])->where('complete_order', $comp)->orderBy('order_date')->paginate(5);
+
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
-            
-            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->get();
-            $client_group = array();
-            foreach ($clients as $item ) {
-                $client_group[] = $item->id;
-            }
-            
-            $orders = Order::addSelect(['name_client' => Client::select('name')
-            ->whereColumn('clients.id', 'Orders.client_id')])
-            ->where('orders.order_number', 'LIKE', '%'.$q.'%')
-            ->orWhere('orders.order_date', 'LIKE', '%'.$q.'%')
-            ->orwhereIn('orders.client_id', $client_group)
-            ->paginate(5);
-            // ->toSql();
-            // dd($orders);
+        } else {
+            $q = '';
         }
+            
+        $clients = Client::where('name', 'LIKE', '%'.$q.'%')->get();
+        $client_group = array();
+        foreach ($clients as $item ) {
+            $client_group[] = $item->id;
+        }
+        
+        $orders = Order::where('complete_order', $comp)
+        ->addSelect(['name_client' => Client::select('name')
+        ->whereColumn('clients.id', 'Orders.client_id')])
+        ->where('orders.order_number', 'LIKE', '%'.$q.'%')
+        ->orWhere('orders.order_date', 'LIKE', '%'.$q.'%')
+        ->orwhereIn('orders.client_id', $client_group)
+        ->orderBy('order_date')
+        ->paginate(5);
         
         return view('orders', [
             'user' => Auth::user(),
@@ -182,7 +190,7 @@ class OrderController extends Controller
             }
         }
 
-        return redirect()->route('orders.index');
+        return redirect()->route('orders.index', ['q' => $order_prod->order_id]);
     }
 
     /**
