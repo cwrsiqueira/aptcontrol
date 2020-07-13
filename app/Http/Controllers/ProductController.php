@@ -49,13 +49,28 @@ class ProductController extends Controller
     {
         $product = Product::find($id);
         $data = Order_product::where('product_id', $id)
-            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
-            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
-            ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
-            ->join('orders', 'order_number', 'order_id')
-            ->where('complete_order', 0)
-            ->orderBy('delivery_date')
-            ->paginate(10);
+        ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
+        ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
+        ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
+        ->join('orders', 'order_number', 'order_id')
+        ->where('complete_order', 0)
+        ->orderBy('delivery_date')
+        ->paginate(10);
+
+        $day_delivery_calc = $this->day_delivery_calc($id);
+        $quant_total = $day_delivery_calc['quant_total'];
+        $delivery_in = $day_delivery_calc['delivery_in'];
+        
+        return view('cc_product', [
+            'data' => $data,
+            'product' => $product,
+            'quant_total' => $quant_total,
+            'delivery_in' => $delivery_in
+        ]);
+    }
+
+    private function day_delivery_calc($id) {
+        $product = Product::find($id);
         $quant_total = Order_product::select('*')
         ->join('orders', 'order_number', 'order_id')
         ->where('order_products.product_id', $id)
@@ -63,7 +78,7 @@ class ProductController extends Controller
         ->sum('quant');
         
         if (!empty($quant_total)) {
-            $days_necessary = ((intval($quant_total->quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+            $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
             
             if ($days_necessary <= 0) {
                 $days_necessary = 0;
@@ -72,13 +87,11 @@ class ProductController extends Controller
         } else {
             $delivery_in = date('Y-m-d');
         }
-        
-        return view('cc_product', [
-            'data' => $data,
-            'product' => $product,
+
+        return array(
             'quant_total' => $quant_total,
             'delivery_in' => $delivery_in
-        ]);
+        );
     }
 
     /**

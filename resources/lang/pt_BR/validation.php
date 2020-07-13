@@ -178,7 +178,12 @@ return [
         'description' => 'descrição',
         'password_confirmation' => 'confirmação da senha',
         'forecast' => 'previsão',
-        'order_number' => 'número do pedido'
+        'order_number' => 'Pedido Nr.',
+        'product_name' => 'Produto',
+        'quant' => 'Quant.',
+        'unit_val' => 'Vlr.Unit.',
+        'total_val' => 'Vlr.Total',
+        'delivery_date' => 'Previsão de Entrega'
     ],
 
 ];

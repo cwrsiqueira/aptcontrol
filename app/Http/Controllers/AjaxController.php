@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Order;
 use App\Client;
 use App\Product;
+use App\Order_product;
 
 class AjaxController extends Controller
 {
@@ -44,6 +45,31 @@ class AjaxController extends Controller
             $order->save();
 
             echo json_encode('Pedido '.$order->order_number.' Concluído com sucesso!');
+        }
+    }
+    
+    public function day_delivery_calc() {
+        if (!empty($_GET['quant'])) {
+            $quant = $_GET['quant'];
+            $quant = str_replace('.', '', $quant);
+            $id = $_GET['id'];
+            $product = Product::find($id);
+            $quant_total = Order_product::select('*')
+            ->join('orders', 'order_number', 'order_id')
+            ->where('order_products.product_id', $id)
+            ->where('orders.complete_order', 0)
+            ->sum('quant');
+            $quant_total = $quant_total + $quant;
+            if (!empty($quant_total)) {
+                $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+                if ($days_necessary <= 0) {
+                    $days_necessary = 0;
+                }
+                $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)+1).' days'));
+            } else {
+                $delivery_in = date('Y-m-d');
+            }
+            echo json_encode($delivery_in);
         }
     }
 

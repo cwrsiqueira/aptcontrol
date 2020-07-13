@@ -9,7 +9,7 @@
             <div class="card col-md-6 m-3">
                 <div class="card-header"><span>{{$product->name}}</span></div>
                 <div class="card-body">
-                    Total a entregar: {{number_format($quant_total->quant_total ?? 0, 0, '', '.') ?? 0}} <br>
+                    Total a entregar: {{number_format($quant_total ?? 0, 0, '', '.') ?? 0}} <br>
                     Entregas a partir de: {{date('d/m/Y', strtotime($delivery_in))}} <br>
                 </div>
             </div>

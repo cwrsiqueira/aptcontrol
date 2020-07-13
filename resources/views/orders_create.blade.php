@@ -3,7 +3,7 @@
 @section('title', 'Pedidos')
 
 @section('content')
-    <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
+    <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4" style="height: 100vh;">
         <h2>Adicionar Pedido</h2>
         @if ($errors->any())
             <div class="alert alert-danger">
@@ -20,18 +20,19 @@
                     <thead>
                         <tr>
                             <th colspan="1">Data: <input class="form-control" type="date" name="order_date" id="order_date" value="{{date('Y-m-d')}}"></th>
-                            <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$client->name}}"><input type="hidden" name="client_id" id="client_id" value="{{$client->id}}"></th>
+                            <th colspan="5">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$client->name}}"><input type="hidden" name="client_id" id="client_id" value="{{$client->id}}"></th>
                         </tr>
                         <tr>
-                            <th colspan="1">Pedido Nr.: <input class="form-control @error('order_number') is-invalid @enderror" type="text" name="order_number" id="order_number"></th>
-                            <th colspan="3">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order"></th>
-                            <th colspan="1">
+                            <th colspan="1">Pedido Nr.: <input class="form-control @error('order_number') is-invalid @enderror order_number" type="text" name="order_number" value="{{old('order_number')}}" placeholder="Digite o número do pedido"></th>
+                            <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order" value="0"></th>
+                            <th colspan="2">
                                 Recebimento do Material:
                                 <select class="form-control" name="withdraw" id="withdraw">
                                     <option value="Entregar">Entregar</option>
                                     <option value="Retirar">Retirar</option>
                                 </select>
                             </th>
+                            <th colspan="1" style="text-align: center"><a class="add_line" style='color:green;; display:none;' href='#' data-toggle='tooltip' title='Adicionar linha!'><i class='fas fa-fw fa-plus' style="font-size: 24px;"></i></a></th>
                         </tr>
                         <tr style="text-align: center;">
                             <th style="width: 250px;">Produto</th>
@@ -39,169 +40,123 @@
                             <th style="width: 125px;">Vlr.Unit.</th>
                             <th style="width: 125px;">Vlr.Total</th>
                             <th style="width: 75px;">Previsão de Entrega</th>
+                            <th style="width: 25px;">Linha</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {{-- LINHA 1 --}}
-                        <tr style="text-align: center;">
-                            <td style="padding: 5px;">
-                                <select class="form-control product_name1" style="width: 100%;" name="product_name1">
-                                    <option value=""></option>
-                                    @foreach ($products as $product)
-                                        <option value="{{$product->id}}">{{$product->name}}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control quant1 qt_mask" style="width: 100%;" type="text" name="quant1">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control unit_val1" style="width: 100%;" type="text" name="unit_val1" value="0">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control total_val1" style="width: 100%;" type="text" name="total_val1" readonly>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control delivery_date1" style="width: 100%;" type="date" name="delivery_date1">
-                            </td>
-                        </tr>
-                        {{--  --}}
-                        {{-- LINHA 2 --}}
-                        <tr style="text-align: center;">
-                            <td style="padding: 5px;">
-                                <select class="form-control product_name2" style="width: 100%;" name="product_name2">
-                                    <option value=""></option>
-                                    @foreach ($products as $product)
-                                        <option value="{{$product->id}}">{{$product->name}}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control quant2 qt_mask" style="width: 100%;" type="text" name="quant2">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control unit_val2" style="width: 100%;" type="text" name="unit_val2" value="0">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control total_val2" style="width: 100%;" type="text" name="total_val2" readonly>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control delivery_date2" style="width: 100%;" type="date" name="delivery_date2">
-                            </td>
-                        </tr>
-                        {{--  --}}
-                        {{-- LINHA 3 --}}
-                        <tr style="text-align: center;">
-                            <td style="padding: 5px;">
-                                <select class="form-control product_name3" style="width: 100%;" name="product_name3">
-                                    <option value=""></option>
-                                    @foreach ($products as $product)
-                                        <option value="{{$product->id}}">{{$product->name}}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control quant3 qt_mask" style="width: 100%;" type="text" name="quant3">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control unit_val3" style="width: 100%;" type="text" name="unit_val3" value="0">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control total_val3" style="width: 100%;" type="text" name="total_val3" readonly>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control delivery_date3" style="width: 100%;" type="date" name="delivery_date3">
-                            </td>
-                        </tr>
-                        {{--  --}}
-                        {{-- LINHA 4 --}}
-                        <tr style="text-align: center;">
-                            <td style="padding: 5px;">
-                                <select class="form-control product_name4" style="width: 100%;" name="product_name4">
-                                    <option value=""></option>
-                                    @foreach ($products as $product)
-                                        <option value="{{$product->id}}">{{$product->name}}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control quant4 qt_mask" style="width: 100%;" type="text" name="quant4">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control unit_val4" style="width: 100%;" type="text" name="unit_val4" value="0">
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control total_val4" style="width: 100%;" type="text" name="total_val4" readonly>
-                            </td>
-                            <td style="padding: 5px;">
-                                <input class="form-control delivery_date4" style="width: 100%;" type="date" name="delivery_date4">
-                            </td>
-                        </tr>
-                        {{--  --}}
-                    </tbody>
+                    <tbody class="table-prod"></tbody>
                 </table>
                 <hr>
-            <input class="btn btn-success mt-3" type="submit" value="Salvar">
+                <div>
+                    <input class="btn btn-success" type="submit" value="Salvar">
+                </div>
         </form>
     </main>
 
     @section('js')
         <script>
 
-            var total = 0;
+            $(function(){
 
-            $('.unit_val1').mask('000.000,00', {reverse:true});
-            $('.qt_mask').mask('000.000.000', {reverse:true});
+                $('.order_number').blur(function(){
+                    if ($(this).val() !== '') {
+                        $('.add_line').show();
+                    }
+                })
 
-            $('.unit_val1').blur(function(){
-                let tirar_ponto = $(this).val().replace('.', '');
-                let vlr_alterado = tirar_ponto.replace(',', '.');
-                let total_val1 = $('.quant1').val() * vlr_alterado;
-                let formatado = total_val1.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('.total_val1').val(formatado);
-                total = total + total_val1;
-                let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('#total_order').val(total_formatado);
-            })
+                // Inclusão de linhas
+                $('.add_line').click(function(e){
 
-            $('.unit_val2').mask('000.000,00', {reverse:true});
+                    e.preventDefault();
+                    let html = "";
+                    let r = new Date().getTime();
+                    
+                    if ($('.prod'+r).length == 0) {
 
-            $('.unit_val2').blur(function(){
-                let tirar_ponto = $(this).val().replace('.', '');
-                let vlr_alterado = tirar_ponto.replace(',', '.');
-                let total_val2 = $('.quant2').val() * vlr_alterado;
-                let formatado = total_val2.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('.total_val2').val(formatado);
-                total = total + total_val2;
-                let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('#total_order').val(total_formatado);
-            })
+                        html += '<tr class="prod'+r+'" style="text-align: center;">';
+                        html += '<td style="padding: 5px;">';
+                        html += '<select class="form-control product_name'+r+'" style="width: 100%;" name="prod['+r+'][product_name]">'
+                        html += '<option value=""></option>';
+                        html += '@foreach ($products as $product)';
+                        html += '<option value="{{$product->id}}">{{$product->name}}</option>';
+                        html += '@endforeach';
+                        html += '</select>';
+                        html += '</td>';
+                        html += '<td style="padding: 5px;">';
+                        html += '<input class="form-control quant'+r+' qt_mask" style="width: 100%;" type="text" name="prod['+r+'][quant]" value="0">'
+                        html += '</td>';
+                        html += '<td style="padding: 5px;">';
+                        html += '<input class="form-control unit_val'+r+'" style="width: 100%;" type="text" name="prod['+r+'][unit_val]" value="0">'
+                        html += '</td>';
+                        html += '<td style="padding: 5px;">';
+                        html += '<input class="form-control total_val'+r+'" style="width: 100%;" type="text" name="prod['+r+'][total_val]" value="0" readonly>'
+                        html += '</td>';
+                        html += '<td style="padding: 5px;">';
+                        html += '<input class="form-control delivery_date'+r+'" style="width: 100%;" type="date" name="prod['+r+'][delivery_date]" value="{{date("Y-m-d")}}">';
+                        html += '</td>';
+                        html += "<td style='padding: 5px;'><a class='new_line"+r+"' style='color:red' href='#' data-toggle='tooltip' title='Excluir linha!' id='"+r+"'><i class='fas fa-fw fa-trash'></i></a></td>";
+                        html += '</tr>';
+                    }
 
-            $('.unit_val3').mask('000.000,00', {reverse:true});
+                    $('.table-prod').append(html);
+                    $('[data-toggle="tooltip"]').tooltip({trigger: "hover"});
 
-            $('.unit_val3').blur(function(){
-                let tirar_ponto = $(this).val().replace('.', '');
-                let vlr_alterado = tirar_ponto.replace(',', '.');
-                let total_val3 = $('.quant3').val() * vlr_alterado;
-                let formatado = total_val3.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('.total_val3').val(formatado);
-                total = total + total_val3;
-                let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('#total_order').val(total_formatado);
-            })
+                    $('.unit_val'+r+'').blur(function(){
+                        let total = 0;
+                        total = $('#total_order').val().replace('.', '').replace(',', '.');
+                        let vlr_alterado = $(this).val().replace('.', '').replace(',', '.');
+                        let total_val = ($('.quant'+r+'').val().replace('.', '') * vlr_alterado) / 1000;
+                        let formatado = total_val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        $('.total_val'+r+'').val(formatado);
+                        total = parseFloat(total) + parseFloat(total_val);
+                        let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        $('#total_order').val(total_formatado);
+                    })
 
-            $('.unit_val4').mask('000.000,00', {reverse:true});
+                    // Calcular Dia de Entrega
+                    $('.quant'+r+'').blur(function(){
+                        let id = $('.product_name'+r+'').val()
+                        let quant = $(this).val()
+                        if (id === '') {
+                            alert('Selecionar o produto');
+                            $('.product_name'+r+'').focus();
+                        } else {
+                            $.ajax({
+                                url:"{{route('day_delivery_calc')}}",
+                                type:'get',
+                                data:{id:id, quant:quant},
+                                dataType:'json',
+                                success:function(json){
+                                    $('.delivery_date'+r+'').val(json)
+                                },
+                            });
+                        }
+                    })
 
-            $('.unit_val4').blur(function(){
-                let tirar_ponto = $(this).val().replace('.', '');
-                let vlr_alterado = tirar_ponto.replace(',', '.');
-                let total_val4 = $('.quant4').val() * vlr_alterado;
-                let formatado = total_val4.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('.total_val4').val(formatado);
-                total = total + total_val4;
-                let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('#total_order').val(total_formatado);
-            })
+                    $('.quant'+r).blur(function(){
+                        $(this).attr('readonly', 'readonly');
+                    })
+
+                    $('.unit_val'+r).blur(function(){
+                        $(this).attr('readonly', 'readonly');
+                    })
+                    
+                    // Excluir Linha nova (Não Salva no BD)
+                    $('.new_line'+r).click(function (e) {
+                        e.preventDefault();
+                        $('[data-toggle="tooltip"]').tooltip('hide');
+                        let linha = $(this).attr('id');
+                        let total = $('#total_order').val().replace('.', '').replace(',', '.');
+                        let deleted_val = $('.total_val'+r+'').val().replace('.', '').replace(',', '.');
+                        total = parseFloat(total) - parseFloat(deleted_val);
+                        let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        $('#total_order').val(total_formatado);
+                        $('.prod'+linha).remove();
+                    })
+
+                    $('.unit_val'+r+'').mask('000.000,00', {reverse:true});
+                    $('.qt_mask').mask('000.000.000', {reverse:true}); 
+                });
+            });
         </script>
     @endsection
 
