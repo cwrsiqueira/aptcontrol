@@ -24,10 +24,14 @@ class HomeController extends Controller
      */
     public function index()
     {
-        if (Auth::user()->confirmed_user === 1) {
-            return view('dashboard');
+        if (Auth::user()->confirmed_user !== 0) {
+            return view('dashboard', [
+                'user' => Auth::user(),
+            ]);
         } else {
-            return view('home');
+            return view('home', [
+                'user' => Auth::user(),
+            ]);
         } 
     }
 }

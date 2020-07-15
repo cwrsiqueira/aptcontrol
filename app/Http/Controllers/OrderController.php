@@ -20,6 +20,7 @@ class OrderController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:menu-pedidos');
     }
 
     /**
@@ -147,8 +148,6 @@ class OrderController extends Controller
             ]
         )->validate();
 
-        dd($data);
-
         $order_total = str_replace('.', '', $data['total_order']);
         $order_total = str_replace(',', '.', $order_total);
 
@@ -161,24 +160,24 @@ class OrderController extends Controller
         $order->withdraw = $data['withdraw'];
         $order->save();
 
-        for ($i=1; $i < 5; $i++) { 
-            if (!empty($data['product_name'.$i])) {
+        foreach($data['prod'] as $item) {
+            if (!empty($item['product_name'])) {
 
-                $quant = str_replace('.', '', $data['quant'.$i]);
+                $quant = str_replace('.', '', $item['quant']);
 
-                $unit_price = str_replace('.', '', $data['unit_val'.$i]);
+                $unit_price = str_replace('.', '', $item['unit_val']);
                 $unit_price = str_replace(',', '.', $unit_price);
 
-                $total_price = str_replace('.', '', $data['total_val'.$i]);
+                $total_price = str_replace('.', '', $item['total_val']);
                 $total_price = str_replace(',', '.', $total_price);
 
                 $order_prod = new Order_product();
                 $order_prod->order_id = $data['order_number'];
-                $order_prod->product_id = $data['product_name'.$i];
+                $order_prod->product_id = $item['product_name'];
                 $order_prod->quant = $quant;
                 $order_prod->unit_price = $unit_price;
                 $order_prod->total_price = $total_price;
-                $order_prod->delivery_date = $data['delivery_date'.$i];
+                $order_prod->delivery_date = $item['delivery_date'];
                 $order_prod->save();
             }
         }

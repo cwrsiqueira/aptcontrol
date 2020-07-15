@@ -10,6 +10,11 @@ use App\Order_product;
 
 class AjaxController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
     public function edit_payment() {
         if (!empty($_GET['payment'])) {
             $payment = $_GET['payment'];

@@ -43,45 +43,58 @@
         <nav class="col-md-2 d-none d-md-block bg-light sidebar">
           <div class="sidebar-sticky">
             <ul class="nav flex-column">
+
               <li class="nav-item">
                 <a class="nav-link @if(Request::is('home')) active @endif" href="{{route('home')}}">
                   <span data-feather="home"></span>
                   Painel <span class="sr-only">(current)</span>
                 </a>
               </li>
+              
               <li class="nav-item">
                 <a class="nav-link @if(Request::is(['products', 'products/*'])) active @endif" href="{{route('products.index')}}">
                   <span data-feather="shopping-cart"></span>
                   Produtos
                 </a>
               </li>
+
               <li class="nav-item">
                 <a class="nav-link @if(Request::is('clients')) active @endif" href="{{route('clients.index')}}">
                   <span data-feather="users"></span>
                   Clientes
                 </a>
               </li>
+
               <li class="nav-item">
                 <a class="nav-link @if(Request::is(['orders', 'orders/*'])) active @endif" href="{{route('orders.index')}}">
                   <span data-feather="file"></span>
                   Pedidos
                 </a>
               </li>
+
               <li class="nav-item">
                 <a class="nav-link @if(Request::is('reports')) active @endif" href="{{route('reports.index')}}">
                   <span data-feather="bar-chart-2"></span>
                   Relatórios
                 </a>
               </li>
+
               <li class="nav-item">
                 <a class="nav-link @if(Request::is('integrations')) active @endif" href="{{route('integrations.index')}}">
                   <span data-feather="layers"></span>
                   Integrações
                 </a>
               </li>
+
+              <li class="nav-item">
+                <a class="nav-link @if(Request::is('permissions')) active @endif" href="{{route('permissions.index')}}">
+                  <span data-feather="layers"></span>
+                  Permissões
+                </a>
+              </li>
+
             </ul>
 
-            
           </div>
         </nav>
 
