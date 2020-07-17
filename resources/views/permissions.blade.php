@@ -8,7 +8,7 @@
 
         <div class="list-group">
             @foreach ($users as $item)
-                <a href="{{route('permissions.edit', ['permission' => $item['id']])}}" class="list-group-item list-group-item-action @if($item->confirmed_user === 0) list-group-item-danger @else list-group-item-success @endif">Usuário: {{$item->name}} - Permissão: {{$item->group_name}} - @if($item->confirmed_user === 0) Usuário não Autorizado @else Usuário Autorizado @endif</a>
+                <a href="{{route('permissions.edit', ['permission' => $item['id']])}}" class="@if($item->confirmed_user === 1)list-group-item disabled @elseif($item->confirmed_user === 0) list-group-item list-group-item-action ist-group-item-danger @else list-group-item list-group-item-action list-group-item-success @endif">Usuário: {{$item->name}} - Permissão: {{$item->group_name}} - @if($item->confirmed_user === 0) Usuário não Autorizado @else Usuário Autorizado @endif</a>
             @endforeach
         </div>
         <div class="mt-3">
@@ -18,7 +18,7 @@
         <!-- MODAL EDIT CLIENTE -->
         <div class="modal fade" id="modal_editPermission">
             <div class="modal-dialog">
-                <form class="form-horizontal" method="POST" action="{{ route( 'permissions.update', [ 'permission' => $user->id ?? 0 ] ) }}">
+                <form class="form-horizontal" method="POST" action="{{ route( 'permissions.update', [ 'permission' => $user_edit->id ?? 0 ] ) }}">
                     @csrf
                     @method('PUT')
 
@@ -44,8 +44,8 @@
                         <div class="modal-body">
                                 
                             <label for="name">Nome do Usuário:</label>
-                            <input readonly class="form-control @error('name') is-invalid @enderror" type="text" name="name" placeholder="Nome do Cliente" id="edit_name" value="{{$user['name'] ?? ''}}">
-                            <input type="hidden" name="user_id" value="{{$user->id ?? ''}}">
+                            <input readonly class="form-control @error('name') is-invalid @enderror" type="text" name="name" placeholder="Nome do Cliente" id="edit_name" value="{{$user_edit['name'] ?? ''}}">
+                            <input type="hidden" name="user_id" value="{{$user_edit->id ?? ''}}">
             
                             <label for="contact">Permissões:</label>
                             <ul class="list-group">
@@ -53,7 +53,7 @@
                                     @foreach ($permissions ?? array() as $item)
                                         <div class="form-check">
                                             <label class="form-check-label">
-                                                <input type="checkbox" class="form-check-input @error($item->slug) is-invalid @enderror" value="{{$item->id}}" name="permission_item[]" id="{{$item->slug}}">{{$item->name}}
+                                                <input @if(in_array($item->id, $user_permissions)) checked @endif type="checkbox" class="form-check-input @error($item->slug) is-invalid @enderror" value="{{$item->id}}" name="permission_item[]" id="{{$item->slug}}">{{$item->name}}
                                             </label>
                                         </div>
                                     @endforeach
@@ -77,7 +77,7 @@
 @endsection
 
 @section('js')
-    @if (!empty($user))
+    @if (!empty($user_edit))
         <script>
             $(function(){
                 $('#modal_editPermission').modal();

@@ -21,21 +21,12 @@
                     <th colspan="1">Pedido Nr.: <input readonly class="form-control" type="text" name="order_number" id="order_number" value="{{$order->order_number}}"></th>
                     <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order" value="R$ {{number_format($order->order_total, 2, ',', '.')}}"></th>
                     <th>
-                        <label for="payment">Pagamento:</label>
-                        <form id="form_payment" method="post">
-                            <select class="form-control" name="payment" id="payment">
-                                <option @if ($order->payment === 'Total') selected @endif value="Total">Total</option>
-                                <option @if ($order->payment === 'Parcial') selected @endif value="Parcial">Parcial</option>
-                                <option @if ($order->payment === 'Aberto') selected @endif value="Aberto">Aberto</option>
-                            </select>
+                        <label for="payment">Pagamento:</label><br>
+                        {{$order->payment}}
                     </th>
                     <th>
-                        <label for="withdraw">Entrega:</label>
-                            <select class="form-control" name="withdraw" id="withdraw">
-                                <option @if ($order->withdraw === 'Entregar') selected @endif value="Entregar">Entregar</option>
-                                <option @if ($order->withdraw === 'Retirar') selected @endif value="Retirar">Retirar</option>
-                            </select>
-                        </form>
+                        <label for="withdraw">Entrega:</label><br>
+                        {{$order->withdraw}}
                     </th>
                 </tr>
                 <tr style="text-align: center;">
@@ -80,34 +71,6 @@
     <script>
 
         $(function(){
-            $('#payment').change(function(){
-                let payment = $(this).val();
-                let id = $('#order_id').val();
-                
-                $.ajax({
-                    url:"{{route('edit_payment')}}",
-                    type:'get',
-                    data:{payment:payment, id:id},
-                    dataType:'json',
-                    success:function(json){
-                        alert(json);
-                    },
-                });
-            })
-            $('#withdraw').change(function(){
-                let withdraw = $(this).val();
-                let id = $('#order_id').val();
-                
-                $.ajax({
-                    url:"{{route('edit_withdraw')}}",
-                    type:'get',
-                    data:{withdraw:withdraw, id:id},
-                    dataType:'json',
-                    success:function(json){
-                        alert(json);
-                    },
-                });
-            })
             $('#quant_prod').mask('000.000.000', {reverse:true});
         })
         

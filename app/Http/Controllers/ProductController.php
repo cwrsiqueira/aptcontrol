@@ -11,6 +11,7 @@ use App\Order;
 use App\Client;
 use App\Order_product;
 use App\Stockmovement;
+use App\User;
 
 class ProductController extends Controller
 {
@@ -23,6 +24,16 @@ class ProductController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('can:menu-produtos');
+    }
+
+    public function get_permissions() {
+        $id = Auth::user()->id;
+        $user_permissions_obj = User::find($id)->permissions;
+        $user_permissions = array();
+        foreach ($user_permissions_obj as $item) {
+            $user_permissions[] = $item->id_permission_item;
+        }
+        return $user_permissions;
     }
 
     /**
@@ -38,8 +49,11 @@ class ProductController extends Controller
             $q = $_GET['q'];
             $products = Product::where('name', 'LIKE', '%'.$q.'%')->paginate(5);
         }
+
+        $user_permissions = $this->get_permissions();
         
         return view('products', [
+            'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'products' => $products,
             'q' => $q
@@ -61,12 +75,15 @@ class ProductController extends Controller
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
+
+        $user_permissions = $this->get_permissions();
         
         return view('cc_product', [
             'data' => $data,
             'product' => $product,
             'quant_total' => $quant_total,
-            'delivery_in' => $delivery_in
+            'delivery_in' => $delivery_in,
+            'user_permissions' => $user_permissions
         ]);
     }
 
@@ -178,11 +195,15 @@ class ProductController extends Controller
         if (!empty($_GET['action'])) {
             $action = $_GET['action'];
         }
+
+        $user_permissions = $this->get_permissions();
+
         return view('products',[
             'user' => Auth::user(),
             'product' => $product,
             'products' => $products,
-            'action' => $action
+            'action' => $action,
+            'user_permissions' => $user_permissions
         ]);
     }
 

@@ -14,7 +14,7 @@
 
                 <form method="get" class="d-flex align-items-center">
                     @if(!empty($q))
-                    <a class="btn btn-sm btn-secondary m-3" href="{{route('clients.index')}}">Limpar Busca</a>
+                    <a class="btn btn-sm btn-secondary m-3" style="width: 160px" href="{{route('clients.index')}}">Limpar Busca</a>
                     @endif
                     <input type="search" class=" form-control" name="q" id="q" placeholder="Procurar Cliente" value="{{$q ?? 0}}">
                     <div class="input-group-append">
@@ -32,7 +32,7 @@
                         <th style="width: 60px;">#Ref.</th>
                         <th style="width: 500px;">Nome</th>
                         <th style="width: 130px;">Contato</th>
-                        <th colspan="2" style="text-align:center;">Ações</th>
+                        <th colspan="3" style="text-align:center;">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,7 +42,7 @@
                         <td><?php echo $item['name']; ?></td>
                         <td><?php echo $item['contact']; ?></td>
                         <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('clients.edit', ['client' => $item->id]) }}">Editar</a></td>
-                        <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('orders.create', ['client' => $item['id']]) }}">Efetuar Pedido</a></td>
+                        <td style="width: 150px;"><a class="btn btn-sm btn-secondary" href="{{ route('orders.create', ['client' => $item['id']]) }}">Efetuar Pedido</a></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_client', ['id' => $item->id]) }}">C/C</a></td>
                     </tr>
                     <?php endforeach; ?>

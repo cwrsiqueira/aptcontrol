@@ -51,13 +51,6 @@ class AuthServiceProvider extends ServiceProvider
         });
     }
 
-    private function getPermissionsAdmin($user){
-        if($user->confirmed_user === 1) {
-            return true;
-        }
-        return false;
-    }
-
     private function getPermissions($user, $menu) {
         
         $permissions = [];

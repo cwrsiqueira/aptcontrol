@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
   <head>
@@ -13,7 +12,7 @@
     <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/dashboard/">
 
     <!-- Bootstrap core CSS -->
-    <link href="{{asset('css/bootstrap.min.css')}}" rel="stylesheet">
+    <link rel="stylesheet" href="{{asset('css/bootstrap.min.css')}}">
 
     <!-- Custom styles for this template -->
     <link href="{{asset('css/dashboard.css')}}" rel="stylesheet">
@@ -51,42 +50,42 @@
                 </a>
               </li>
               
-              <li class="nav-item">
+              <li class="nav-item" @if(in_array('1', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is(['products', 'products/*'])) active @endif" href="{{route('products.index')}}">
                   <span data-feather="shopping-cart"></span>
                   Produtos
                 </a>
               </li>
 
-              <li class="nav-item">
+              <li class="nav-item" @if(in_array('2', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('clients')) active @endif" href="{{route('clients.index')}}">
                   <span data-feather="users"></span>
                   Clientes
                 </a>
               </li>
 
-              <li class="nav-item">
+              <li class="nav-item" @if(in_array('3', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is(['orders', 'orders/*'])) active @endif" href="{{route('orders.index')}}">
                   <span data-feather="file"></span>
                   Pedidos
                 </a>
               </li>
 
-              <li class="nav-item">
+              <li class="nav-item" @if(in_array('4', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('reports')) active @endif" href="{{route('reports.index')}}">
                   <span data-feather="bar-chart-2"></span>
                   Relatórios
                 </a>
               </li>
 
-              <li class="nav-item">
+              <li class="nav-item" @if(in_array('5', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('integrations')) active @endif" href="{{route('integrations.index')}}">
                   <span data-feather="layers"></span>
                   Integrações
                 </a>
               </li>
 
-              <li class="nav-item">
+              <li class="nav-item" @if(in_array('6', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('permissions')) active @endif" href="{{route('permissions.index')}}">
                   <span data-feather="layers"></span>
                   Permissões
@@ -100,8 +99,8 @@
 
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
           
-            @yield('content')
-
+          @yield('content')
+          
         </main>
       </div>
     </div>

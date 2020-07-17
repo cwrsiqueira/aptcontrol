@@ -10,7 +10,7 @@ use App\Client;
 use App\Product;
 use App\Order;
 use App\Order_product;
-
+use App\User;
 
 class ClientController extends Controller
 {
@@ -23,6 +23,16 @@ class ClientController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('can:menu-clientes');
+    }
+
+    public function get_permissions() {
+        $id = Auth::user()->id;
+        $user_permissions_obj = User::find($id)->permissions;
+        $user_permissions = array();
+        foreach ($user_permissions_obj as $item) {
+            $user_permissions[] = $item->id_permission_item;
+        }
+        return $user_permissions;
     }
 
     /**
@@ -38,11 +48,14 @@ class ClientController extends Controller
             $q = $_GET['q'];
             $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(5);
         }
+
+        $user_permissions = $this->get_permissions();
         
         return view('clients', [
             'user' => Auth::user(),
             'clients' => $clients,
-            'q' => $q
+            'q' => $q,
+            'user_permissions' => $user_permissions
         ]);
     }
 
@@ -81,10 +94,13 @@ class ClientController extends Controller
             }
         }
 
+        $user_permissions = $this->get_permissions();
+
         return view('cc_client', [
             'data' => $data,
             'client' => $client,
-            'product_total' => $product_total
+            'product_total' => $product_total,
+            'user_permissions' => $user_permissions
         ]);
     }
 
@@ -152,11 +168,13 @@ class ClientController extends Controller
     {
         $clients = Client::paginate(5);
         $client = Client::find($id);
+        $user_permissions = $this->get_permissions();
 
         return view('clients',[
             'user' => Auth::user(),
             'client' => $client,
             'clients' => $clients,
+            'user_permissions' => $user_permissions
         ]);
     }
 

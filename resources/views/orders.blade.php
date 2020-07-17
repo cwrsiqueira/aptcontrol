@@ -15,7 +15,7 @@
 
             <div class="d-flex align-items-center">
                 @if(!empty($q))
-                <a class="btn btn-sm btn-secondary mr-3" href="{{route('orders.index')}}">Limpar Busca</a>
+                <a class="btn btn-sm btn-secondary mr-3" style="width:160px" href="{{route('orders.index')}}">Limpar Busca</a>
                 @endif
                 <input type="search" class="form-control" name="q" id="q" placeholder="Procurar Pedido" value="{{$q}}">
                 <div class="input-group-append">
@@ -36,7 +36,7 @@
                         <th>Cliente</th>
                         <th>Pagamento</th>
                         <th>Entrega</th>
-                        <th></th>
+                        <th colspan="3" style="text-align: center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,6 +48,7 @@
                         <td>{{$item['payment']}}</td>
                         <td>{{$item['withdraw']}}</td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Visualizar</a></td>
+                        <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->id]) }}">Editar</a></td>
                         <td><button class="btn btn-sm btn-secondary complete_order" data-id="{{$item->id}}">Concluir</button></td>
                     </tr>
                     <?php endforeach; ?>
@@ -66,18 +67,23 @@
     <script>
         $(function(){
             $('.complete_order').click(function(){
-                let id = $(this).attr('data-id');
+                if (confirm('Confirma a entrega do pedido?')) {
+                    let id = $(this).attr('data-id');
                 
-                $.ajax({
-                    url:"{{route('edit_complete_order')}}",
-                    type:'get',
-                    data:{id:id},
-                    dataType:'json',
-                    success:function(json){
-                        alert(json);
-                        window.location.href = 'orders';
-                    },
-                });
+                    $.ajax({
+                        url:"{{route('edit_complete_order')}}",
+                        type:'get',
+                        data:{id:id},
+                        dataType:'json',
+                        success:function(json){
+                            alert(json);
+                            window.location.href = 'orders';
+                        },
+                    });
+                } else {
+                    return false;
+                }
+                
             })
         })
     </script>

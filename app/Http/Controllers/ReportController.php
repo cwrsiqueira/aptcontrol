@@ -9,6 +9,7 @@ use App\Client;
 use App\Product;
 use App\Order;
 use App\Order_product;
+use App\User;
 
 class ReportController extends Controller
 {
@@ -23,6 +24,16 @@ class ReportController extends Controller
         $this->middleware('can:menu-relatorios');
     }
 
+    public function get_permissions() {
+        $id = Auth::user()->id;
+        $user_permissions_obj = User::find($id)->permissions;
+        $user_permissions = array();
+        foreach ($user_permissions_obj as $item) {
+            $user_permissions[] = $item->id_permission_item;
+        }
+        return $user_permissions;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -30,7 +41,12 @@ class ReportController extends Controller
      */
     public function index()
     {
-        return view('reports', ['user' => Auth::user()]);
+        $user_permissions = $this->get_permissions();
+
+        return view('reports', [
+            'user_permissions' => $user_permissions,
+            'user' => Auth::user()
+        ]);
     }
 
     public function report_delivery() 

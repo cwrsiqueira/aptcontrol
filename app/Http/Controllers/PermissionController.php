@@ -17,6 +17,17 @@ class PermissionController extends Controller
         $this->middleware('auth');
         $this->middleware('can:admin');
     }
+
+    public function get_permissions() {
+        $id = Auth::user()->id;
+        $user_permissions_obj = User::find($id)->permissions;
+        $user_permissions = array();
+        foreach ($user_permissions_obj as $item) {
+            $user_permissions[] = $item->id_permission_item;
+        }
+        return $user_permissions;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -28,9 +39,13 @@ class PermissionController extends Controller
         ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
         ->orderBy('users.name')
         ->paginate(5);
+
+        $user_permissions = $this->get_permissions();
         
         return view('permissions', [
-            'users' => $users
+            'user' => Auth::user(),
+            'user_permissions' => $user_permissions,
+            'users' => $users,
         ]);
     }
 
@@ -78,11 +93,17 @@ class PermissionController extends Controller
         ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
         ->orderBy('users.name')
         ->paginate(5);
-        $user = User::find($id);
+        $user_edit = User::find($id);
         $permissions = Permission_item::all();
-        $user_permissions = Permission_link::where('id_user', $id);
+        $user_permissions_obj = User::find($id)->permissions;
+        $user_permissions = array();
+        foreach ($user_permissions_obj as $item) {
+            $user_permissions[] = $item->id_permission_item;
+        }
+        
         return view('permissions', [
-            'user' => $user,
+            'user' => Auth::user(),
+            'user_edit' => $user_edit,
             'users' => $users,
             'permissions' => $permissions,
             'user_permissions' => $user_permissions
@@ -114,12 +135,14 @@ class PermissionController extends Controller
         )->validate();
         
         $perm = Permission_link::where('id_user', $data['user_id'])->delete();
-
-        for($i = 0; $i < count($data['permission_item']); $i++) {
-            $perm = new Permission_link();
-            $perm->id_user = $data['user_id'];
-            $perm->id_permission_item = $data['permission_item'][$i];
-            $perm->save();
+        
+        if (!empty($data['permission_item'])) {
+            for($i = 0; $i < count($data['permission_item']); $i++) {
+                $perm = new Permission_link();
+                $perm->id_user = $data['user_id'];
+                $perm->id_permission_item = $data['permission_item'][$i];
+                $perm->save();
+            }
         }
 
         $conf_user = User::find($data['user_id']);

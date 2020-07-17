@@ -14,32 +14,6 @@ class AjaxController extends Controller
     {
         $this->middleware('auth');
     }
-    
-    public function edit_payment() {
-        if (!empty($_GET['payment'])) {
-            $payment = $_GET['payment'];
-            $id = $_GET['id'] ;
-
-            $order = Order::find($id);
-            $order->payment = $payment;
-            $order->save();
-
-            echo json_encode('Alterado com sucesso para pagamento '.$payment.'!');
-        }
-    }
-
-    public function edit_withdraw() {
-        if (!empty($_GET['withdraw'])) {
-            $withdraw = $_GET['withdraw'];
-            $id = $_GET['id'] ;
-
-            $order = Order::find($id);
-            $order->withdraw = $withdraw;
-            $order->save();
-
-            echo json_encode('Alterado com sucesso para entrega '.$withdraw.'!');
-        }
-    }
 
     public function edit_complete_order() {
         if (!empty($_GET['id'])) {
@@ -97,6 +71,24 @@ class AjaxController extends Controller
             }
 
             echo json_encode($data);
+        }
+    }
+
+    public function search_order_number() {
+        if (!empty($_GET['data'])) {
+            $order_number = $_GET['data'];
+
+            $numbers = Order::where('order_number', 'LIKE', $order_number.'-%')
+            ->orWhere('order_number', $order_number)
+            ->get('order_number');
+            
+            if (count($numbers) > 0) {
+                $count = count($numbers);
+                $new_number = $order_number.'-'.($count+1);
+                echo json_encode($new_number);
+            } else {
+                echo json_encode($order_number);
+            }
         }
     }
 }
