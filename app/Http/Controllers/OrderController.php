@@ -48,7 +48,7 @@ class OrderController extends Controller
         }
 
         $orders = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'Orders.client_id')])
+        ->whereColumn('id', 'orders.client_id')])
         ->where('complete_order', $comp)
         ->orderBy('order_date')
         ->orderBy('order_number')
@@ -66,7 +66,7 @@ class OrderController extends Controller
                 $orders = Order::where('complete_order', $comp)
                 ->where('order_date', $q)
                 ->addSelect(['name_client' => Client::select('name')
-                ->whereColumn('clients.id', 'Orders.client_id')])
+                ->whereColumn('clients.id', 'orders.client_id')])
                 ->orderBy('order_date')
                 ->orderBy('order_number')
                 ->paginate(10);
@@ -87,7 +87,7 @@ class OrderController extends Controller
                     $orders = Order::where('complete_order', $comp)
                     ->whereIn('client_id', $client_group)
                     ->addSelect(['name_client' => Client::select('name')
-                    ->whereColumn('clients.id', 'Orders.client_id')])
+                    ->whereColumn('clients.id', 'orders.client_id')])
                     ->orderBy('order_date')
                     ->orderBy('order_number')
                     ->paginate(10);
@@ -95,7 +95,7 @@ class OrderController extends Controller
                     $orders = Order::where('complete_order', $comp)
                     ->where('order_number', 'LIKE', '%'.$q.'%')
                     ->addSelect(['name_client' => Client::select('name')
-                    ->whereColumn('clients.id', 'Orders.client_id')])
+                    ->whereColumn('clients.id', 'orders.client_id')])
                     ->orderBy('order_date')
                     ->orderBy('order_number')
                     ->paginate(10);
@@ -241,7 +241,7 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'Orders.client_id')])->find($id);
+        ->whereColumn('id', 'orders.client_id')])->find($id);
         $order_products = Order_product::where('order_id', $order->order_number)->addSelect(['product_name' => Product::select('name')
         ->whereColumn('id', 'order_products.product_id')])->get();
         $user_permissions = $this->get_permissions();
@@ -262,7 +262,7 @@ class OrderController extends Controller
     public function edit($id)
     {
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'Orders.client_id')])->find($id);
+        ->whereColumn('id', 'orders.client_id')])->find($id);
         $order_products = Order_product::where('order_id', $order->order_number)->addSelect(['product_name' => Product::select('name')
         ->whereColumn('id', 'order_products.product_id')])->get();
         $user_permissions = $this->get_permissions();
