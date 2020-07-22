@@ -39,6 +39,6 @@ class User extends Authenticatable
 
     public function permissions()
     {
-        return $this->hasMany('App\Permission_link', 'id_user', 'confirmed_user');
+        return $this->hasMany('App\Permission_link', 'id_user', 'id');
     }
 }

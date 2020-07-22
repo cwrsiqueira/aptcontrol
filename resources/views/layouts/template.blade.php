@@ -85,7 +85,7 @@
                 </a>
               </li>
 
-              <li class="nav-item" @if(in_array('6', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('permissions')) active @endif" href="{{route('permissions.index')}}">
                   <span data-feather="layers"></span>
                   Permissões
