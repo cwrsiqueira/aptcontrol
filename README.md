@@ -32,3 +32,11 @@ BETA TESTE 1.02
 
 
 - Ajustes de bugs nas permissões
+
+
+BETA TESTE 1.03
+
+22/07/2020 - 02:44
+
+
+- Adiciona botão excluir usuário
