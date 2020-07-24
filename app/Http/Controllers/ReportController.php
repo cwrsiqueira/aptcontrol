@@ -69,26 +69,70 @@ class ReportController extends Controller
             ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_id)
+            ->where('delivery_date', $date)
             ->groupBY('product_id')
-            ->get();
+            ->first();
         }
         
         $product_total = array();
         if (!empty($total_product)) {
-            foreach ($total_product as $products) {
-                foreach ($products as $item) {
-                    if (!isset($product_total[$item->product_name])) {
-                        $product_total[$item->product_name] = $item->quant_total;
-                    } else {
-                        $product_total[$item->product_name] += $item->quant_total;
-                    }
+            foreach ($total_product as $item) {
+                if (!isset($product_total[$item->product_name])) {
+                    $product_total[$item->product_name] = $item->quant_total;
+                } else {
+                    $product_total[$item->product_name] += $item->quant_total;
                 }
             }
         }
-
+        
         return view('reports_delivery', [
             'orders' => $orders,
             'date' => $date,
+            'product_total' => $product_total
+        ]);
+    }
+
+    public function report_delivery_byPeriod() 
+    {
+        $orders = array();
+        if (!empty($_GET['date_ini'])) {
+            $date_ini = $_GET['date_ini'];
+            $date_fin = $_GET['date_fin'];
+            $orders = Order_product::whereBetween('delivery_date', [$date_ini, $date_fin])->orderBy('order_id')
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
+            ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
+            ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
+            ->join('orders', 'order_number', 'order_id')
+            ->where('complete_order', 0)
+            ->get();
+        }
+        
+        foreach ($orders as $key => $value) {
+            $total_product[$value->order_id] = DB::table('order_products')
+            ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->addSelect(DB::raw('sum(quant) as quant_total'))
+            ->where('order_id', $value->order_id)
+            ->whereBetween('delivery_date', [$date_ini, $date_fin])
+            ->groupBY('product_id')
+            ->first();
+        }
+        
+        $product_total = array();
+        if (!empty($total_product)) {
+            foreach ($total_product as $item) {
+                if (!isset($product_total[$item->product_name])) {
+                    $product_total[$item->product_name] = $item->quant_total;
+                } else {
+                    $product_total[$item->product_name] += $item->quant_total;
+                }
+            }
+        }
+        
+        return view('reports_delivery', [
+            'orders' => $orders,
+            'date_ini' => $date_ini,
+            'date_fin' => $date_fin,
             'product_total' => $product_total
         ]);
     }

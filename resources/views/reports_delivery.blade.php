@@ -7,7 +7,7 @@
         <h2>Entregas nesta data</h2>
         <div class="row">
             <div class="card col-md-6 m-3">
-            <div class="card-header"><span style="font-size: 24px; font_weight:bold;">{{date('d/m/Y', strtotime($date))}}</span></div>
+            <div class="card-header"><span style="font-size: 24px; font_weight:bold;">{{date('d/m/Y', strtotime($date ?? ''))}}</span></div>
                 <div class="card-body">
                     <ul>
                         @foreach ($product_total as $key => $value)
