@@ -4,10 +4,21 @@
 
 @section('content')
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
+        @if (!empty($date))
         <h2>Entregas nesta data</h2>
+        @else
+        <h2>Entregas nesta período</h2>
+        @endif
+        
         <div class="row">
             <div class="card col-md-6 m-3">
-            <div class="card-header"><span style="font-size: 24px; font_weight:bold;">{{date('d/m/Y', strtotime($date ?? ''))}}</span></div>
+            <div class="card-header"><span style="font-size: 24px; font_weight:bold;">
+                @if (!empty($date))
+                {{date('d/m/Y', strtotime($date ?? $date_ini.'/'.$date_fin))}}
+                @else
+                {{date('d/m/Y', strtotime($date_ini))}} a {{date('d/m/Y', strtotime($date_fin))}}
+                @endif
+                </span></div>
                 <div class="card-body">
                     <ul>
                         @foreach ($product_total as $key => $value)
