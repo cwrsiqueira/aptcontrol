@@ -70,7 +70,7 @@ class ProductController extends Controller
         ->join('orders', 'order_number', 'order_id')
         ->where('complete_order', 0)
         ->orderBy('delivery_date')
-        ->paginate(10);
+        ->paginate(20);
 
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
