@@ -49,7 +49,7 @@
                         <td>{{$item['withdraw']}}</td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Visualizar</a></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->id]) }}">Editar</a></td>
-                        <td><button class="btn btn-sm btn-secondary complete_order" data-id="{{$item->id}}">Concluir</button></td>
+                        <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Concluir</a></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

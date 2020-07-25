@@ -291,6 +291,15 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $products = Order_product::where('product_id', $id)->get();
+        if (count($products) > 0) {
+            $message = [
+                'cannot_exclude' => 'Produto não pode ser excluído, pois possui pedidos vinculados!',
+            ];
+            return redirect()->route('products.index')->withErrors($message);
+        } else {
+            Product::find($id)->delete();
+            return redirect()->route('products.index');
+        }
     }
 }

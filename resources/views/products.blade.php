@@ -7,6 +7,21 @@
 
         <h2>Produtos</h2>
 
+        @if ($errors->has('cannot_exclude'))
+        <div class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+            <h5>
+                <i class="icon fas fa-ban"></i>
+                Erro!!!
+            </h5>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
         <div>
             <div class="d-flex justify-content-between">
 
@@ -33,7 +48,7 @@
                         <th>Nome</th>
                         <th>Estoque</th>
                         <th>Previsão Diária</th>
-                        <th colspan="2" style="text-align:center;">Ações</th>
+                        <th colspan="4" style="text-align:center;">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -46,6 +61,13 @@
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'add_estock']) }}">+ Estoque</a></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_product', ['id' => $item->id]) }}">C/C</a></td>
+                        <td>
+                            <form title="Excluir" action=" {{ route('products.destroy', [ 'product' => $item->id ]) }} " method="POST" onsubmit="return confirm('Confirma a exclusão do produto?')" >
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -196,7 +218,7 @@
 
 @section('js')
 
-    @if ($errors->any())
+    @if ($errors->any() && !$errors->has('cannot_exclude'))
         <script>
             $(function(){
                 $('#modal_addproduto').modal();

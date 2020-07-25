@@ -3,6 +3,18 @@
 @section('title', 'Pedido')
 
 @section('content')
+    <main>
+        @if ($order->complete_order === 1)
+            <div class="delivered">
+                ENTREGUE
+            </div>
+        @endif
+        @if ($order->complete_order === 2)
+            <div class="canceled">
+                CANCELADA
+            </div>
+        @endif
+    </main>
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         <h2>Pedido nr. {{$order->order_number}}</h2>
         <div class="col-md-3 m-3">
@@ -75,4 +87,34 @@
         })
         
     </script>
+@endsection
+
+@section('css')
+<style>
+    .delivered {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        text-align: center;
+        font-size: 18px;
+        font-size: 150px; 
+        font-weight: bold; 
+        color: rgba(110, 168, 108, 0.6); 
+        transform: rotate(-45deg);
+        z-index: 9;
+    }
+    .canceled {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        text-align: center;
+        font-size: 18px;
+        font-size: 150px; 
+        font-weight: bold; 
+        color: rgba(165, 74, 74, 0.6); 
+        transform: rotate(-45deg);
+        z-index: 9;
+    }
+</style>
+    
 @endsection
