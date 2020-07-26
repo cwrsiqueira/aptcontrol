@@ -48,8 +48,21 @@
                         <td>{{$item['payment']}}</td>
                         <td>{{$item['withdraw']}}</td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Visualizar</a></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->id]) }}">Editar</a></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Concluir</a></td>
+                        @if ($item->complete_order === 1 || $item->complete_order === 2)
+                            @if ($item->complete_order === 1)
+                            <td colspan="2" style="text-align: center; font-weight:bold;color:green">
+                                Entregue
+                            </td>
+                            @endif
+                            @if ($item->complete_order === 2)
+                            <td colspan="2" style="text-align: center; font-weight:bold;color:red">
+                                Cancelada
+                            </td>
+                            @endif
+                        @else
+                            <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->id]) }}">Editar</a></td>
+                            <td><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Concluir</a></td>
+                        @endif
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

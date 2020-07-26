@@ -41,12 +41,14 @@ class OrderController extends Controller
      */
     public function index()
     {
-        if (isset($_GET['comp'])) {
+        if (isset($_GET['comp']) && $_GET['comp'] == 1) {
             $comp = 1;
+        } elseif (isset($_GET['comp']) && $_GET['comp'] == 2) {
+            $comp = 2;
         } else {
             $comp = 0;
         }
-
+        
         $orders = Order::addSelect(['name_client' => Client::select('name')
         ->whereColumn('id', 'orders.client_id')])
         ->where('complete_order', $comp)
@@ -77,34 +79,34 @@ class OrderController extends Controller
                 $q = $_GET['q'];
                 // A consulta NÃO é por data
 
-                if (ctype_alpha($q)) {
-                    $clients = Client::where('name', 'LIKE', '%'.$q.'%')->get();
-                    $client_group = array();
-                    foreach ($clients as $item ) {
-                        $client_group[] = $item->id;
-                    }
-
-                    $orders = Order::where('complete_order', $comp)
-                    ->whereIn('client_id', $client_group)
-                    ->addSelect(['name_client' => Client::select('name')
-                    ->whereColumn('clients.id', 'orders.client_id')])
-                    ->orderBy('order_date')
-                    ->orderBy('order_number')
-                    ->paginate(10);
-                } else {
-                    $orders = Order::where('complete_order', $comp)
-                    ->where('order_number', 'LIKE', '%'.$q.'%')
-                    ->addSelect(['name_client' => Client::select('name')
-                    ->whereColumn('clients.id', 'orders.client_id')])
-                    ->orderBy('order_date')
-                    ->orderBy('order_number')
-                    ->paginate(10);
-                }
+                $orders = Order::where('order_number', 'LIKE', '%'.$q.'%')
+                ->where('complete_order', $comp)
+                ->addSelect(['name_client' => Client::select('name')
+                ->whereColumn('clients.id', 'orders.client_id')])
+                ->orderBy('order_date')
+                ->orderBy('order_number')
+                ->paginate(10);
             }
 
         } else {
             $q = '';
         }
+
+        // if (!empty($_GET['q'])) {
+
+        //     $q = $_GET['q'];
+
+        //     $orders = Order::where('order_number', 'LIKE', '%'.$q.'%')
+        //     ->where('complete_order', $comp)
+        //     ->addSelect(['name_client' => Client::select('name')
+        //     ->whereColumn('clients.id', 'orders.client_id')])
+        //     ->orderBy('order_date')
+        //     ->orderBy('order_number')
+        //     ->paginate(10);
+
+        // } else {
+        //     $q = '';
+        // }
 
         $user_permissions = $this->get_permissions();
         

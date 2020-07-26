@@ -90,6 +90,9 @@
                 <input class="btn btn-success" type="submit" value="Salvar">
             </div>
         </form>
+        <div>
+            <a class="btn btn-danger mt-3" href="{{route('orders.index')}}">Voltar</a>
+        </div>
     </main>
     
 @endsection

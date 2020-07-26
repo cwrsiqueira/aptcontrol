@@ -11,18 +11,34 @@
         @endif
         @if ($order->complete_order === 2)
             <div class="canceled">
-                CANCELADA
+                CANCELADO
             </div>
         @endif
     </main>
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         <h2>Pedido nr. {{$order->order_number}}</h2>
-        <div class="col-md-3 m-3">
-            <div class="card-tools">
-                <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../orders'" id="btn_voltar">Voltar</button>
-                <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = '../orders';">Imprimir</button>
+
+        <div class="row">
+            <div class="col-md m-3">
+                <div class="card-tools">
+                    @if ($order->complete_order === 1 || $order->complete_order === 2)
+                        <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../orders?comp=1'" id="btn_voltar">Voltar</button>
+                    @else
+                        <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../orders'" id="btn_voltar">Voltar</button>
+                    @endif
+                    <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = '../orders';">Imprimir</button>
+                </div>
             </div>
+            @if ($order->complete_order !== 1 && $order->complete_order !== 2)
+                <div class="col-md m-3 d-flex justify-content-end">
+                    <div class="card-tools">
+                        <button style="width:135px;" class="btn btn-sm btn-secondary btn-success" id="deliver" data-id="{{$order->id}}">Confirmar Entrega</button>
+                        <button style="width:135px" class="btn btn-sm btn-secondary btn-danger" id="cancel" data-id="{{$order->id}}">Cancelar Pedido</button>
+                    </div>
+                </div>
+            @endif
         </div>
+        
         <table class="table">
             <thead>
                 <tr>
@@ -84,6 +100,39 @@
 
         $(function(){
             $('#quant_prod').mask('000.000.000', {reverse:true});
+
+            $('#deliver').click(function(){
+                if (confirm('Deseja confirmar a entrega?')) {
+                    let id = $(this).attr('data-id')
+                    $.ajax({
+                        url:"{{route('register_delivery')}}",
+                        type:'get',
+                        data:{id:id},
+                        dataType:'json',
+                        success:function(json){
+                            window.location.href = json;
+                        }
+                    })    
+                } else {
+                    return false;
+                }
+            })
+            $('#cancel').click(function(){
+                if (confirm('Deseja cancelar o pedido?')) {
+                    let id = $(this).attr('data-id')
+                    $.ajax({
+                        url:"{{route('register_cancel')}}",
+                        type:'get',
+                        data:{id:id},
+                        dataType:'json',
+                        success:function(json){
+                            window.location.href = json;
+                        }
+                    })    
+                } else {
+                    return false;
+                }
+            })
         })
         
     </script>

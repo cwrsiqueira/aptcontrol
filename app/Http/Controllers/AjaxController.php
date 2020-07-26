@@ -91,4 +91,28 @@ class AjaxController extends Controller
             }
         }
     }
+
+    public function register_delivery() {
+        if (!empty($_GET['id'])) {
+            $id = $_GET['id'];
+
+            $order = Order::find($id);
+            $order->complete_order = 1;
+            $order->save();
+
+            return $id;
+        }
+    }
+
+    public function register_cancel() {
+        if (!empty($_GET['id'])) {
+            $id = $_GET['id'];
+
+            $order = Order::find($id);
+            $order->complete_order = 2;
+            $order->save();
+
+            return $id;
+        }
+    }
 }

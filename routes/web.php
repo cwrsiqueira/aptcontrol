@@ -38,6 +38,8 @@ Route::get('/edit_complete_order', 'AjaxController@edit_complete_order')->name('
 Route::get('/day_delivery_calc', 'AjaxController@day_delivery_calc')->name('day_delivery_calc');
 Route::get('/search', 'AjaxController@search')->name('search');
 Route::get('/search_order_number', 'AjaxController@search_order_number')->name('search_order_number');
+Route::get('/register_delivery', 'AjaxController@register_delivery')->name('register_delivery');
+Route::get('/register_cancel', 'AjaxController@register_cancel')->name('register_cancel');
 
 Route::get('/report_delivery', 'ReportController@report_delivery')->name('report_delivery');
 Route::get('/report_delivery_byPeriod', 'ReportController@report_delivery_byPeriod')->name('report_delivery_byPeriod');
