@@ -95,10 +95,19 @@ class AjaxController extends Controller
     public function register_delivery() {
         if (!empty($_GET['id'])) {
             $id = $_GET['id'];
+            $val = $_GET['val'];
 
             $order = Order::find($id);
-            $order->complete_order = 1;
-            $order->save();
+            $order_product = Order_product::where('order_id', $order->order_number)->first();
+            
+            $checkoutorder = new Order_product();
+            $checkoutorder->order_id = $order->order_number;
+            $checkoutorder->product_id = $order_product->product_id;
+            $checkoutorder->quant = $val*(-1);
+            $checkoutorder->unit_price = $order_product->unit_price;
+            $checkoutorder->total_price = $val * $order_product->unit_price;
+            $checkoutorder->delivery_date = NOW();
+            $checkoutorder->save();
 
             return $id;
         }

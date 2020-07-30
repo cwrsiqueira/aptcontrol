@@ -51,26 +51,32 @@ class ReportController extends Controller
 
     public function report_delivery() 
     {
+        $por_produto = Product::get('id');
+        if (!empty($_GET['por_produto'])) {
+            $por_produto = $_GET['por_produto'] ?? $por_produto;
+        }
         $orders = array();
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
-            $orders = Order_product::where('delivery_date', $date)->orderBy('delivery_date')
+            $orders = Order_product::where('delivery_date', '<=', $date)->orderBy('delivery_date')
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
             ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->join('orders', 'order_number', 'order_id')
+            ->whereIn('product_id', $por_produto)
             ->where('complete_order', 0)
             ->get();
         }
         
-        foreach ($orders as $key => $value) {
+        foreach ($orders as $value) {
             $total_product[$value->order_id] = DB::table('order_products')
-            ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_id)
-            ->where('delivery_date', $date)
+            ->where('delivery_date', '<=', $date)
             ->groupBY('product_id')
             ->first();
         }
@@ -79,9 +85,10 @@ class ReportController extends Controller
         if (!empty($total_product)) {
             foreach ($total_product as $item) {
                 if (!isset($product_total[$item->product_name])) {
-                    $product_total[$item->product_name] = $item->quant_total;
+                    $product_total[$item->product_name]['id'] = $item->product_id;
+                    $product_total[$item->product_name]['qt'] = $item->quant_total;
                 } else {
-                    $product_total[$item->product_name] += $item->quant_total;
+                    $product_total[$item->product_name]['qt'] += $item->quant_total;
                 }
             }
         }
@@ -95,6 +102,10 @@ class ReportController extends Controller
 
     public function report_delivery_byPeriod() 
     {
+        $por_produto = Product::get('id');
+        if (!empty($_GET['por_produto'])) {
+            $por_produto = $_GET['por_produto'] ?? $por_produto;
+        }
         $orders = array();
         if (!empty($_GET['date_ini'])) {
             $date_ini = $_GET['date_ini'];
@@ -106,13 +117,15 @@ class ReportController extends Controller
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->join('orders', 'order_number', 'order_id')
+            ->whereIn('product_id', $por_produto)
             ->where('complete_order', 0)
             ->get();
         }
         
         foreach ($orders as $key => $value) {
             $total_product[$value->order_id] = DB::table('order_products')
-            ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_id)
             ->whereBetween('delivery_date', [$date_ini, $date_fin])
@@ -124,9 +137,10 @@ class ReportController extends Controller
         if (!empty($total_product)) {
             foreach ($total_product as $item) {
                 if (!isset($product_total[$item->product_name])) {
-                    $product_total[$item->product_name] = $item->quant_total;
+                    $product_total[$item->product_name]['id'] = $item->product_id;
+                    $product_total[$item->product_name]['qt'] = $item->quant_total;
                 } else {
-                    $product_total[$item->product_name] += $item->quant_total;
+                    $product_total[$item->product_name]['qt'] += $item->quant_total;
                 }
             }
         }

@@ -21,11 +21,7 @@
         <div class="row">
             <div class="col-md m-3">
                 <div class="card-tools">
-                    @if ($order->complete_order === 1 || $order->complete_order === 2)
-                        <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
-                    @else
-                        <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1)" id="btn_voltar">Voltar</button>
-                    @endif
+                    <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
                     <button class="btn btn-sm btn-secondary" onclick="
                         this.style.display = 'none';
                         document.getElementById('btn_voltar').style.display = 'none';
@@ -67,7 +63,7 @@
                     <th style="width: 75px;">Quant.</th>
                     <th style="width: 125px;">Vlr.Unit.</th>
                     <th style="width: 125px;">Vlr.Total</th>
-                    <th style="width: 75px;">Previsão de Entrega</th>
+                    <th style="width: 75px;">Entrega</th>
                 </tr>
             </thead>
             <tbody>
@@ -108,20 +104,24 @@
 
             $('#deliver').click(function(){
                 if (confirm('Deseja confirmar a entrega?')) {
-                    let id = $(this).attr('data-id')
-                    $.ajax({
-                        url:"{{route('register_delivery')}}",
-                        type:'get',
-                        data:{id:id},
-                        dataType:'json',
-                        success:function(json){
-                            window.location.href = json;
-                        }
-                    })    
+                    let val = prompt('Digite o valor entregue:');
+                    if (val != null) {
+                        let id = $(this).attr('data-id')
+                        $.ajax({
+                            url:"{{route('register_delivery')}}",
+                            type:'get',
+                            data:{id:id, val:val},
+                            dataType:'json',
+                            success:function(json){
+                                window.location.href = json;
+                            }
+                        })   
+                    }   
                 } else {
                     return false;
                 }
             })
+
             $('#cancel').click(function(){
                 if (confirm('Deseja cancelar o pedido?')) {
                     let id = $(this).attr('data-id')

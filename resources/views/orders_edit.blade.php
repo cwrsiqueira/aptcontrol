@@ -75,12 +75,42 @@
                             <input readonly class="form-control total_val{{$item->id}}" style="width: 100%;" type="text" name="prod[{{$item->id}}][total_val]" value="{{number_format($item->total_price, 2, ',', '.')}}" readonly>'
                         </td>
                         <td style="padding: 5px;">
-                            <input readonly class="form-control delivery_date{{$item->id}}" style="width: 100%;" type="date" name="prod[{{$item->id}}][delivery_date]" value="{{$item->delivery_date}}">
+                            <input class="form-control delivery_date{{$item->id}}" style="width: 100%;" type="date" name="prod[{{$item->id}}][delivery_date]" value="{{$item->delivery_date}}" id="delivery_date{{$item->id}}" onclick="calc_delivery_date($('.quant{{$item->id}}').val());">
                         </td>
                         <td style='padding: 5px;'>
                             <a class='remove_line' style='color:red' href='#' data-toggle='tooltip' title='Excluir linha!' data-id="line{{$item->id}}"><i class='fas fa-fw fa-trash'></i></a>
                         </td>
                     </tr>
+                    <script>
+                        const picker = document.getElementById('delivery_date{{$item->id}}');
+                        picker.addEventListener('input', function(e){
+                            var day = new Date(this.value).getUTCDay();
+                            if([0].includes(day)){
+                                e.preventDefault();
+                                calc_delivery_date($('.quant{{$item->id}}').val());
+                                alert('Agendamento para domingo não permitido!');
+                            }
+                        });
+                        function calc_delivery_date(obj) {
+                            let id = $('.product_name{{$item->id}}').val();
+                            let quant = obj;
+                            if (id === '') {
+                                alert('Selecionar o produto');
+                                $('.product_name{{$item->id}}').focus();
+                            } else {
+                                $.ajax({
+                                    url:"{{route('day_delivery_calc')}}",
+                                    type:'get',
+                                    data:{id:id, quant:quant},
+                                    dataType:'json',
+                                    success:function(json){
+                                        $('.delivery_date{{$item->id}}').val(json);
+                                    },
+                                });
+                            }
+                        }
+                    </script>
+                    
                     @endforeach
 
                 </tbody>
@@ -138,7 +168,7 @@
                     html += '<input class="form-control total_val'+r+'" style="width: 100%;" type="text" name="prod['+r+'][total_val]" value="0" readonly>'
                     html += '</td>';
                     html += '<td style="padding: 5px;">';
-                    html += '<input class="form-control delivery_date'+r+'" style="width: 100%;" type="date" name="prod['+r+'][delivery_date]" value="{{date("Y-m-d")}}">';
+                    html += '<input class="form-control delivery_date'+r+'" style="width: 100%;" type="date" name="prod['+r+'][delivery_date]" value="{{date("Y-m-d")}}" id="delivery_date'+r+'">';
                     html += '</td>';
                     html += "<td style='padding: 5px;'><a class='new_line"+r+"' style='color:red' href='#' data-toggle='tooltip' title='Excluir linha!' id='"+r+"'><i class='fas fa-fw fa-trash'></i></a></td>";
                     html += '</tr>';
@@ -161,8 +191,12 @@
 
                 // Calcular Dia de Entrega
                 $('.quant'+r+'').blur(function(){
+                    calc_delivery_date($(this).val());
+                })
+
+                function calc_delivery_date(obj) {
                     let id = $('.product_name'+r+'').val()
-                    let quant = $(this).val()
+                    let quant = obj;
                     if (id === '') {
                         alert('Selecionar o produto');
                         $('.product_name'+r+'').focus();
@@ -177,7 +211,7 @@
                             },
                         });
                     }
-                })
+                }
 
                 $('.quant'+r).blur(function(){
                     $(this).attr('readonly', 'readonly');
@@ -202,6 +236,16 @@
 
                 $('.unit_val'+r+'').mask('000.000,00', {reverse:true});
                 $('.qt_mask').mask('000.000.000', {reverse:true}); 
+
+                const picker = document.getElementById('delivery_date'+r+'');
+                picker.addEventListener('input', function(e){
+                    var day = new Date(this.value).getUTCDay();
+                    if([0].includes(day)){
+                        e.preventDefault();
+                        calc_delivery_date($('.quant'+r+'').val());
+                        alert('Agendamento para domingo não permitido!');
+                    }
+                });
             });
         });
         

@@ -51,7 +51,7 @@
             </thead>
             <tbody>
                 @foreach ($data as $item)
-                    <tr @if($item->delivery_date < date('Y-m-d')) style="color:red;font-weight:bold;" @endif >
+                    <tr @if($item->quant < 0) style="color:green;font-weight:bold;" @elseif($item->delivery_date < date('Y-m-d')) style="color:red;font-weight:bold;" @else style="color:black;font-weight:bold;" @endif >
                         <td>{{date('d/m/Y', strtotime($item->order_date))}}</td>
                         <td>{{$item->order_id}}</td>
                         <td>{{$item->product_name}}</td>
