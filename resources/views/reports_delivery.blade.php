@@ -30,7 +30,12 @@
             <div class="col-md-3 m-3">
                 <div class="card-tools">
                     <button class="btn btn-sm btn-secondary" onclick="window.location.href = 'reports'" id="btn_voltar">Voltar</button>
-                    <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = 'reports';">Imprimir</button>
+                    <button class="btn btn-sm btn-secondary" onclick="
+                        this.style.display = 'none';
+                        document.getElementById('btn_voltar').style.display = 'none';
+                        window.print();
+                        javascript:history.go(0);
+                    ">Imprimir</button>
                 </div>
             </div>
         </div>
@@ -39,19 +44,23 @@
             <thead>
                 <tr>
                     <th>Pedido</th>
+                    <th>Entrega</th>
                     <th>Cliente</th>
                     <th>Produto</th>
                     <th>Quant</th>
+                    <th>Contato</th>
                     <th>Endereço</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($orders as $item)
-                    <tr>
+                    <tr @if($item->delivery_date < date('Y-m-d')) style="color:red;font-weight:bold;" @endif >
                         <td>{{$item->order_id}}</td>
+                        <td>{{date('d-m-Y', strtotime($item->delivery_date))}}</td>
                         <td>{{$item->client_name}}</td>
                         <td>{{$item->product_name}}</td>
                         <td>{{number_format($item->quant, 0, '', '.')}}</td>
+                        <td>{{$item->client_phone}}</td>
                         <td>{{$item->client_address}}</td>
                     </tr>
                 @endforeach

@@ -7,6 +7,21 @@
 
         <h2>Clientes</h2>
 
+        @if ($errors->has('cannot_exclude') || $errors->has('no-access'))
+        <div class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+            <h5>
+                <i class="icon fas fa-ban"></i>
+                Erro!!!
+            </h5>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
         <div>
             <div class="d-flex justify-content-between">
 
@@ -41,9 +56,16 @@
                         <td><?php echo $item['id']; ?></td>
                         <td><?php echo $item['name']; ?></td>
                         <td><?php echo $item['contact']; ?></td>
-                        <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('clients.edit', ['client' => $item->id]) }}">Editar</a></td>
+                        <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('clients.edit', [ 'client' => $item->id, 'q' => $q ] ) }}">Editar</a></td>
                         <td style="width: 150px;"><a class="btn btn-sm btn-secondary" href="{{ route('orders.create', ['client' => $item['id']]) }}">Efetuar Pedido</a></td>
                         <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_client', ['id' => $item->id]) }}">C/C</a></td>
+                        <td>
+                            <form title="Excluir" action=" {{ route('clients.destroy', [ 'client' => $item->id, 'q' => $q ] ) }} " method="POST" onsubmit="return confirm('Confirma a exclusão do cliente?')" >
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -143,7 +165,7 @@
                         <!-- Modal footer -->
                         <div class="modal-footer justify-content-between">
                             <input type="submit" class="btn btn-success" value="Salvar">
-                            <button type="button" onclick="window.location.href = '../../clients'" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" onclick="javascript:history.go(-1);" class="btn btn-danger" data-dismiss="modal">Close</button>
                         </div>
             
                     </div>
@@ -158,7 +180,7 @@
 
 @section('js')
 
-    @if ($errors->any())
+    @if ($errors->any() && !$errors->has('cannot_exclude') && !$errors->has('no-access'))
         <script>
             $(function(){
                 $('#modal_addcliente').modal();

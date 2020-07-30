@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use App\Product;
 use App\Order;
 use App\Client;
@@ -62,6 +63,15 @@ class ProductController extends Controller
 
     public function cc_product($id) 
     {
+        // $response = Gate::inspect('menu-produtos-cc', Auth::user());
+
+        // if (!$response->allowed()) {
+        //     $message = [
+        //         'no-access' => 'Solicite acesso ao administrador!',
+        //     ];
+        //     return redirect()->route('products.index')->withErrors($message);
+        // }
+
         $product = Product::find($id);
         $data = Order_product::where('product_id', $id)
         ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
@@ -190,6 +200,15 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
+        // $response = Gate::inspect('menu-produtos-edit');
+        // dd($response);
+        // if (!$response->allowed()) {
+        //     $message = [
+        //         'no-access' => 'Solicite acesso ao administrador!',
+        //     ];
+        //     return redirect()->route('products.index')->withErrors($message);
+        // }
+
         $products = Product::paginate(5);
         $product = Product::find($id);
         if (!empty($_GET['action'])) {
@@ -291,6 +310,16 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
+        // $response = Gate::inspect('menu-produtos-delete', Auth::user());
+        // dd($response);
+
+        // if (!$response->allowed()) {
+        //     $message = [
+        //         'no-access' => 'Solicite acesso ao administrador!',
+        //     ];
+        //     return redirect()->route('products.index')->withErrors($message);
+        // }
+
         $products = Order_product::where('product_id', $id)->get();
         if (count($products) > 0) {
             $message = [

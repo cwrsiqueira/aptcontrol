@@ -42,11 +42,11 @@ class ClientController extends Controller
      */
     public function index()
     {
-        $clients = Client::orderBy('name')->paginate(5);
+        $clients = Client::orderBy('name')->paginate(10);
         $q = '';
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
-            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(5);
+            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(10);
         }
 
         $user_permissions = $this->get_permissions();
@@ -61,22 +61,38 @@ class ClientController extends Controller
 
     public function cc_client($id) 
     {
+        $por_produto = Product::get('id');
+        $date_ini = '2020-01-01';
+        $date_fin = '2020-12-31';
+        if (!empty($_GET['por_produto']) || !empty($_GET['date_ini'])) {
+            $por_produto = $_GET['por_produto'] ?? $por_produto;
+            $date_ini = $_GET['date_ini'];
+            $date_fin = $_GET['date_fin'];
+        }
         $client = Client::find($id);
         $orders = Order::select('order_number')->where('client_id', $id)->get();
         $data = Order_product::whereIn('order_id', $orders)
         ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
         ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
         ->join('orders', 'order_number', 'order_id')
+        ->whereIn('product_id', $por_produto)
+        ->whereBetween('delivery_date', [$date_ini, $date_fin])
         ->where('complete_order', 0)
-        ->paginate(10);
-
+        ->orderBy('delivery_date')
+        ->get();
+        $data_sum = array();
+        foreach($data as $item) {
+            $data_sum[] = $item->order_id;
+        }
         foreach ($orders as $key => $value) {
             $total_product[$value->order_number] = DB::table('order_products')
-            ->select(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_number)
             ->join('orders', 'order_number', 'order_id')
             ->where('complete_order', 0)
+            ->whereIn('order_id', $data_sum)
             ->groupBY('product_id')
             ->get();
         }
@@ -86,14 +102,15 @@ class ClientController extends Controller
             foreach ($total_product as $products) {
                 foreach ($products as $item) {
                     if (!isset($product_total[$item->product_name])) {
-                        $product_total[$item->product_name] = $item->quant_total;
+                        $product_total[$item->product_name]['id'] = $item->product_id;
+                        $product_total[$item->product_name]['qt'] = $item->quant_total;
                     } else {
-                        $product_total[$item->product_name] += $item->quant_total;
+                        $product_total[$item->product_name]['qt'] += $item->quant_total;
                     }
                 }
             }
         }
-
+        
         $user_permissions = $this->get_permissions();
 
         return view('cc_client', [
@@ -166,7 +183,13 @@ class ClientController extends Controller
      */
     public function edit($id)
     {
-        $clients = Client::paginate(5);
+        $clients = Client::orderBy('name')->paginate(10);
+        $q = '';
+        if (!empty($_GET['q'])) {
+            $q = $_GET['q'];
+            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(10);
+        }
+        
         $client = Client::find($id);
         $user_permissions = $this->get_permissions();
 
@@ -174,6 +197,7 @@ class ClientController extends Controller
             'user' => Auth::user(),
             'client' => $client,
             'clients' => $clients,
+            'q' => $q,
             'user_permissions' => $user_permissions
         ]);
     }
@@ -219,6 +243,15 @@ class ClientController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $clients = Order::where('client_id', $id)->get();
+        if (count($clients) > 0) {
+            $message = [
+                'cannot_exclude' => 'Cliente não pode ser excluído, pois possui pedidos vinculados!',
+            ];
+            return redirect()->route('clients.index', ['q' => $_GET['q']])->withErrors($message);
+        } else {
+            Client::find($id)->delete();
+            return redirect()->route('clients.index', ['q' => $_GET['q']]);
+        }
     }
 }

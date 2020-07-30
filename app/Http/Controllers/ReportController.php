@@ -54,11 +54,12 @@ class ReportController extends Controller
         $orders = array();
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
-            $orders = Order_product::where('delivery_date', $date)->orderBy('order_id')
+            $orders = Order_product::where('delivery_date', $date)->orderBy('delivery_date')
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
             ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
+            ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->join('orders', 'order_number', 'order_id')
             ->where('complete_order', 0)
             ->get();
@@ -98,11 +99,12 @@ class ReportController extends Controller
         if (!empty($_GET['date_ini'])) {
             $date_ini = $_GET['date_ini'];
             $date_fin = $_GET['date_fin'];
-            $orders = Order_product::whereBetween('delivery_date', [$date_ini, $date_fin])->orderBy('order_id')
+            $orders = Order_product::whereBetween('delivery_date', [$date_ini, $date_fin])->orderBy('delivery_date')
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
             ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
+            ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->join('orders', 'order_number', 'order_id')
             ->where('complete_order', 0)
             ->get();

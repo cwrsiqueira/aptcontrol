@@ -71,7 +71,7 @@
                             <ul class="list-group">
                                 <li class="list-group-item">
                                     @foreach ($permissions ?? array() as $item)
-                                        <div class="form-check">
+                                        <div class="form-check @if($item->ident == 'sub') ml-3 @endif">
                                             <label class="form-check-label">
                                                 <input @if(in_array($item->id, $user_permissions)) checked @endif type="checkbox" class="form-check-input @error($item->slug) is-invalid @enderror" value="{{$item->id}}" name="permission_item[]" id="{{$item->slug}}">{{$item->name}}
                                             </label>

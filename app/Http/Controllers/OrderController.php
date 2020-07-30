@@ -42,16 +42,16 @@ class OrderController extends Controller
     public function index()
     {
         if (isset($_GET['comp']) && $_GET['comp'] == 1) {
+            $comps = array(1,2);
             $comp = 1;
-        } elseif (isset($_GET['comp']) && $_GET['comp'] == 2) {
-            $comp = 2;
-        } else {
+        }else {
+            $comps = array(0);
             $comp = 0;
         }
         
         $orders = Order::addSelect(['name_client' => Client::select('name')
         ->whereColumn('id', 'orders.client_id')])
-        ->where('complete_order', $comp)
+        ->whereIn('complete_order', $comps)
         ->orderBy('order_date')
         ->orderBy('order_number')
         ->paginate(10);
@@ -65,7 +65,7 @@ class OrderController extends Controller
                 $q = array_reverse($q);
                 $q = implode('-', $q);
                 // A consulta É por data
-                $orders = Order::where('complete_order', $comp)
+                $orders = Order::whereIn('complete_order', $comps)
                 ->where('order_date', $q)
                 ->addSelect(['name_client' => Client::select('name')
                 ->whereColumn('clients.id', 'orders.client_id')])
@@ -80,7 +80,7 @@ class OrderController extends Controller
                 // A consulta NÃO é por data
 
                 $orders = Order::where('order_number', 'LIKE', '%'.$q.'%')
-                ->where('complete_order', $comp)
+                ->whereIn('complete_order', $comps)
                 ->addSelect(['name_client' => Client::select('name')
                 ->whereColumn('clients.id', 'orders.client_id')])
                 ->orderBy('order_date')

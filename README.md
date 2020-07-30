@@ -1,6 +1,16 @@
 # aptcontrol
 Controle de Vendas Amapá Telhas
 
+BETA TESTE 1.05 //
+29/07/2020 - 23:54
+
+- Opções de consulta na C/C Clientes
+- Botão Excluir cliente
+- Ajuste do sistema de consultas no menu pedido
+- Bug que não aparecia os pedidos cancelados (resolvido)
+- Incluído nos relatórios data, contato e atrasados em vermelho
+- Voltar da pesquisa pra tela anterior sem perder a pesquisa
+
 BETA TESTE 1.04 //
 26/07/2020 - 15:46
 

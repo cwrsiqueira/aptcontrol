@@ -38,7 +38,7 @@ class PermissionController extends Controller
         $users = User::select('*')
         ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
         ->orderBy('users.name')
-        ->paginate(5);
+        ->paginate(10);
 
         $user_permissions = $this->get_permissions();
         
@@ -92,13 +92,21 @@ class PermissionController extends Controller
         $users = User::select('*')
         ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
         ->orderBy('users.name')
-        ->paginate(5);
+        ->paginate(10);
         $user_edit = User::find($id);
-        $permissions = Permission_item::all();
+        $permissions = Permission_item::orderBy('slug')->get();
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
         foreach ($user_permissions_obj as $item) {
             $user_permissions[] = $item->id_permission_item;
+        }
+        foreach ($permissions as $item) {
+            $identifier = explode('-', $item['slug']);
+            if (count($identifier) > 2) {
+                $item['ident'] = 'sub';
+            } else {
+                $item['ident'] = 'pri';
+            }
         }
         
         return view('permissions', [

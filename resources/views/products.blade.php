@@ -7,7 +7,7 @@
 
         <h2>Produtos</h2>
 
-        @if ($errors->has('cannot_exclude'))
+        @if ($errors->has('cannot_exclude') || $errors->has('no-access'))
         <div class="alert alert-danger alert-dismissible">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
             <h5>
@@ -25,7 +25,7 @@
         <div>
             <div class="d-flex justify-content-between">
 
-                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addproduto">Cadastrar Produto</button>
+                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addproduto" @if(in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>Cadastrar Produto</button>
 
                 <form method="get" class="d-flex align-items-center">
                     @if(!empty($q ?? ''))
@@ -58,10 +58,16 @@
                         <td><?php echo $item['name']; ?></td>
                         <td><?php echo number_format($item['current_stock'], 0, '', '.'); ?></td>
                         <td><?php echo number_format($item['daily_production_forecast'], 0, '', '.'); ?></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'add_estock']) }}">+ Estoque</a></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_product', ['id' => $item->id]) }}">C/C</a></td>
-                        <td>
+                        <td @if(in_array('8', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
+                            <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a>
+                        </td>
+                        <td @if(in_array('9', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
+                            <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'add_estock']) }}">+ Estoque</a>
+                        </td>
+                        <td @if(in_array('10', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
+                            <a class="btn btn-sm btn-secondary" href="{{ route('cc_product', ['id' => $item->id]) }}">C/C</a>
+                        </td>
+                        <td @if(in_array('11', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
                             <form title="Excluir" action=" {{ route('products.destroy', [ 'product' => $item->id ]) }} " method="POST" onsubmit="return confirm('Confirma a exclusão do produto?')" >
                                 @csrf
                                 @method('DELETE')
@@ -218,7 +224,7 @@
 
 @section('js')
 
-    @if ($errors->any() && !$errors->has('cannot_exclude'))
+    @if ($errors->any() && !$errors->has('cannot_exclude') && !$errors->has('no-access'))
         <script>
             $(function(){
                 $('#modal_addproduto').modal();

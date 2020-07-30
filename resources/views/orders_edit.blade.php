@@ -91,7 +91,7 @@
             </div>
         </form>
         <div>
-            <a class="btn btn-danger mt-3" href="{{route('orders.index')}}">Voltar</a>
+            <button class="btn btn-danger mt-3"  onclick="javascript:history.go(-1);">Voltar</button>
         </div>
     </main>
     

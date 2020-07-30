@@ -22,11 +22,16 @@
             <div class="col-md m-3">
                 <div class="card-tools">
                     @if ($order->complete_order === 1 || $order->complete_order === 2)
-                        <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../orders?comp=1'" id="btn_voltar">Voltar</button>
+                        <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
                     @else
-                        <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../orders'" id="btn_voltar">Voltar</button>
+                        <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1)" id="btn_voltar">Voltar</button>
                     @endif
-                    <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = '../orders';">Imprimir</button>
+                    <button class="btn btn-sm btn-secondary" onclick="
+                        this.style.display = 'none';
+                        document.getElementById('btn_voltar').style.display = 'none';
+                        window.print();
+                        javascript:history.go(0);
+                    ">Imprimir</button>
                 </div>
             </div>
             @if ($order->complete_order !== 1 && $order->complete_order !== 2)
