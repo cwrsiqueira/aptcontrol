@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Order;
 use App\Client;
 use App\Product;
@@ -243,15 +244,39 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'orders.client_id')])->find($id);
-        $order_products = Order_product::where('order_id', $order->order_number)->addSelect(['product_name' => Product::select('name')
-        ->whereColumn('id', 'order_products.product_id')])->get();
-        $user_permissions = $this->get_permissions();
+        ->whereColumn('id', 'orders.client_id')])
+        ->find($id);
 
+        $saldo_produtos = Order_product::where('order_id', $order->order_number)
+        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+        ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
+        ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
+        ->groupBy('product_id')
+        ->orderBy('product_id')
+        ->orderBy('delivery_date')
+        ->get();
+
+        $order_products = Order_product::where('order_id', $order->order_number)
+        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+        ->orderBy('product_id')
+        ->orderBy('delivery_date')
+        ->get();
+
+        $user_permissions = $this->get_permissions();
+        $product = array();
+        $products = json_decode($saldo_produtos);
+        foreach ($products as $item) {
+            if ($item->saldo != 0) {
+                $product[$item->product_id] = $item->product_name;
+            }
+        }
+        
         return view('orders_view',[
             'order' => $order,
             'order_products' => $order_products,
-            'user_permissions' => $user_permissions
+            'user_permissions' => $user_permissions,
+            'product' => $product,
+            'saldo_produtos' => $saldo_produtos
         ]);
     }
 

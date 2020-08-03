@@ -73,14 +73,21 @@ class ProductController extends Controller
         // }
 
         $product = Product::find($id);
-        $data = Order_product::where('product_id', $id)
-        ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
-        ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
-        ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
-        ->join('orders', 'order_number', 'order_id')
-        ->where('complete_order', 0)
+
+        $data = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id')
+        ->join('orders', 'orders.order_number', 'order_products.order_id')
+        ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
+        ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
+        ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
+        ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
+        ->where('product_id', $id)
+        ->where('orders.complete_order', 0)
+        ->groupBy('order_products.order_id')
+        ->havingRaw('SUM(order_products.quant) <> ?', [0])
         ->orderBy('delivery_date')
         ->paginate(20);
+
+        // dd($data);
 
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];

@@ -27,17 +27,17 @@
                     <th>Data</th>
                     <th>Cliente</th>
                     <th>Pedido</th>
-                    <th>Quant</th>
+                    <th>Saldo</th>
                     <th>Entrega</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($data as $item)
-                    <tr>
+                    <tr class="linha" data-id="{{$item->id}}">
                         <td>{{date('d/m/Y', strtotime($item->order_date))}}</td>
                         <td>{{$item->client_name}}</td>
                         <td>{{$item->order_id}}</td>
-                        <td>{{number_format($item->quant, 0, '', '.')}}</td>
+                        <td>{{number_format($item->saldo, 0, '', '.')}}</td>
                         <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
                     </tr>
                 @endforeach
@@ -45,5 +45,27 @@
         </table>
         {{$data->links()}}
     </main>
+@endsection
+
+@section('css')
+    <style>
+        tbody tr:hover {
+            background-color:rgb(227, 236, 233);
+            cursor: pointer;
+        }
+    </style>
+@endsection
+
+@section('js')
+    <script>
+        $('.linha').click(function(){
+            let attr = $(this).attr('style');
+            if (typeof attr !== typeof undefined && attr !== false) {
+                $(this).removeAttr('style');
+            } else {
+                $(this).attr('style', 'background-color:aquamarine;');
+            }
+        });
+    </script>
 @endsection
 

@@ -58,16 +58,25 @@ class ReportController extends Controller
         $orders = array();
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
-            $orders = Order_product::where('delivery_date', '<=', $date)->orderBy('delivery_date')
+
+            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant')
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->addSelect(DB::raw('sum(quant) as saldo'))
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
-            ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
+            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
-            ->join('orders', 'order_number', 'order_id')
+            ->where('orders.complete_order', 0)
             ->whereIn('product_id', $por_produto)
-            ->where('complete_order', 0)
+            ->havingRaw('SUM(order_products.quant) <> ?', [0])
+            ->orderBy('delivery_date', 'asc')
+            ->groupBy('product_id', 'order_id')
             ->get();
+
+            $orders = $orders->where('delivery_date', '<=', $date)
+            ->all();
         }
         
         foreach ($orders as $value) {
@@ -76,7 +85,7 @@ class ReportController extends Controller
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_id)
-            ->where('delivery_date', '<=', $date)
+            // ->where('delivery_date', '<=', $date)
             ->groupBY('product_id')
             ->first();
         }
@@ -110,16 +119,25 @@ class ReportController extends Controller
         if (!empty($_GET['date_ini'])) {
             $date_ini = $_GET['date_ini'];
             $date_fin = $_GET['date_fin'];
-            $orders = Order_product::whereBetween('delivery_date', [$date_ini, $date_fin])->orderBy('delivery_date')
+
+            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant')
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->addSelect(DB::raw('sum(quant) as saldo'))
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('order_number', 'order_id')])
-            ->addSelect(['client_name' => Client::select('name')->whereColumn('id', 'client_id')])
+            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
-            ->join('orders', 'order_number', 'order_id')
+            ->where('orders.complete_order', 0)
             ->whereIn('product_id', $por_produto)
-            ->where('complete_order', 0)
+            ->havingRaw('SUM(order_products.quant) <> ?', [0])
+            ->orderBy('delivery_date', 'asc')
+            ->groupBy('product_id', 'order_id')
             ->get();
+            
+            $orders = $orders->whereBetween('delivery_date', [$date_ini, $date_fin])
+            ->all();
         }
         
         foreach ($orders as $key => $value) {
@@ -128,7 +146,7 @@ class ReportController extends Controller
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(DB::raw('sum(quant) as quant_total'))
             ->where('order_id', $value->order_id)
-            ->whereBetween('delivery_date', [$date_ini, $date_fin])
+            // ->whereBetween('delivery_date', [$date_ini, $date_fin])
             ->groupBY('product_id')
             ->first();
         }

@@ -78,7 +78,7 @@
                     <th>Entrega</th>
                     <th>Cliente</th>
                     <th>Produto</th>
-                    <th>Quant</th>
+                    <th>Saldo</th>
                     <th>Contato</th>
                     <th>Endereço</th>
                 </tr>
@@ -90,7 +90,7 @@
                         <td>{{date('d-m-Y', strtotime($item->delivery_date))}}</td>
                         <td>{{$item->client_name}}</td>
                         <td>{{$item->product_name}}</td>
-                        <td>{{number_format($item->quant, 0, '', '.')}}</td>
+                        <td>{{number_format($item->saldo, 0, '', '.')}}</td>
                         <td>{{$item->client_phone}}</td>
                         <td style="width:200px">{{$item->client_address}}</td>
                     </tr>
