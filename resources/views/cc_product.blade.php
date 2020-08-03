@@ -43,7 +43,7 @@
                 @endforeach
             </tbody>
         </table>
-        {{$data->links()}}
+        {{-- {{$data->links()}} --}}
     </main>
 @endsection
 

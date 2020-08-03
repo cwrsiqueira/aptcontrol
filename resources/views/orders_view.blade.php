@@ -34,7 +34,7 @@
                 <label>Falta Entregar:</label>
                 <ul>
                     @foreach ($saldo_produtos as $item)
-                        <li>{{$item->product_name}} = {{$item->saldo}} <br></li>
+                        <li>{{$item->product_name}} = {{number_format($item->saldo, 0, '', '.')}} <br></li>
                     @endforeach
                 </ul>
             </div>

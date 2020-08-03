@@ -85,7 +85,7 @@ class ProductController extends Controller
         ->groupBy('order_products.order_id')
         ->havingRaw('SUM(order_products.quant) <> ?', [0])
         ->orderBy('delivery_date')
-        ->paginate(20);
+        ->get();
 
         // dd($data);
 

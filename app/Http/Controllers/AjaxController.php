@@ -45,7 +45,13 @@ class AjaxController extends Controller
                 if ($days_necessary <= 0) {
                     $days_necessary = 0;
                 }
+                
                 $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)+1).' days'));
+
+                if (date('w', strtotime($delivery_in)) == 0) {
+                    $delivery_in = date('Y-m-d', strtotime($delivery_in.' +1 days'));
+                }
+                
             } else {
                 $delivery_in = date('Y-m-d');
             }
