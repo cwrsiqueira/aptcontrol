@@ -70,7 +70,7 @@ class OrderController extends Controller
                 ->where('order_date', $q)
                 ->addSelect(['name_client' => Client::select('name')
                 ->whereColumn('clients.id', 'orders.client_id')])
-                ->orderBy('order_date')
+                ->orderBy('order_date', 'desc')
                 ->orderBy('order_number')
                 ->paginate(10);
 
@@ -84,7 +84,7 @@ class OrderController extends Controller
                 ->whereIn('complete_order', $comps)
                 ->addSelect(['name_client' => Client::select('name')
                 ->whereColumn('clients.id', 'orders.client_id')])
-                ->orderBy('order_date')
+                ->orderBy('order_date', 'desc')
                 ->orderBy('order_number')
                 ->paginate(10);
             }
