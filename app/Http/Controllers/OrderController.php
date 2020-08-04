@@ -53,8 +53,7 @@ class OrderController extends Controller
         $orders = Order::addSelect(['name_client' => Client::select('name')
         ->whereColumn('id', 'orders.client_id')])
         ->whereIn('complete_order', $comps)
-        ->orderBy('order_date', 'desc')
-        ->orderBy('order_number')
+        ->orderBy('id', 'desc')
         ->paginate(10);
 
         if (!empty($_GET['q'])) {
@@ -70,8 +69,7 @@ class OrderController extends Controller
                 ->where('order_date', $q)
                 ->addSelect(['name_client' => Client::select('name')
                 ->whereColumn('clients.id', 'orders.client_id')])
-                ->orderBy('order_date', 'desc')
-                ->orderBy('order_number')
+                ->orderBy('id', 'desc')
                 ->paginate(10);
 
                 $q = date('d/m/Y', strtotime($q));
@@ -84,8 +82,7 @@ class OrderController extends Controller
                 ->whereIn('complete_order', $comps)
                 ->addSelect(['name_client' => Client::select('name')
                 ->whereColumn('clients.id', 'orders.client_id')])
-                ->orderBy('order_date', 'desc')
-                ->orderBy('order_number')
+                ->orderBy('id', 'desc')
                 ->paginate(10);
             }
 
