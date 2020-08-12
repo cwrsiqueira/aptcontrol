@@ -30,6 +30,7 @@ Route::resource('/reports', 'ReportController');
 Route::resource('/integrations', 'IntegrationController');
 Route::resource('/permissions', 'PermissionController');
 Route::resource('/users', 'UserController');
+Route::resource('/categories', 'CategoryController');
 
 Route::get('/products/cc_products/{id}', 'ProductController@cc_product')->name('cc_product');
 Route::get('/clients/cc_clients/{id}', 'ClientController@cc_client')->name('cc_client');

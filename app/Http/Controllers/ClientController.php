@@ -11,6 +11,7 @@ use App\Product;
 use App\Order;
 use App\Order_product;
 use App\User;
+use App\Clients_category;
 
 class ClientController extends Controller
 {
@@ -47,15 +48,22 @@ class ClientController extends Controller
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
             $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(10);
+            $category = Clients_category::where('name', $q)->first();
+            if ($category != null) {
+                $clients = Client::where('id_categoria', $category['id'])
+                ->paginate(10);
+            }
         }
 
         $user_permissions = $this->get_permissions();
+        $categories = Clients_category::orderBy('id')->get();
         
         return view('clients', [
             'user' => Auth::user(),
             'clients' => $clients,
             'q' => $q,
-            'user_permissions' => $user_permissions
+            'user_permissions' => $user_permissions,
+            'categories' => $categories
         ]);
     }
 
@@ -141,6 +149,7 @@ class ClientController extends Controller
     {
         $data = $request->only([
             'name',
+            'category',
             'contact',
             'address',
         ]);
@@ -149,6 +158,7 @@ class ClientController extends Controller
             $data,
             [
                 'name' => 'required|unique:clients|max:100',
+                'category' => 'required',
                 'contact' => 'max:50|nullable',
                 'address' => 'nullable',
             ]
@@ -156,6 +166,7 @@ class ClientController extends Controller
 
         $prod = new Client();
         $prod->name = $data['name'];
+        $prod->id_categoria = $data['category'];
         $prod->contact = $data['contact'];
         $prod->full_address = $data['address'];
         $prod->save();
@@ -188,17 +199,24 @@ class ClientController extends Controller
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
             $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(10);
+            $category = Clients_category::where('name', $q)->first();
+            if ($category != null) {
+                $clients = Client::where('id_categoria', $category['id'])
+                ->paginate(10);
+            }
         }
         
         $client = Client::find($id);
         $user_permissions = $this->get_permissions();
+        $categories = Clients_category::orderBy('id')->get();
 
         return view('clients',[
             'user' => Auth::user(),
             'client' => $client,
             'clients' => $clients,
             'q' => $q,
-            'user_permissions' => $user_permissions
+            'user_permissions' => $user_permissions,
+            'categories' => $categories
         ]);
     }
 
@@ -213,6 +231,7 @@ class ClientController extends Controller
     {
         $data = $request->only([
             'name',
+            'category',
             'contact',
             'address',
         ]);
@@ -221,6 +240,7 @@ class ClientController extends Controller
             $data,
             [
                 'name' => 'required|max:100',
+                'category' => 'required',
                 'contact' => 'max:50|nullable',
                 'address' => 'nullable',
             ]
@@ -228,6 +248,7 @@ class ClientController extends Controller
 
         $prod = Client::find($id);
         $prod->name = $data['name'];
+        $prod->id_categoria = $data['category'];
         $prod->contact = $data['contact'];
         $prod->full_address = $data['address'];
         $prod->save();

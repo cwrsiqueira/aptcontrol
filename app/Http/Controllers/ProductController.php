@@ -13,6 +13,7 @@ use App\Client;
 use App\Order_product;
 use App\Stockmovement;
 use App\User;
+use App\Clients_category;
 
 class ProductController extends Controller
 {
@@ -72,22 +73,45 @@ class ProductController extends Controller
         //     return redirect()->route('products.index')->withErrors($message);
         // }
 
+        
+        $categories = Clients_category::orderBy('id')->get();
+        $cats = array(999 => 0);
+        foreach ($categories as $key => $value) {
+            $cats[$key] = $value['id'];
+        }
+        if (!empty($_GET['por_categoria'])) {
+            $cats = $_GET['por_categoria'];
+        }
+        
         $product = Product::find($id);
 
         $data = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id')
         ->join('orders', 'orders.order_number', 'order_products.order_id')
+        ->join('clients', 'clients.id', 'client_id')
         ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
         ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
         ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
         ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
+        ->addSelect(['client_id_categoria' => Client::select('id_categoria')->whereColumn('clients.id', 'client_id')])
+        ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
         ->where('product_id', $id)
         ->where('orders.complete_order', 0)
+        ->whereIn('clients.id_categoria', $cats)
         ->groupBy('order_products.order_id')
         ->havingRaw('SUM(order_products.quant) <> ?', [0])
         ->orderBy('delivery_date')
         ->get();
 
-        // dd($data);
+        $quant_por_categoria = Order_product::join('orders', 'orders.order_number', 'order_products.order_id')
+        ->join('clients', 'clients.id', 'orders.client_id')
+        ->join('clients_categories', 'clients_categories.id', 'clients.id_categoria')
+        ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
+        ->addSelect(['name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'clients.id_categoria')])
+        ->addSelect(['id' => Clients_category::select('id')->whereColumn('clients_categories.id', 'clients.id_categoria')])
+        ->where('product_id', $id)
+        ->where('orders.complete_order', 0)
+        ->groupBy('clients.id_categoria')
+        ->get();
 
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
@@ -100,7 +124,9 @@ class ProductController extends Controller
             'product' => $product,
             'quant_total' => $quant_total,
             'delivery_in' => $delivery_in,
-            'user_permissions' => $user_permissions
+            'user_permissions' => $user_permissions,
+            'categories' => $categories,
+            'quant_por_categoria' => $quant_por_categoria
         ]);
     }
 

@@ -27,6 +27,8 @@
 
                 <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addcliente">Cadastrar Cliente</button>
 
+                <a class="btn btn-secondary my-3" href="{{route('categories.index')}}">Categorias de Cientes</a>
+
                 <form method="get" class="d-flex align-items-center">
                     @if(!empty($q))
                     <a class="btn btn-sm btn-secondary m-3" style="width: 160px" href="{{route('clients.index')}}">Limpar Busca</a>
@@ -102,6 +104,14 @@
                                 
                                 <label for="name">Nome do Cliente:</label>
                                 <input class="form-control @error('name') is-invalid @enderror" type="text" name="name" placeholder="Nome do Cliente" id="name" value="{{old('name')}}">
+
+                                <label for="name">Categoria:</label>
+                                <select class="form-control" name="category" id="category">
+                                    @foreach ($categories as $item)
+                                        <option value="{{$item->id}}">{{$item->name}}</option>
+                                    @endforeach
+                                </select>
+                                {{-- <input class="form-control @error('name') is-invalid @enderror" type="text" name="name" placeholder="Nome do Cliente" id="name" value="{{old('name')}}"> --}}
                 
                                 <label for="contact">Contato:</label>
                                 <input class="form-control @error('contact') is-invalid @enderror" type="text" name="contact" placeholder="Número de Contato" id="contact" value="{{old('contact')}}">
@@ -153,6 +163,13 @@
                                 
                             <label for="name">Nome do Cliente:</label>
                             <input class="form-control @error('name') is-invalid @enderror" type="text" name="name" placeholder="Nome do Cliente" id="edit_name" value="{{$client['name'] ?? ''}}">
+
+                            <label for="name">Categoria:</label>
+                            <select class="form-control" name="category" id="category">
+                                @foreach ($categories as $item)
+                                    <option @if(!empty($client->id) && $client->id_categoria == $item->id) selected @endif value="{{$item->id}}">{{$item->name}}</option>
+                                @endforeach
+                            </select>
             
                             <label for="contact">Contato:</label>
                             <input class="form-control @error('contact') is-invalid @enderror" type="text" name="contact" placeholder="Número de Contato" id="edit_contact" value="{{$client['contact'] ?? ''}}">
@@ -173,7 +190,6 @@
                 </form>
             </div>
         </div>
-
     </main>
 
 @endsection

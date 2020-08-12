@@ -58,7 +58,7 @@
               </li>
 
               <li class="nav-item" @if(in_array('2', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
-                <a class="nav-link @if(Request::is('clients')) active @endif" href="{{route('clients.index')}}">
+                <a class="nav-link @if(Request::is(['clients', 'categories'])) active @endif" href="{{route('clients.index')}}">
                   <span data-feather="users"></span>
                   Clientes
                 </a>

@@ -13,6 +13,23 @@
                     Entregas a partir de: {{date('d/m/Y', strtotime($delivery_in))}} <br>
                 </div>
             </div>
+            <form method="get">
+                <div class="card m-3">
+                    <div class="card-header">
+                        Filtros
+                    </div>
+
+                    <div class="card-body">
+                        @foreach ($quant_por_categoria as $item)
+                            <input class="mr-1" type="checkbox" name="por_categoria[]"  value="{{$item['id']}}" @if(!empty($_GET['por_categoria']) && in_array($item['id'], $_GET['por_categoria'])) checked @endif>{{$item['name']}} = {{$item['saldo']}} <br>
+                        @endforeach
+                        <hr>
+                        <input type="submit" value="Filtrar" id="search">
+                        <a href="{{route('cc_product', ['id' => $product->id])}}" id="clean_search">Limpar Filtro</a>
+                    </div>
+                </div>
+            </form>
+
             <div class="col-md-3 m-3">
                 <div class="card-tools">
                     <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../../products'" id="btn_voltar">Voltar</button>
@@ -26,6 +43,7 @@
                 <tr>
                     <th>Data</th>
                     <th>Cliente</th>
+                    <th>Categoria</th>
                     <th>Pedido</th>
                     <th>Saldo</th>
                     <th>Entrega</th>
@@ -36,6 +54,7 @@
                     <tr class="linha" data-id="{{$item->id}}">
                         <td>{{date('d/m/Y', strtotime($item->order_date))}}</td>
                         <td>{{$item->client_name}}</td>
+                        <td>{{$item->category_name}}</td>
                         <td>{{$item->order_id}}</td>
                         <td>{{number_format($item->saldo, 0, '', '.')}}</td>
                         <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
