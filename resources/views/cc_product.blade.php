@@ -21,7 +21,7 @@
 
                     <div class="card-body">
                         @foreach ($quant_por_categoria as $item)
-                            <input class="mr-1" type="checkbox" name="por_categoria[]"  value="{{$item['id']}}" @if(!empty($_GET['por_categoria']) && in_array($item['id'], $_GET['por_categoria'])) checked @endif>{{$item['name']}} = {{$item['saldo']}} <br>
+                            <input class="mr-1" type="checkbox" name="por_categoria[]"  value="{{$item['id']}}" @if(!empty($_GET['por_categoria']) && in_array($item['id'], $_GET['por_categoria'])) checked @endif>{{$item['name']}} = {{number_format($item['saldo'], 0, '', '.')}} <br>
                         @endforeach
                         <hr>
                         <input type="submit" value="Filtrar" id="search">

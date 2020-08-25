@@ -3,6 +3,7 @@
 @section('title', 'C/C Cliente')
 
 @section('content')
+
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         <h2>Conta Corrente Cliente</h2>
         <div class="row">
@@ -27,14 +28,7 @@
             <div class="col-md-3 m-3">
                 <div class="card-tools">
                     <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
-                    <button class="btn btn-sm btn-secondary" onclick="
-                        this.style.display = 'none';
-                        document.getElementById('btn_voltar').style.display = 'none';
-                        document.getElementById('search').style.display = 'none';
-                        document.getElementById('clean_search').style.display = 'none';
-                        window.print();
-                        javascript:history.go(0);
-                    ">Imprimir</button>
+                    <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
                 </div>
             </div>
         </div>
@@ -47,6 +41,7 @@
                     <th>Produto</th>
                     <th>Quant</th>
                     <th>Entrega</th>
+                    <th class="btn_acoes" colspan="2">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -57,11 +52,29 @@
                         <td>{{$item->product_name}}</td>
                         <td>{{number_format($item->quant, 0, '', '.')}}</td>
                         <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
+                        <td class="btn_acoes"><a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->orders_order_id]) }}">Editar</a></td>
+                        <td class="btn_acoes"><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->orders_order_id]) }}">Concluir</a></td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
         {{-- {{$data->links()}} --}}
     </main>
+@endsection
+
+@section('js')
+    <script>
+        $(function(){
+            $('#btn_imprimir').click(function(){
+                $(this).hide();
+                $('#btn_voltar').hide();
+                $('#search').hide();
+                $('#clean_search').hide(); 
+                $('.btn_acoes').hide(); 
+                window.print();
+                javascript:history.go(0);
+            })
+        })
+    </script>
 @endsection
 

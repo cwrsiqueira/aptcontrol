@@ -133,7 +133,7 @@ class ReportController extends Controller
             ->whereIn('product_id', $por_produto)
             ->havingRaw('SUM(order_products.quant) <> ?', [0])
             ->orderBy('delivery_date', 'asc')
-            ->groupBy('product_id', 'order_id')
+            ->groupBy('product_id', 'order_id', 'client_address')
             ->get();
             
             $orders = $orders->whereBetween('delivery_date', [$date_ini, $date_fin])

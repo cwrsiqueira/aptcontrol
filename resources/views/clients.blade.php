@@ -117,7 +117,7 @@
                                 <input class="form-control @error('contact') is-invalid @enderror" type="text" name="contact" placeholder="Número de Contato" id="contact" value="{{old('contact')}}">
                 
                                 <label for="address">Endereço Completo:</label>
-                                <textarea class="form-control @error('address') is-invalid @enderror" type="text" name="address" placeholder="Endereço Completo" id="address">{{old('address')}}</textarea>
+                                <textarea class="form-control @error('address') is-invalid @enderror" type="text" name="address" placeholder="Logradouro, número, bairro, cidade, estado, complemento, cep" id="address">{{old('address')}}</textarea>
 
                         </div>
                 

@@ -42,7 +42,16 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::allows('menu-produtos-edit', function($user){
-            return $this->getPermissions($user, 'menu-produtos-edit') ? Response::allow() : Responde::deny('Solicite Autorização');
+            $permissions = [];
+            $id_permissions = $user->permissions;
+            foreach ($id_permissions as $item ) {
+                $permissions[] = $item['id_permission_item'];
+            }
+            $id_this_permission = Permission_item::where('slug', $menu)->first('id');
+            if (in_array($id_this_permission['id'], $permissions) || $user->confirmed_user === 1) {
+                return Response::allow();
+            } 
+            return Responde::deny('Solicite Autorização');
         });
 
         Gate::allows('menu-produtos-estoque', function($user){
@@ -74,7 +83,7 @@ class AuthServiceProvider extends ServiceProvider
             return $this->getPermissions($user, 'menu-clientes-pedido');
         });
 
-        Gate::allows('menu-clientes-cc', function($user){
+        Gate::define('menu-clientes-cc', function($user){
             return $this->getPermissions($user, 'menu-clientes-cc');
         });
 

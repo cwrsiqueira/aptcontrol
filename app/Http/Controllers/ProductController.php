@@ -63,17 +63,7 @@ class ProductController extends Controller
     }
 
     public function cc_product($id) 
-    {
-        // $response = Gate::inspect('menu-produtos-cc', Auth::user());
-
-        // if (!$response->allowed()) {
-        //     $message = [
-        //         'no-access' => 'Solicite acesso ao administrador!',
-        //     ];
-        //     return redirect()->route('products.index')->withErrors($message);
-        // }
-
-        
+    {   
         $categories = Clients_category::orderBy('id')->get();
         $cats = array(999 => 0);
         foreach ($categories as $key => $value) {
@@ -234,7 +224,6 @@ class ProductController extends Controller
     public function edit($id)
     {
         // $response = Gate::inspect('menu-produtos-edit');
-        // dd($response);
         // if (!$response->allowed()) {
         //     $message = [
         //         'no-access' => 'Solicite acesso ao administrador!',

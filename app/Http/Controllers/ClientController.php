@@ -82,6 +82,7 @@ class ClientController extends Controller
         $data = Order_product::whereIn('order_id', $orders)
         ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
         ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+        ->addSelect(['orders_order_id' => Order::select('id')->whereColumn('order_number', 'order_id')])
         ->join('orders', 'order_number', 'order_id')
         ->whereIn('product_id', $por_produto)
         ->whereBetween('delivery_date', [$date_ini, $date_fin])

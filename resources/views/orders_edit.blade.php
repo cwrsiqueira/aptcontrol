@@ -21,10 +21,10 @@
                 <thead>
                     <tr>
                         <th colspan="1">Data: <input class="form-control" type="date" name="order_date" id="order_date" value="{{$order->order_date}}"><input type="hidden" name="order_id" id="order_id" value="{{$order->id}}"></th>
-                        <th colspan="5">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$order->name_client}}"></th>
+                        <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name" id="client_name" value="{{$order->name_client}}"></th>
                     </tr>
                     <tr>
-                        <th colspan="1">Pedido Nr.: <input readonly class="form-control" type="text" name="order_number" id="order_number" value="{{$order->order_number}}"></th>
+                        <th colspan="1">Pedido Nr.: <input class="form-control" type="text" name="order_number" id="order_number" value="{{$order->order_number}}"></th><input class="form-control" type="hidden" name="order_old_number" id="order_old_number" value="{{$order->order_number}}">
                         <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text" name="total_order" id="total_order" value="{{number_format($order->order_total, 2, ',', '.')}}"></th>
                         <th colspan="1">
                             Pagamento:

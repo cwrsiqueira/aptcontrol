@@ -243,7 +243,7 @@ class OrderController extends Controller
         $order = Order::addSelect(['name_client' => Client::select('name')
         ->whereColumn('id', 'orders.client_id')])
         ->find($id);
-
+        
         $saldo_produtos = Order_product::where('order_id', $order->order_number)
         ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
         ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
@@ -252,7 +252,7 @@ class OrderController extends Controller
         ->orderBy('product_id')
         ->orderBy('delivery_date')
         ->get();
-
+        
         $order_products = Order_product::where('order_id', $order->order_number)
         ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
         ->orderBy('product_id')
@@ -313,6 +313,7 @@ class OrderController extends Controller
         $data = $request->only([
             "order_date",
             "order_number",
+            'order_old_number',
             "total_order",
             "payment",
             "withdraw",
@@ -324,6 +325,7 @@ class OrderController extends Controller
             [
                 "order_date" => ['required'],
                 "order_number" => ['required'],
+                "order_old_number" => ['required'],
                 "total_order" => ['required'],
                 "payment" => ['required'],
                 "withdraw" => ['required'],
@@ -336,12 +338,13 @@ class OrderController extends Controller
 
         $order = Order::find($id);
         $order->order_date = $data['order_date'];
+        $order->order_number = $data['order_number'];
         $order->order_total = $order_total;
         $order->payment = $data['payment'];
         $order->withdraw = $data['withdraw'];
         $order->save();
 
-        Order_product::where('order_id', $data['order_number'])->delete();
+        Order_product::where('order_id', $data['order_old_number'])->delete();
 
         foreach($data['prod'] as $item) {
             if (!empty($item['product_name'])) {
