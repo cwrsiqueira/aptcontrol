@@ -8,6 +8,7 @@ use App\Order;
 use App\Client;
 use App\Product;
 use App\Order_product;
+use App\User;
 
 class AjaxController extends Controller
 {
@@ -162,6 +163,25 @@ class AjaxController extends Controller
             $order->save();
 
             return $id;
+        }
+    }
+
+    public function update_admin() {
+        if (!empty($_GET['id'])) {
+            $id = $_GET['id'];
+
+            $adm = User::find($id);
+            
+            if ($adm['confirmed_user'] == 1) {
+                $adms = User::where('confirmed_user', 1)->count();
+                if ($adms > 1) {
+                    $adm->confirmed_user = 2;
+                }
+            } else {
+                $adm->confirmed_user = 1;
+            }
+
+            $adm->save();
         }
     }
 }

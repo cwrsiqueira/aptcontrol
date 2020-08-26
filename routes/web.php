@@ -42,6 +42,7 @@ Route::get('/search_order_number', 'AjaxController@search_order_number')->name('
 Route::get('/register_delivery', 'AjaxController@register_delivery')->name('register_delivery');
 Route::get('/register_cancel', 'AjaxController@register_cancel')->name('register_cancel');
 Route::get('/saldo_produto', 'AjaxController@saldo_produto')->name('saldo_produto');
+Route::get('/update_admin', 'AjaxController@update_admin')->name('update_admin');
 
 Route::get('/report_delivery', 'ReportController@report_delivery')->name('report_delivery');
 Route::get('/report_delivery_byPeriod', 'ReportController@report_delivery_byPeriod')->name('report_delivery_byPeriod');

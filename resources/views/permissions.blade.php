@@ -12,7 +12,12 @@
                 <div class="col-sm-8">
                     <a href="{{route('permissions.edit', ['permission' => $item['id']])}}" class="@if($item->confirmed_user === 1)list-group-item disabled @elseif($item->confirmed_user === 0) list-group-item list-group-item-action ist-group-item-danger @else list-group-item list-group-item-action list-group-item-success @endif">Usuário: {{$item->name}} - Permissão: {{$item->group_name}} - @if($item->confirmed_user === 0) Usuário não Autorizado @else Usuário Autorizado @endif</a>
                 </div>
-                <div class="col-sm-4">
+                <div class="">
+                    <div class="p-3">
+                        <button class='fas fa-crown update_admin' data-id="{{$item['id']}}" style='font-size:18px;cursor: pointer;border:0; background-color:transparent;@if($item->confirmed_user === 1) color:orange; @else color:#ccc; @endif'></button>
+                    </div>
+                </div>
+                <div class="">
                     <form class="p-3" action=" {{ route('users.destroy', [ 'user' => $item['id'] ]) }} " method="POST" 
                         @if ($item->confirmed_user === 1)
                             onsubmit="alert('Você não pode excluir o admin!');return false;"
@@ -97,6 +102,28 @@
 @endsection
 
 @section('js')
+
+    <script>
+        $(function(){
+            $('.update_admin').click(function(){
+                let id = $(this).attr('data-id');
+                let user_id = "{{$user['id']}}";
+                if (id != user_id) {
+                    $.ajax({
+                        url:"{{route('update_admin')}}",
+                        type:"get",
+                        data:{id:id},
+                        success:function(){
+                            location.reload();
+                        }
+                    })
+                } else {
+                    alert('Você não pode tirar seu próprio acesso!');
+                }
+            })
+        })
+    </script>
+
     @if (!empty($user_edit))
         <script>
             $(function(){
@@ -104,4 +131,5 @@
             })
         </script>
     @endif
+
 @endsection
