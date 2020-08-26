@@ -124,6 +124,14 @@ class OrderController extends Controller
      */
     public function create()
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('14', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $client = array();
         if (!empty($_GET['client'])) {
             $client = Client::find($_GET['client']);
@@ -170,6 +178,14 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('14', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $data = $request->only([
             "order_date",
             "client_name",
@@ -232,14 +248,16 @@ class OrderController extends Controller
         return redirect()->route('orders.index', ['q' => $order_prod->order_id]);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('17', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
         $order = Order::addSelect(['name_client' => Client::select('name')
         ->whereColumn('id', 'orders.client_id')])
         ->find($id);
@@ -278,6 +296,63 @@ class OrderController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function orders_conclude()
+    {
+        if (!empty($_GET['order'])) {
+            $id = $_GET['order'];
+        }
+        
+        $user_permissions = $this->get_permissions();
+        if (!in_array('19', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
+        $order = Order::addSelect(['name_client' => Client::select('name')
+        ->whereColumn('id', 'orders.client_id')])
+        ->find($id);
+        
+        $saldo_produtos = Order_product::where('order_id', $order->order_number)
+        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+        ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
+        ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
+        ->groupBy('product_id')
+        ->orderBy('product_id')
+        ->orderBy('delivery_date')
+        ->get();
+        
+        $order_products = Order_product::where('order_id', $order->order_number)
+        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+        ->orderBy('product_id')
+        ->orderBy('delivery_date')
+        ->get();
+
+        $user_permissions = $this->get_permissions();
+        $product = array();
+        $products = json_decode($saldo_produtos);
+        foreach ($products as $item) {
+            if ($item->saldo != 0) {
+                $product[$item->product_id] = $item->product_name;
+            }
+        }
+        
+        return view('orders_conclude',[
+            'order' => $order,
+            'order_products' => $order_products,
+            'user_permissions' => $user_permissions,
+            'product' => $product,
+            'saldo_produtos' => $saldo_produtos
+        ]);
+    }
+
+    /**
      * Show the form for editing the specified resource.
      *
      * @param  int  $id
@@ -285,6 +360,14 @@ class OrderController extends Controller
      */
     public function edit($id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('18', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
         $order = Order::addSelect(['name_client' => Client::select('name')
         ->whereColumn('id', 'orders.client_id')])->find($id);
         $order_products = Order_product::where('order_id', $order->order_number)->addSelect(['product_name' => Product::select('name')
@@ -310,6 +393,14 @@ class OrderController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('18', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
         $data = $request->only([
             "order_date",
             "order_number",

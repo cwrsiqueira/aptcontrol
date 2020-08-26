@@ -183,7 +183,8 @@ return [
         'quant' => 'Quant.',
         'unit_val' => 'Vlr.Unit.',
         'total_val' => 'Vlr.Total',
-        'delivery_date' => 'Previsão de Entrega'
+        'delivery_date' => 'Previsão de Entrega',
+        'auth' => 'Autorização',
     ],
 
 ];

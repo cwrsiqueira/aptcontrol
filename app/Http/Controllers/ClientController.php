@@ -69,6 +69,14 @@ class ClientController extends Controller
 
     public function cc_client($id) 
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('15', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $por_produto = Product::get('id');
         $date_ini = '2020-01-01';
         $date_fin = '2020-12-31';
@@ -119,8 +127,6 @@ class ClientController extends Controller
                 }
             }
         }
-        
-        $user_permissions = $this->get_permissions();
 
         return view('cc_client', [
             'data' => $data,
@@ -148,6 +154,14 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('12', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $data = $request->only([
             'name',
             'category',
@@ -195,6 +209,14 @@ class ClientController extends Controller
      */
     public function edit($id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('13', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $clients = Client::orderBy('name')->paginate(10);
         $q = '';
         if (!empty($_GET['q'])) {
@@ -230,6 +252,14 @@ class ClientController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('13', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $data = $request->only([
             'name',
             'category',
@@ -265,6 +295,14 @@ class ClientController extends Controller
      */
     public function destroy($id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('24', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
         $clients = Order::where('client_id', $id)->get();
         if (count($clients) > 0) {
             $message = [

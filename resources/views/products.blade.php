@@ -25,7 +25,7 @@
         <div>
             <div class="d-flex justify-content-between">
 
-                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addproduto" @if(in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>Cadastrar Produto</button>
+                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addproduto" @if(in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) @else disabled title="Solicitar Acesso" @endif>Cadastrar Produto</button>
 
                 <form method="get" class="d-flex align-items-center">
                     @if(!empty($q ?? ''))
@@ -58,21 +58,37 @@
                         <td><?php echo $item['name']; ?></td>
                         <td><?php echo number_format($item['current_stock'], 0, '', '.'); ?></td>
                         <td><?php echo number_format($item['daily_production_forecast'], 0, '', '.'); ?></td>
-                        <td @if(in_array('8', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
-                            <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a>
+                        <td>
+                            @if(in_array('8', $user_permissions) || Auth::user()->confirmed_user === 1)
+                            <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a> 
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
+                            @endif
                         </td>
-                        <td @if(in_array('9', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
+                        <td>
+                            @if(in_array('9', $user_permissions) || Auth::user()->confirmed_user === 1) 
                             <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'add_estock']) }}">+ Estoque</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">+ Estoque</button>
+                            @endif
                         </td>
-                        <td @if(in_array('10', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
+                        <td>
+                            @if(in_array('10', $user_permissions) || Auth::user()->confirmed_user === 1) 
                             <a class="btn btn-sm btn-secondary" href="{{ route('cc_product', ['id' => $item->id]) }}">C/C</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">C/C</button>
+                            @endif
                         </td>
-                        <td @if(in_array('11', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="visibility:hidden;" @endif>
+                        <td>
+                            @if(in_array('11', $user_permissions) || Auth::user()->confirmed_user === 1) 
                             <form title="Excluir" action=" {{ route('products.destroy', [ 'product' => $item->id ]) }} " method="POST" onsubmit="return confirm('Confirma a exclusão do produto?')" >
                                 @csrf
                                 @method('DELETE')
                                 <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
                             </form>
+                            @else 
+                            <button class="btn btn-sm btn-danger" disabled title="Solicitar Acesso"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
+                            @endif
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -83,7 +99,9 @@
 
         
         <!-- MODAL ADD PRODUTOS -->
+        @if(in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) 
         <div class="modal fade" id="modal_addproduto">
+            @else <div class="modal fade" id=""> @endif
             <div class="modal-dialog">
                 <form method="post" action="{{route('products.store')}}" id="form_add_produto">
                     @csrf
@@ -218,6 +236,35 @@
                 </form>
             </div>
         </div>
+
+        <!-- MODAL ERROR -->
+        <div class="modal fade" id="modal_error">
+            <div class="modal-dialog">
+                
+                    <div class="modal-content">
+            
+                        <!-- Modal Header -->
+                        <div class="modal-header">
+                            <h4 class="modal-title">ERRO!</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                
+                        <!-- Modal body -->
+                        <div class="modal-body">
+                            Solicite Acesso!
+                        </div>
+                
+                        <!-- Modal footer -->
+                        <div class="modal-footer justify-content-between">
+                            <button type="button" onclick="window.location.href = '../../products'" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                        </div>
+            
+                    </div>
+                
+                </form>
+            </div>
+        </div>
+
     </main>
 
 @endsection
@@ -234,19 +281,31 @@
 
     @if (!empty($product))
 
-        @if ($action === 'edit')
-            <script>
-                $(function(){
-                    $('#modal_editproduto').modal();
-                })
-            </script>
-        @else
-            <script>
-                $(function(){
-                    $('#modal_addestoque').modal();
-                })
-            </script>
-        @endif
+        @switch($action)
+            @case('edit')
+                <script>
+                    $(function(){
+                        $('#modal_editproduto').modal();
+                    })
+                </script>
+                @break
+            @case('add_estock')
+                <script>
+                    $(function(){
+                        $('#modal_addestoque').modal();
+                    })
+                </script>
+                @break
+            @case('Não Autorizado')
+                <script>
+                    $(function(){
+                        $('#modal_error').modal();
+                    })
+                </script>
+                @break
+            @default
+            
+        @endswitch
         
     @endif
 

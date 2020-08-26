@@ -45,6 +45,7 @@ Route::get('/saldo_produto', 'AjaxController@saldo_produto')->name('saldo_produt
 
 Route::get('/report_delivery', 'ReportController@report_delivery')->name('report_delivery');
 Route::get('/report_delivery_byPeriod', 'ReportController@report_delivery_byPeriod')->name('report_delivery_byPeriod');
+Route::get('/orders_conclude', 'OrderController@orders_conclude')->name('orders_conclude');
 
 Route::get('/logout', function(){
     Auth::logout();

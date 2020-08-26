@@ -21,7 +21,7 @@
         <div class="row">
             <div class="col-md m-3">
                 <div class="card-tools">
-                    <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
+                    <button class="btn btn-sm btn-secondary" onclick="history.back();"  value="Back" id="btn_voltar">Voltar</button>
                     <button class="btn btn-sm btn-secondary" onclick="
                         this.style.display = 'none';
                         document.getElementById('btn_voltar').style.display = 'none';
@@ -38,6 +38,14 @@
                     @endforeach
                 </ul>
             </div>
+            @if ($order->complete_order !== 1 && $order->complete_order !== 2)
+                <div class="col-md m-3 d-flex justify-content-end">
+                    <div class="card-tools">
+                        <button style="width:135px;" class="btn btn-sm btn-secondary btn-success" data-toggle="modal" data-target="#confirmarEntrega">Confirmar Entrega</button>
+                        <button style="width:135px" class="btn btn-sm btn-secondary btn-danger" data-toggle="modal" data-target="#cancelarPedido">Cancelar Pedido</button>
+                    </div>
+                </div>
+            @endif
         </div>
         
         <table class="table">
@@ -152,6 +160,7 @@
     <script>
 
         $(function(){
+
             $('#quant_prod').mask('000.000.000', {reverse:true});
             $('#quant').mask('000.000.000', {reverse:true});
 
@@ -209,7 +218,7 @@
                         data:{id:id, id_prod:id_prod, quant:quant, delivered:delivered},
                         dataType:'json',
                         success:function(json){
-                            window.location.href = json;
+                            window.location.href = 'orders_conclude?order=' + json;
                         }
                     });
 
@@ -227,7 +236,7 @@
                         data:{id:id},
                         dataType:'json',
                         success:function(json){
-                            window.location.href = json;
+                            window.location.href = 'orders_conclude?order=' + json;
                         }
                     });    
                 } else {

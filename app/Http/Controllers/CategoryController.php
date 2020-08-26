@@ -68,6 +68,14 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('21', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('categories.index')->withErrors($message);
+        }
+
         $data = $request->only([
             'name',
         ]);
@@ -105,6 +113,14 @@ class CategoryController extends Controller
      */
     public function edit($id)
     {   
+        $user_permissions = $this->get_permissions();
+        if (!in_array('22', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('categories.index')->withErrors($message);
+        }
+
         $categories = Clients_category::orderBy('id')->paginate(10);
         $category = Clients_category::find($id);
         $user_permissions = $this->get_permissions();
@@ -126,6 +142,14 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('22', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('categories.index')->withErrors($message);
+        }
+        
         $data = $request->only([
             'name',
         ]);
@@ -152,6 +176,14 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
+        $user_permissions = $this->get_permissions();
+        if (!in_array('23', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('categories.index')->withErrors($message);
+        }
+
         $categories = Client::where('id_categoria', $id)->get();
         if (count($categories) > 0) {
             $message = [

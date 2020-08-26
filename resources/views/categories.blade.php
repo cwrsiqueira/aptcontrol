@@ -32,7 +32,7 @@
         <div>
             <div class="d-flex justify-content-between">
 
-                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addcategoria">Cadastrar Categoria</button>
+                <button @if(in_array('21', $user_permissions) || Auth::user()->confirmed_user === 1) @else disabled title="Solicitar Acesso" @endif class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addcategoria">Cadastrar Categoria</button>
 
             </div>
             
@@ -47,13 +47,23 @@
                     <?php foreach($categories as $item): ?>
                     <tr>
                         <td><?php echo $item['name']; ?></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('categories.edit', [ 'category' => $item->id ] ) }}">Editar</a></td>
                         <td>
+                            @if(in_array('22', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            <a class="btn btn-sm btn-secondary" href="{{ route('categories.edit', [ 'category' => $item->id ] ) }}">Editar</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
+                            @endif
+                        </td>
+                        <td>
+                            @if(in_array('23', $user_permissions) || Auth::user()->confirmed_user === 1) 
                             <form title="Excluir" action=" {{ route('categories.destroy', [ 'category' => $item->id ] ) }} " method="POST" onsubmit="return confirm('Confirma a exclusão da categoria?')" >
                                 @csrf
                                 @method('DELETE')
                                 <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
                             </form>
+                            @else 
+                            <button class="btn btn-sm btn-danger" disabled title="Solicitar Acesso"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
+                            @endif
                         </td>
                     </tr>
                     <?php endforeach; ?>

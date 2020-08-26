@@ -25,9 +25,13 @@
         <div>
             <div class="d-flex justify-content-between">
 
-                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addcliente">Cadastrar Cliente</button>
+                <button @if(in_array('12', $user_permissions) || Auth::user()->confirmed_user === 1) @else disabled title="Solicitar Acesso" @endif class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addcliente">Cadastrar Cliente</button>
 
-                <a class="btn btn-secondary my-3" href="{{route('categories.index')}}">Categorias de Cientes</a>
+                @if(in_array('20', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                <a class="btn btn-secondary my-3" href="{{route('categories.index')}}">Categorias de Clientes</a>
+                @else 
+                <button class="btn btn-secondary my-3" disabled title="Solicitar Acesso">Categorias de Clientes</button>
+                @endif
 
                 <form method="get" class="d-flex align-items-center">
                     @if(!empty($q))
@@ -58,15 +62,37 @@
                         <td><?php echo $item['id']; ?></td>
                         <td><?php echo $item['name']; ?></td>
                         <td><?php echo $item['contact']; ?></td>
-                        <td style="width: 100px;"><a class="btn btn-sm btn-secondary" href="{{ route('clients.edit', [ 'client' => $item->id, 'q' => $q ] ) }}">Editar</a></td>
-                        <td style="width: 150px;"><a class="btn btn-sm btn-secondary" href="{{ route('orders.create', ['client' => $item['id']]) }}">Efetuar Pedido</a></td>
-                        <td><a class="btn btn-sm btn-secondary" href="{{ route('cc_client', ['id' => $item->id]) }}">C/C</a></td>
+                        <td style="width: 100px;">
+                            @if(in_array('13', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            <a class="btn btn-sm btn-secondary" href="{{ route('clients.edit', [ 'client' => $item->id, 'q' => $q ] ) }}">Editar</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
+                            @endif
+                        </td>
+                        <td style="width: 150px;">
+                            @if(in_array('14', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            <a class="btn btn-sm btn-secondary" href="{{ route('orders.create', ['client' => $item['id']]) }}">Efetuar Pedido</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Efetuar Pedido</button>
+                            @endif
+                        </td>
                         <td>
+                            @if(in_array('15', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            <a class="btn btn-sm btn-secondary" href="{{ route('cc_client', ['id' => $item->id]) }}">C/C</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">C/C</button>
+                            @endif
+                        </td>
+                        <td>
+                            @if(in_array('24', $user_permissions) || Auth::user()->confirmed_user === 1) 
                             <form title="Excluir" action=" {{ route('clients.destroy', [ 'client' => $item->id, 'q' => $q ] ) }} " method="POST" onsubmit="return confirm('Confirma a exclusão do cliente?')" >
                                 @csrf
                                 @method('DELETE')
                                 <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
                             </form>
+                            @else 
+                            <button class="btn btn-sm btn-danger" disabled title="Solicitar Acesso"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
+                            @endif
                         </td>
                     </tr>
                     <?php endforeach; ?>

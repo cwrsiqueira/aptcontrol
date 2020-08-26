@@ -52,8 +52,20 @@
                         <td>{{$item->product_name}}</td>
                         <td>{{number_format($item->quant, 0, '', '.')}}</td>
                         <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
-                        <td class="btn_acoes"><a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->orders_order_id]) }}">Editar</a></td>
-                        <td class="btn_acoes"><a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->orders_order_id]) }}">Concluir</a></td>
+                        <td class="btn_acoes">
+                            @if(in_array('18', $user_permissions) || Auth::user()->confirmed_user === 1)
+                            <a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->orders_order_id]) }}">Editar</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
+                            @endif
+                        </td>
+                        <td class="btn_acoes">
+                            @if(in_array('19', $user_permissions) || Auth::user()->confirmed_user === 1)
+                            <a class="btn btn-sm btn-secondary" href="{{ route('orders_conclude', ['order' => $item->orders_order_id]) }}">Concluir</a>
+                            @else 
+                            <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Concluir</button>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
@@ -65,6 +77,18 @@
 @section('js')
     <script>
         $(function(){
+            
+            if( window.localStorage ) {
+
+                if( !localStorage.getItem( 'firstLoad' ) ) {
+                    localStorage[ 'firstLoad' ] = true;
+                    window.location.reload();
+                } else {
+                    localStorage.removeItem( 'firstLoad' );
+                    $('html,body').scrollTop(0);
+                }
+            }
+
             $('#btn_imprimir').click(function(){
                 $(this).hide();
                 $('#btn_voltar').hide();
