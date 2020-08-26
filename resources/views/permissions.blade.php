@@ -10,7 +10,7 @@
             @foreach ($users as $item)
             <div class="row mb-1">
                 <div class="col-sm-8">
-                    <a href="{{route('permissions.edit', ['permission' => $item['id']])}}" class="@if($item->confirmed_user === 1)list-group-item disabled @elseif($item->confirmed_user === 0) list-group-item list-group-item-action ist-group-item-danger @else list-group-item list-group-item-action list-group-item-success @endif">Usuário: {{$item->name}} - Permissão: {{$item->group_name}} - @if($item->confirmed_user === 0) Usuário não Autorizado @else Usuário Autorizado @endif</a>
+                    <a href="{{route('permissions.edit', ['permission' => $item['id']])}}" class="@if($item->confirmed_user === 1)list-group-item disabled @elseif($item->confirmed_user === 0) list-group-item list-group-item-action list-group-item-danger @else list-group-item list-group-item-action list-group-item-success @endif">Usuário: {{$item->name}} - Permissão: {{$item->group_name}} - @if($item->confirmed_user === 0) Usuário não Autorizado @else Usuário Autorizado @endif</a>
                 </div>
                 <div class="">
                     <div class="p-3">
