@@ -14,6 +14,7 @@ use App\Order_product;
 use App\Stockmovement;
 use App\User;
 use App\Clients_category;
+use Helper;
 
 class ProductController extends Controller
 {
@@ -64,6 +65,15 @@ class ProductController extends Controller
 
     public function cc_product($id) 
     {
+
+        $user_permissions = $this->get_permissions();
+        if (!in_array('10', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('products.index')->withErrors($message);
+        }
+
         $categories = Clients_category::orderBy('id')->get();
         $cats = array(999 => 0);
         foreach ($categories as $key => $value) {
@@ -106,14 +116,6 @@ class ProductController extends Controller
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
-
-        $user_permissions = $this->get_permissions();
-        if (!in_array('10', $user_permissions) || !Auth::user()->confirmed_user === 1) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('products.index')->withErrors($message);
-        }
         
         return view('cc_product', [
             'data' => $data,
@@ -212,6 +214,8 @@ class ProductController extends Controller
         $prod->img_url = $data['file'];
         $prod->save();
 
+        Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Produtos');
+
         return redirect()->route('products.index');
 
     }
@@ -243,11 +247,11 @@ class ProductController extends Controller
         
         $user_permissions = $this->get_permissions();
         if ($action == 'edit') {
-            if (!in_array('8', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            if (!in_array('8', $user_permissions) && !Auth::user()->confirmed_user === 1) {
                 $action = 'Não Autorizado';
             }
         }  elseif ($action == 'add_estock') {
-            if (!in_array('9', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+            if (!in_array('9', $user_permissions) && !Auth::user()->confirmed_user === 1) {
                 $action = 'Não Autorizado';
             }
         }
@@ -334,6 +338,8 @@ class ProductController extends Controller
             $prod->save();
         }
 
+        Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Produtos');
+
         return redirect()->route('products.index');
     }
 
@@ -346,7 +352,7 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('11', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('11', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -360,7 +366,9 @@ class ProductController extends Controller
             ];
             return redirect()->route('products.index')->withErrors($message);
         } else {
+            $product = Product::find($id);
             Product::find($id)->delete();
+            Helper::saveLog(Auth::user()->id, 'Deleção', $id, $product->name, 'Produtos');
             return redirect()->route('products.index');
         }
     }

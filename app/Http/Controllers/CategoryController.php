@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Client;
 use App\Clients_category;
 use App\User;
+use Helper;
 
 class CategoryController extends Controller
 {
@@ -69,7 +70,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('21', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('21', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -90,6 +91,8 @@ class CategoryController extends Controller
         $prod = new Clients_category();
         $prod->name = $data['name'];
         $prod->save();
+
+        Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Categorias');
 
         return redirect()->route("categories.index");
     }
@@ -114,7 +117,7 @@ class CategoryController extends Controller
     public function edit($id)
     {   
         $user_permissions = $this->get_permissions();
-        if (!in_array('22', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('22', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -143,7 +146,7 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('22', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('22', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -165,6 +168,8 @@ class CategoryController extends Controller
         $prod->name = $data['name'];
         $prod->save();
 
+        Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Categorias');
+
         return redirect()->route('categories.index');
     }
 
@@ -177,7 +182,7 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('23', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('23', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -185,13 +190,16 @@ class CategoryController extends Controller
         }
 
         $categories = Client::where('id_categoria', $id)->get();
+        
         if (count($categories) > 0) {
             $message = [
                 'cannot_exclude' => 'Categoria não pode ser excluída, pois possui clientes vinculados!',
             ];
             return redirect()->route('categories.index')->withErrors($message);
         } else {
+            $category = Clients_category::find($id);
             Clients_category::find($id)->delete();
+            Helper::saveLog(Auth::user()->id, 'Deleção', $id, $category->name, 'Categorias');
             return redirect()->route('categories.index');
         }
     }

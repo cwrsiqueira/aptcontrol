@@ -92,6 +92,13 @@
                 </a>
               </li>
 
+              <li class="nav-item" @if(Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+                <a class="nav-link @if(Request::is('logs')) active @endif" href="{{route('logs.index')}}">
+                  <span data-feather="layers"></span>
+                  Log do Sistema
+                </a>
+              </li>
+
             </ul>
 
           </div>

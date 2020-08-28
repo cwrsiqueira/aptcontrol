@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Order;
 use App\Client;
 use App\Product;
 use App\Order_product;
 use App\User;
+use Helper;
 
 class AjaxController extends Controller
 {
@@ -150,6 +152,8 @@ class AjaxController extends Controller
                 }
             }
 
+            Helper::saveLog(Auth::user()->id, 'Registro de Entrega', $order->id, $order->order_number, 'Pedidos');
+
             return $id;
         }
     }
@@ -161,6 +165,8 @@ class AjaxController extends Controller
             $order = Order::find($id);
             $order->complete_order = 2;
             $order->save();
+
+            Helper::saveLog(Auth::user()->id, 'Cancelamento', $order->id, $order->order_number, 'Pedidos');
 
             return $id;
         }

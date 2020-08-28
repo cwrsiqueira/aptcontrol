@@ -11,6 +11,7 @@ use App\Client;
 use App\Product;
 use App\Order_product;
 use App\User;
+use Helper;
 
 class OrderController extends Controller
 {
@@ -125,7 +126,7 @@ class OrderController extends Controller
     public function create()
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('14', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('14', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -179,7 +180,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('14', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('14', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -223,6 +224,8 @@ class OrderController extends Controller
         $order->withdraw = $data['withdraw'];
         $order->save();
 
+        Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');
+
         foreach($data['prod'] as $item) {
             if (!empty($item['product_name'])) {
 
@@ -251,7 +254,7 @@ class OrderController extends Controller
     public function show($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('17', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('17', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -308,7 +311,7 @@ class OrderController extends Controller
         }
         
         $user_permissions = $this->get_permissions();
-        if (!in_array('19', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('19', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -361,7 +364,7 @@ class OrderController extends Controller
     public function edit($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('18', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('18', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -394,7 +397,7 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('18', $user_permissions) || !Auth::user()->confirmed_user === 1) {
+        if (!in_array('18', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -458,6 +461,8 @@ class OrderController extends Controller
                 $order_prod->save();
             }
         }
+
+        Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->order_number, 'Pedidos');
 
         return redirect()->route('orders.index', ['q' => $order_prod->order_id]);
     }
