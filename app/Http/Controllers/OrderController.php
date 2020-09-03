@@ -413,6 +413,10 @@ class OrderController extends Controller
             "withdraw",
             "prod",
         ]);
+        
+        if ($data['order_number'] != $data['order_old_number']) {
+            $validator = Validator::make($data, ['order_number' => 'unique:orders'])->validate();
+        }
 
         $validator = Validator::make(
             $data,
