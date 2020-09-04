@@ -51,6 +51,11 @@ class ReportController extends Controller
 
     public function report_delivery() 
     {
+        $withdraw = '%';
+        if (!empty($_GET['withdraw'])) {
+            $withdraw = $_GET['withdraw'];
+        }
+
         $por_produto = Product::get('id');
         if (!empty($_GET['por_produto'])) {
             $por_produto = $_GET['por_produto'] ?? $por_produto;
@@ -59,7 +64,7 @@ class ReportController extends Controller
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
 
-            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant')
+            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant', 'orders.withdraw')
             ->join('orders', 'orders.order_number', 'order_products.order_id')
             ->addSelect(DB::raw('sum(quant) as saldo'))
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
@@ -69,6 +74,7 @@ class ReportController extends Controller
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->where('orders.complete_order', 0)
+            ->where('orders.withdraw', 'LIKE', $withdraw)
             ->whereIn('product_id', $por_produto)
             ->havingRaw('SUM(order_products.quant) <> ?', [0])
             ->orderBy('delivery_date', 'asc')
@@ -111,6 +117,11 @@ class ReportController extends Controller
 
     public function report_delivery_byPeriod() 
     {
+        $withdraw = '%';
+        if (!empty($_GET['withdraw'])) {
+            $withdraw = $_GET['withdraw'];
+        }
+
         $por_produto = Product::get('id');
         if (!empty($_GET['por_produto'])) {
             $por_produto = $_GET['por_produto'] ?? $por_produto;
@@ -120,7 +131,7 @@ class ReportController extends Controller
             $date_ini = $_GET['date_ini'];
             $date_fin = $_GET['date_fin'];
 
-            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant')
+            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant', 'orders.withdraw')
             ->join('orders', 'orders.order_number', 'order_products.order_id')
             ->addSelect(DB::raw('sum(quant) as saldo'))
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
@@ -130,6 +141,7 @@ class ReportController extends Controller
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->where('orders.complete_order', 0)
+            ->where('orders.withdraw', 'LIKE', $withdraw)
             ->whereIn('product_id', $por_produto)
             ->havingRaw('SUM(order_products.quant) <> ?', [0])
             ->orderBy('delivery_date', 'asc')

@@ -24,14 +24,23 @@
                 <form action="{{route('report_delivery')}}" method="get">
                 @else
                 <form action="{{route('report_delivery_byPeriod')}}" method="get">
-                @endif
+                    @endif
 
                     <div class="card-body">
+
+                        <label>Filtrar por Tipo de Material:</label>
                         <ul>
                             @foreach ($product_total as $key => $value)
                                 <input class="mr-1" type="checkbox" name="por_produto[]"  value="{{$value['id']}}" @if(!empty($_GET['por_produto']) && in_array($value['id'], $_GET['por_produto'])) checked @endif>Total de {{$key}}: {{number_format($value['qt'], 0, '', '.')}} <br>
                             @endforeach
                         </ul>
+                        
+                        <label for="withdraw">Filtrar por Forma de Entrega:</label>
+                        <select class="form-control col-sm-4 mb-3 ml-3" name="withdraw" id="withdraw">
+                            <option></option>
+                            <option @if(!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Entregar') selected @endif value="Entregar">Entregar na Obra</option>
+                            <option @if(!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar') selected @endif value="Retirar">Retirar na Fábrica</option>
+                        </select>
 
                         @if (!empty($date))
                         <input type="hidden" name="delivery_date" value="{{$date}}">
@@ -47,16 +56,8 @@
                         <input type="submit" value="Filtrar" id="search">
                         <a href="{{route('report_delivery_byPeriod', ['date_ini' => $date_ini, 'date_fin' => $date_fin])}}" id="clean_search">Limpar Filtro</a>
                         @endif
-
                     </div>
                 </form>
-                {{-- <div class="card-body">
-                    <ul>
-                        @foreach ($product_total as $key => $value)
-                            <li>Total de {{$key}}: {{number_format($value, 0, '', '.')}}</li>
-                        @endforeach
-                    </ul>
-                </div> --}}
             </div>
             <div class="col-md-3 m-3">
                 <div class="card-tools">
@@ -64,6 +65,8 @@
                     <button class="btn btn-sm btn-secondary" onclick="
                         this.style.display = 'none';
                         document.getElementById('btn_voltar').style.display = 'none';
+                        document.getElementById('search').style.display = 'none';
+                        document.getElementById('clean_search').style.display = 'none';
                         window.print();
                         javascript:history.go(0);
                     ">Imprimir</button>
@@ -80,7 +83,12 @@
                     <th>Produto</th>
                     <th>Saldo</th>
                     <th>Contato</th>
+                    @if(!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
+                    <th>Forma de Entrega</th>
+                    @else
+                    <th>Forma de Entrega</th>
                     <th>Endereço</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -92,7 +100,12 @@
                         <td>{{$item->product_name}}</td>
                         <td>{{number_format($item->saldo, 0, '', '.')}}</td>
                         <td>{{$item->client_phone}}</td>
-                        <td style="width:200px">{{$item->client_address}}</td>
+                        @if(!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
+                        <td>{{$item->withdraw}}</td>
+                        @else
+                        <td>{{$item->withdraw}}</td>
+                        <td>{{$item->client_address}}</td>
+                        @endif
                     </tr>
                 @endforeach
             </tbody>
