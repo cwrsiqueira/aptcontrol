@@ -47,7 +47,7 @@
                 <?php endforeach; ?>
             </tbody>
         </table>
-        {{$log->links()}}
+        {{$log->appends(['acao' => $_GET['acao'] ?? ''])->links()}}
 
     </main>
 @endsection
