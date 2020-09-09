@@ -3,6 +3,21 @@
 @section('title', 'Log')
 
 @section('content')
+
+    <div class="modal" id="loader">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: transparent;border:0;">
+
+            <!-- Modal body -->
+            <div class="modal-body" style="text-align: center;">
+                <div class="spinner-border" style="color: #fff;width:100px;height:100px;"></div>
+                <p style="color: #fff;font-size:24px;font-weight:bold;">Aguarde...</p>
+            </div>
+            
+            </div>
+        </div>
+    </div>
+
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
         <h2>Log do Sistema</h2>
 
@@ -50,5 +65,14 @@
         {{$log->appends(['acao' => $_GET['acao'] ?? ''])->links()}}
 
     </main>
+@endsection
+
+@section('js')
+   <script>
+        $('#loader').modal('show');
+        $(function(){
+            $('#loader').delay(10000).modal('hide');
+        })
+   </script>
 @endsection
 
