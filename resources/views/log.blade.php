@@ -13,6 +13,7 @@
             <form method="get">
                 <div class="card-body">
                     <select class="form-control" onchange="this.form.submit();" name="acao" id="acao">
+                        <option @empty($_GET['acao']) selected @endempty value="">Todos</option>
                         <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Cadastro') selected @endif>Cadastro</option>
                         <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Alteração') selected @endif>Alteração</option>
                         <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Cancelamento') selected @endif>Cancelamento</option>
