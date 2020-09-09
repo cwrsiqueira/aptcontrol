@@ -37,7 +37,7 @@
                 </div>
             </form>
         </div>
-
+        
         <table class="table" style="text-align: center">
             <thead>
                 <tr>
@@ -70,9 +70,9 @@
 @section('js')
    <script>
         $('#loader').modal('show');
-        $(function(){
-            $('#loader').delay(10000).modal('hide');
-        })
+        $(document).ready(function() {
+            $('#loader').modal('hide');
+        });
    </script>
 @endsection
 
