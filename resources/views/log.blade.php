@@ -6,6 +6,22 @@
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
         <h2>Log do Sistema</h2>
 
+        <div class="card col-sm-4 m-3">
+            <div class="card-header">
+                Filtrar por:
+            </div>
+            <form method="get">
+                <div class="card-body">
+                    <select class="form-control" onchange="this.form.submit();" name="acao" id="acao">
+                        <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Cadastro') selected @endif>Cadastro</option>
+                        <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Alteração') selected @endif>Alteração</option>
+                        <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Cancelamento') selected @endif>Cancelamento</option>
+                        <option @if(!empty($_GET['acao']) && $_GET['acao'] == 'Registro de Entrega') selected @endif>Registro de Entrega</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
         <table class="table" style="text-align: center">
             <thead>
                 <tr>
