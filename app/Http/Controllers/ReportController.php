@@ -55,16 +55,21 @@ class ReportController extends Controller
         if (!empty($_GET['withdraw'])) {
             $withdraw = $_GET['withdraw'];
         }
-
-        $por_produto = Product::get('id');
-        if (!empty($_GET['por_produto'])) {
-            $por_produto = $_GET['por_produto'] ?? $por_produto;
+        
+        $produtos = Product::all();
+        $por_produto = array();
+        foreach ($produtos as $key => $value) {
+            $por_produto[$key] = strval($value['id']);
         }
+        if (!empty($_GET['por_produto'])) {
+            $por_produto = ($_GET['por_produto']) ?? $por_produto;
+        }
+        
         $orders = array();
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
-
-            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant', 'orders.withdraw')
+            
+            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'order_products.product_id', 'order_products.quant', 'orders.withdraw')
             ->join('orders', 'orders.order_number', 'order_products.order_id')
             ->addSelect(DB::raw('sum(quant) as saldo'))
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
@@ -75,7 +80,7 @@ class ReportController extends Controller
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->where('orders.complete_order', 0)
             ->where('orders.withdraw', 'LIKE', $withdraw)
-            ->whereIn('product_id', $por_produto)
+            ->whereIn('order_products.product_id', ($por_produto))
             ->havingRaw('SUM(order_products.quant) <> ?', [0])
             ->orderBy('delivery_date', 'asc')
             ->groupBy('product_id', 'order_id')
@@ -84,30 +89,30 @@ class ReportController extends Controller
             $orders = $orders->where('delivery_date', '<=', $date)
             ->all();
         }
-        
-        foreach ($orders as $value) {
-            $total_product[$value->order_id] = DB::table('order_products')
-            ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
+
+        foreach ($orders as $item) {
+            $product_quant = DB::table('order_products')
+            ->select(['id' => Product::select('id')->whereColumn('id', 'product_id')])
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(DB::raw('sum(quant) as quant_total'))
-            ->where('order_id', $value->order_id)
-            // ->where('delivery_date', '<=', $date)
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->addSelect(DB::raw('sum(quant) as quant'))
+            ->where('orders.withdraw', 'LIKE', $withdraw)
+            ->where('orders.complete_order', '=', 0)
+            ->where('delivery_date', '<=', $date)
+            ->whereIn('order_products.product_id', ($por_produto))
             ->groupBY('product_id')
-            ->first();
+            ->get();
         }
-        
         $product_total = array();
-        if (!empty($total_product)) {
-            foreach ($total_product as $item) {
-                if (!isset($product_total[$item->product_name])) {
-                    $product_total[$item->product_name]['id'] = $item->product_id;
-                    $product_total[$item->product_name]['qt'] = $item->quant_total;
-                } else {
-                    $product_total[$item->product_name]['qt'] += $item->quant_total;
-                }
+        if (!empty($product_quant)) {
+            foreach ($product_quant as $item) {
+                $product_total[$item->product_name] = [
+                    'id' => $item->id,
+                    'qt' => $item->quant
+                ];
             }
         }
-        
+
         return view('reports_delivery', [
             'orders' => $orders,
             'date' => $date,
@@ -121,7 +126,7 @@ class ReportController extends Controller
         if (!empty($_GET['withdraw'])) {
             $withdraw = $_GET['withdraw'];
         }
-
+        
         $por_produto = Product::get('id');
         if (!empty($_GET['por_produto'])) {
             $por_produto = $_GET['por_produto'] ?? $por_produto;
@@ -151,27 +156,28 @@ class ReportController extends Controller
             $orders = $orders->whereBetween('delivery_date', [$date_ini, $date_fin])
             ->all();
         }
-        
-        foreach ($orders as $key => $value) {
-            $total_product[$value->order_id] = DB::table('order_products')
-            ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
+
+        foreach ($orders as $item) {
+            $product_quant = DB::table('order_products')
+            ->select(['id' => Product::select('id')->whereColumn('id', 'product_id')])
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(DB::raw('sum(quant) as quant_total'))
-            ->where('order_id', $value->order_id)
-            // ->whereBetween('delivery_date', [$date_ini, $date_fin])
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->addSelect(DB::raw('sum(quant) as quant'))
+            ->where('orders.withdraw', 'LIKE', $withdraw)
+            ->where('orders.complete_order', '=', 0)
+            ->where('delivery_date', '<=', $date)
+            ->whereIn('order_products.product_id', ($por_produto))
             ->groupBY('product_id')
-            ->first();
+            ->get();
         }
-        
+
         $product_total = array();
-        if (!empty($total_product)) {
-            foreach ($total_product as $item) {
-                if (!isset($product_total[$item->product_name])) {
-                    $product_total[$item->product_name]['id'] = $item->product_id;
-                    $product_total[$item->product_name]['qt'] = $item->quant_total;
-                } else {
-                    $product_total[$item->product_name]['qt'] += $item->quant_total;
-                }
+        if (!empty($product_quant)) {
+            foreach ($product_quant as $item) {
+                $product_total[$item->product_name] = [
+                    'id' => $item->id,
+                    'qt' => $item->quant
+                ];
             }
         }
         
