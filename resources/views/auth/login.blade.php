@@ -29,7 +29,7 @@
                             <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
 
                             <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
+                                <input onkeypress="capLock(event)" id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
 
                                 @error('password')
                                     <span class="invalid-feedback" role="alert">
@@ -38,6 +38,8 @@
                                 @enderror
                             </div>
                         </div>
+
+                        <div id="divMayus" style="color:red;"></div>
 
                         <div class="form-group row">
                             <div class="col-md-6 offset-md-4">
@@ -70,4 +72,23 @@
         </div>
     </div>
 </div>
+
+@endsection
+
+@section('js')
+    <script language="Javascript">
+        document.addEventListener('keydown', function( event ) {
+            let flag = event.getModifierState && event.getModifierState('CapsLock');
+            let estate = flag ? "Caps Lock LIGADO": "Caps Lock DESLIGADO"
+            $('#divMayus').html(estate);
+        });
+        // function capLock(e){
+        // kc = e.keyCode?e.keyCode:e.which;
+        // sk = e.shiftKey?e.shiftKey:((kc == 16)?true:false);
+        // if(((kc >= 65 && kc <= 90) && !sk)||((kc >= 97 && kc <= 122) && sk))
+        // document.getElementById('divMayus').style.visibility = 'visible';
+        // else
+        // document.getElementById('divMayus').style.visibility = 'hidden';
+        // }
+    </script>
 @endsection
