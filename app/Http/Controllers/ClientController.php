@@ -79,13 +79,16 @@ class ClientController extends Controller
         }
 
         $por_produto = Product::get('id');
-        $date_ini = '2020-01-01';
-        $date_fin = '2020-12-31';
-        if (!empty($_GET['por_produto']) || !empty($_GET['date_ini'])) {
-            $por_produto = $_GET['por_produto'] ?? $por_produto;
-            $date_ini = $_GET['date_ini'];
-            $date_fin = $_GET['date_fin'];
-        }
+        // $date_ini = '2020-01-01';
+        // $date_fin = '2020-12-31';
+        // if (!empty($_GET['por_produto']) || !empty($_GET['date_ini'])) {
+        //     $por_produto = $_GET['por_produto'] ?? $por_produto;
+        //     $date_ini = $_GET['date_ini'];
+        //     $date_fin = $_GET['date_fin'];
+        // }
+        if (!empty($_GET['por_produto'])) {
+                $por_produto = $_GET['por_produto'] ?? $por_produto;
+            }
         $client = Client::find($id);
         $orders = Order::select('order_number')->where('client_id', $id)->get();
         $data = Order_product::whereIn('order_id', $orders)
@@ -94,14 +97,36 @@ class ClientController extends Controller
         ->addSelect(['orders_order_id' => Order::select('id')->whereColumn('order_number', 'order_id')])
         ->join('orders', 'order_number', 'order_id')
         ->whereIn('product_id', $por_produto)
-        ->whereBetween('delivery_date', [$date_ini, $date_fin])
+        // ->whereBetween('delivery_date', [$date_ini, $date_fin])
         ->where('complete_order', 0)
         ->orderBy('delivery_date')
         ->get();
+
         $data_sum = array();
         foreach($data as $item) {
             $data_sum[] = $item->order_id;
         }
+
+        $saldo = [];
+        foreach ($data as $key => $value) {
+            if (!isset($saldo[$value->product_id])) {
+                $saldo[$value->product_id] = $value->quant;
+                $data[$key]['saldo'] = $saldo[$value->product_id];
+            } else {
+                $saldo[$value->product_id] += $value->quant;
+                $data[$key]['saldo'] = $saldo[$value->product_id];
+                // if ($saldo[$value->product_id] > $value->quant) {
+                //     $data[$key]['saldo'] = $value->quant;
+                // } else {
+                //     $data[$key]['saldo'] = $saldo[$value->product_id];
+                // }
+            }
+        }
+
+        if(empty($_GET['entregas'])) {
+            $data = $data->where('saldo', '>', 0);
+        }
+
         foreach ($orders as $key => $value) {
             $total_product[$value->order_number] = DB::table('order_products')
             ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
@@ -128,7 +153,7 @@ class ClientController extends Controller
                 }
             }
         }
-
+        // dd($data);
         return view('cc_client', [
             'data' => $data,
             'client' => $client,

@@ -1,6 +1,18 @@
 # aptcontrol
 Controle de Vendas Amapá Telhas
 
+BETA TESTE 1.06 //
+27/10/2020 - 12:18
+
+- Alteração dos relatórios de CC Produtos, CC Clientes, Relatório
+- Correções de erros nos relatórios CC Produtos, CC Clientes, Relatório
+- Alterações no formulário de criar pedidos
+- Alteração na lógica geral do sistema para demonstração nos relatórios
+- Alteração na lógica do banco de dados para apresentar o saldo real dos produtos
+- Efetuar a seguinte alteração no banco de dados:
+    - UPDATE order_products SET delivery_date = '1970-01-01' WHERE quant < 0;
+    - para que o sistema ajuste a posição das entregas em relação aos pedidos
+
 BETA TESTE 1.05 //
 29/07/2020 - 23:54
 

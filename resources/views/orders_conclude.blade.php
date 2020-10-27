@@ -91,7 +91,11 @@
                         R$ {{number_format($item->total_price, 2, ',', '.')}}
                     </td>
                     <td style="padding: 5px;">
-                        {{date('d/m/Y', strtotime($item->delivery_date))}}
+                        @if ($item->quant < 0)
+                            {{date('d/m/Y', strtotime($item->created_at))}}
+                        @else
+                            {{date('d/m/Y', strtotime($item->delivery_date))}}
+                        @endif
                     </td>
                 </tr>
                     

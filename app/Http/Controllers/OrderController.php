@@ -151,7 +151,8 @@ class OrderController extends Controller
        ]);
     }
 
-    private function get_seq_order_number() {
+    private function get_seq_order_number() 
+    {
         $items = array();
         $seq = 0;
         $sn_orders = Order::where('order_number', 'LIKE', '%sn%')->get('order_number');
@@ -276,7 +277,7 @@ class OrderController extends Controller
         
         $order_products = Order_product::where('order_id', $order->order_number)
         ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-        ->orderBy('product_id')
+        // ->orderBy('product_id')
         ->orderBy('delivery_date')
         ->get();
 
@@ -372,9 +373,15 @@ class OrderController extends Controller
         }
 
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'orders.client_id')])->find($id);
-        $order_products = Order_product::where('order_id', $order->order_number)->addSelect(['product_name' => Product::select('name')
-        ->whereColumn('id', 'order_products.product_id')])->get();
+        ->whereColumn('id', 'orders.client_id')])
+        ->find($id);
+
+        $order_products = Order_product::where('order_id', $order->order_number)
+        ->addSelect(['product_name' => Product::select('name')
+        ->whereColumn('id', 'order_products.product_id')])
+        ->orderBy('delivery_date')
+        ->get();
+
         $user_permissions = $this->get_permissions();
         $products = Product::all();
 

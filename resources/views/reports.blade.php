@@ -20,7 +20,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            {{-- <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h4>Relação de Entregas por período</h4>
@@ -35,7 +35,7 @@
                         </form>
                     </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </main>
 @endsection

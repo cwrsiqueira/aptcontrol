@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use App\Order;
 use App\Client;
 use App\Product;
@@ -19,7 +20,8 @@ class AjaxController extends Controller
         $this->middleware('auth');
     }
 
-    public function edit_complete_order() {
+    public function edit_complete_order()
+    {
         if (!empty($_GET['id'])) {
             $id = $_GET['id'];
 
@@ -31,7 +33,8 @@ class AjaxController extends Controller
         }
     }
     
-    public function day_delivery_calc() {
+    public function day_delivery_calc() 
+    {
         if (!empty($_GET['quant'])) {
             $quant = $_GET['quant'];
             $quant = str_replace('.', '', $quant);
@@ -62,7 +65,8 @@ class AjaxController extends Controller
         }
     }
 
-    public function search() {
+    public function search() 
+    {
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
             $search = $_GET['search'];
@@ -84,7 +88,8 @@ class AjaxController extends Controller
         }
     }
 
-    public function search_order_number() {
+    public function search_order_number() 
+    {
         if (!empty($_GET['data'])) {
             $order_number = $_GET['data'];
 
@@ -102,7 +107,8 @@ class AjaxController extends Controller
         }
     }
 
-    public function saldo_produto() {
+    public function saldo_produto() 
+    {
         if(!empty($_GET['id'])) {
             $id = $_GET['id'];
             $order = $_GET['order'];
@@ -118,7 +124,8 @@ class AjaxController extends Controller
         }
     }
 
-    public function register_delivery() {
+    public function register_delivery() 
+    {
         if (!empty($_GET['id'])) {
             $id = $_GET['id'];
             $id_prod = $_GET['id_prod'];
@@ -135,8 +142,8 @@ class AjaxController extends Controller
             $checkoutorder->product_id = $order_product->product_id;
             $checkoutorder->quant = $quant*(-1);
             $checkoutorder->unit_price = $order_product->unit_price;
-            $checkoutorder->total_price = $quant * $order_product->unit_price;
-            $checkoutorder->delivery_date = NOW();
+            $checkoutorder->total_price = ($quant * $order_product->unit_price) / 1000;
+            $checkoutorder->delivery_date = '0000-00-00';
             $checkoutorder->save();
 
             if ($delivered == 'total') {
@@ -188,6 +195,98 @@ class AjaxController extends Controller
             }
 
             $adm->save();
+        }
+    }
+
+    public function del_line() {
+        if(!empty($_GET['n_line'])) {
+            $n_line = $_GET['n_line'];
+            $total = $_GET['total'];
+            $order_prod = Order_product::find($n_line);
+            $order = Order::where('order_number', $order_prod->order_id)->first();
+            $order->order_total = $total;
+            $order->save();
+            Order_product::find($n_line)->delete();
+        }
+    }
+
+    public function add_order() {
+        if(!empty($_GET)) {
+            $data = $_GET;
+            
+            $order = new Order();
+            $order->client_id = $_GET['client_id'];
+            $order->order_date = $_GET['order_date'];
+            $order->order_number = $_GET['order_number'];
+            $order->order_total = 0;
+            $order->payment = $_GET['payment'];
+            $order->withdraw = $_GET['withdraw'];
+            $order->complete_order = 0;
+            $order->save();
+
+            return $order->id;
+        }
+    }
+
+    public function add_order_products() {
+        if(!empty($_GET)) {
+            $data = $_GET;
+            
+            if ($data['order_number'] != $data['order_old_number']) {
+                $validator = Validator::make($data, ['order_number' => 'unique:orders'])->validate();
+            }
+    
+            $validator = Validator::make(
+                $data,
+                [
+                    "order_date" => ['required'],
+                    "order_number" => ['required'],
+                    "order_old_number" => ['required'],
+                    "total_order" => ['required'],
+                    "payment" => ['required'],
+                    "withdraw" => ['required'],
+                    "prod" => ['required'],
+                ]
+            )->validate();
+            
+            $order_total = str_replace('.', '', $data['total_order']);
+            $order_total = str_replace(',', '.', $order_total);
+    
+            $order = Order::find($data['order_id']);
+            $order->order_date = $data['order_date'];
+            $order->order_number = $data['order_number'];
+            $order->order_total = $order_total;
+            $order->payment = $data['payment'];
+            $order->withdraw = $data['withdraw'];
+            $order->save();
+    
+            Order_product::where('order_id', $data['order_old_number'])->delete();
+    
+            foreach($data['prod'] as $item) {
+                if (!empty($item['product_name'])) {
+    
+                    $quant = str_replace('.', '', $item['quant']);
+    
+                    $unit_price = str_replace('.', '', $item['unit_val']);
+                    $unit_price = str_replace(',', '.', $unit_price);
+    
+                    $total_price = str_replace('.', '', $item['total_val']);
+                    $total_price = str_replace(',', '.', $total_price);
+    
+                    $order_prod = new Order_product();
+                    $order_prod->order_id = $data['order_number'];
+                    $order_prod->product_id = $item['product_name'];
+                    $order_prod->quant = $quant;
+                    $order_prod->unit_price = $unit_price;
+                    $order_prod->total_price = $total_price;
+                    $order_prod->delivery_date = $item['delivery_date'];
+                    $order_prod->save();
+                }
+            }
+    
+            Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->order_number, 'Pedidos');
+
+            return $data;
         }
     }
 }

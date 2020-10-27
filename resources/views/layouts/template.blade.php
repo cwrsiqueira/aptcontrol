@@ -19,6 +19,7 @@
 
     {{-- FONT AWESOME --}}
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <!-- MY Custom styles -->
     <link href="{{asset('css/style.css')}}" rel="stylesheet">
@@ -128,6 +129,8 @@
     </script>
 
     <script src="{{asset('js/jquery.mask.min.js')}}"></script>
+
+    <script>let BASE_URL = "{{asset('/')}}"</script>
 
     @yield('js')
 

@@ -71,7 +71,7 @@ class ReportController extends Controller
             
             $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'order_products.product_id', 'order_products.quant', 'orders.withdraw')
             ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->addSelect(DB::raw('sum(quant) as saldo'))
+            ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
             ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
@@ -86,32 +86,53 @@ class ReportController extends Controller
             ->groupBy('product_id', 'order_id')
             ->get();
 
-            $orders = $orders->where('delivery_date', '<=', $date)
-            ->all();
-        }
+            // $total_products = $orders->where('delivery_date', '<=', $date);
 
-        foreach ($orders as $item) {
-            $product_quant = DB::table('order_products')
-            ->select(['id' => Product::select('id')->whereColumn('id', 'product_id')])
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->addSelect(DB::raw('sum(quant) as quant'))
-            ->where('orders.withdraw', 'LIKE', $withdraw)
-            ->where('orders.complete_order', '=', 0)
-            ->where('delivery_date', '<=', $date)
-            ->whereIn('order_products.product_id', ($por_produto))
-            ->groupBY('product_id')
-            ->get();
+            $orders = $orders->where('delivery_date', '<=', $date)
+            ->where('delivery_date', '>', '1970-01-01')
+            ->where('saldo', '>', 0)
+            ->all();
+            
         }
-        $product_total = array();
-        if (!empty($product_quant)) {
-            foreach ($product_quant as $item) {
-                $product_total[$item->product_name] = [
-                    'id' => $item->id,
-                    'qt' => $item->quant
+        
+        $product_total = [];
+        foreach ($orders as $key => $value) {
+            if (!isset($product_total[$value->product_name])) {
+                $product_total[$value->product_name] = [
+                    'id' => $value->product_id,
+                    'qt' => $value->saldo
+                ];
+            } else {
+                $product_total[$value->product_name] = [
+                    'id' => $value->product_id,
+                    'qt' => $product_total[$value->product_name]['qt'] + $value->saldo
                 ];
             }
         }
+
+        // foreach ($orders as $item) {
+        //     $product_quant = DB::table('order_products')
+        //     ->select(['id' => Product::select('id')->whereColumn('id', 'product_id')])
+        //     ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+        //     ->join('orders', 'orders.order_number', 'order_products.order_id')
+        //     ->addSelect(DB::raw('sum(quant) as quant'))
+        //     ->where('orders.withdraw', 'LIKE', $withdraw)
+        //     ->where('orders.complete_order', '=', 0)
+        //     ->where('delivery_date', '<=', $date)
+        //     ->whereIn('order_products.product_id', ($por_produto))
+        //     ->groupBY('product_id')
+        //     ->get();
+        // }
+        // dd($product_total);
+        // $product_total = array();
+        // if (!empty($product_quant)) {
+        //     foreach ($product_quant as $item) {
+        //         $product_total[$item->product_name] = [
+        //             'id' => $item->id,
+        //             'qt' => $item->quant
+        //         ];
+        //     }
+        // }
 
         return view('reports_delivery', [
             'orders' => $orders,
