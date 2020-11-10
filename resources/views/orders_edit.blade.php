@@ -29,17 +29,17 @@
                         <th colspan="1">
                             Pagamento:
                             <select class="form-control" name="payment" id="payment">
-                                <option value="Aberto">Aberto</option>
-                                <option value="Parcial">Parcial</option>
-                                <option value="Total">Total</option>
+                                <option @if($order->payment == 'Aberto') selected @endif value="Aberto">Aberto</option>
+                                <option @if($order->payment == 'Parcial') selected @endif value="Parcial">Parcial</option>
+                                <option @if($order->payment == 'Total') selected @endif value="Total">Total</option>
                             </select>
                         </th>
 
                         <th colspan="1">
                             Recebimento do Material:
                             <select class="form-control" name="withdraw" id="withdraw">
-                                <option value="Entregar">Entregar</option>
-                                <option value="Retirar">Retirar</option>
+                                <option @if($order->withdraw == 'Entregar') selected @endif value="Entregar">Entregar</option>
+                                <option @if($order->withdraw == 'Retirar') selected @endif value="Retirar">Retirar</option>
                             </select><small class="order_number_align_size" style="color:transparent;"></small>
                         </th>
 
