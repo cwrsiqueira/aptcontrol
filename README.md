@@ -1,6 +1,14 @@
 # aptcontrol
 Controle de Vendas Amapá Telhas
 
+BETA TESTE 1.07 //
+18/112020 - 19:23
+
+- Alterações nos formulários de Efetuar e Editar Pedidos
+- Alterações nas inclusões e deleções das linhas de produtos de pedidos
+- Reformulação do código para geração de relatórios e alterações visuais
+- outros
+
 BETA TESTE 1.06 //
 27/10/2020 - 12:18
 

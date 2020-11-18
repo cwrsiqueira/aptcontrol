@@ -32,6 +32,11 @@ Route::resource('/permissions', 'PermissionController');
 Route::resource('/users', 'UserController');
 Route::resource('/categories', 'CategoryController');
 
+Route::get('/orders_client', 'OrderController@orders_client')->name('orders_client');
+Route::get('/edit_line', 'OrderController@edit_line')->name('edit_line');
+
+Route::post('/add_line', 'OrderController@add_line')->name('add_line');
+
 Route::get('/log', 'LogController@index')->name('logs.index');
 
 Route::get('/products/cc_products/{id}', 'ProductController@cc_product')->name('cc_product');

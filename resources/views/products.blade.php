@@ -140,7 +140,7 @@
                         <!-- Modal footer -->
                         <div class="modal-footer justify-content-between">
                             <input type="submit" class="btn btn-success" value="Salvar">
-                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Fechar</button>
                         </div>
             
                     </div>
@@ -191,7 +191,7 @@
                         <!-- Modal footer -->
                         <div class="modal-footer justify-content-between">
                             <input type="submit" class="btn btn-success" value="Salvar">
-                            <button type="button" onclick="window.location.href = '../../products'" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" onclick="window.location.href = '../../products'" class="btn btn-danger" data-dismiss="modal">Fechar</button>
                         </div>
             
                     </div>
@@ -228,7 +228,7 @@
                         <!-- Modal footer -->
                         <div class="modal-footer justify-content-between">
                             <input type="submit" class="btn btn-success" value="Salvar">
-                            <button type="button" onclick="window.location.href = '../../products'" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" onclick="window.location.href = '../../products'" class="btn btn-danger" data-dismiss="modal">Fechar</button>
                         </div>
             
                     </div>

@@ -58,8 +58,8 @@ class ReportController extends Controller
         
         $produtos = Product::all();
         $por_produto = array();
-        foreach ($produtos as $key => $value) {
-            $por_produto[$key] = strval($value['id']);
+        foreach ($produtos as $value) {
+            $por_produto[] = strval($value['id']);
         }
         if (!empty($_GET['por_produto'])) {
             $por_produto = ($_GET['por_produto']) ?? $por_produto;
@@ -69,32 +69,40 @@ class ReportController extends Controller
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
             
-            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'order_products.product_id', 'order_products.quant', 'orders.withdraw')
+            $orders = Order_product::select('*')
             ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
             ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
             ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
             ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
             ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
             ->where('orders.complete_order', 0)
             ->where('orders.withdraw', 'LIKE', $withdraw)
-            ->whereIn('order_products.product_id', ($por_produto))
-            ->havingRaw('SUM(order_products.quant) <> ?', [0])
-            ->orderBy('delivery_date', 'asc')
-            ->groupBy('product_id', 'order_id')
+            ->where('delivery_date', '<=', $date)
+            ->whereIn('product_id', $por_produto)
+            // ->havingRaw('SUM(order_products.quant) <> ?', [0])
+            ->orderBy('delivery_date')
             ->get();
-
-            // $total_products = $orders->where('delivery_date', '<=', $date);
-
-            $orders = $orders->where('delivery_date', '<=', $date)
-            ->where('delivery_date', '>', '1970-01-01')
-            ->where('saldo', '>', 0)
-            ->all();
             
+            $saldo = [];
+            foreach ($orders as $key => $value) {
+                if (!isset($saldo[$value->product_id][$value->client_id])) {
+                    $saldo[$value->product_id][$value->client_id] = $value->quant;
+                    $orders[$key]['saldo'] = $saldo[$value->product_id][$value->client_id];
+                } else {
+                    $saldo[$value->product_id][$value->client_id] += $value->quant;
+                    if ($saldo[$value->product_id][$value->client_id] > $value->quant) {
+                        $orders[$key]['saldo'] = $value->quant;
+                    } else {
+                        $orders[$key]['saldo'] = $saldo[$value->product_id][$value->client_id];
+                    }
+                }
+            }
         }
-        
+        // dd($orders);
+        $orders = $orders->where('saldo', '>', 0);
+
         $product_total = [];
         foreach ($orders as $key => $value) {
             if (!isset($product_total[$value->product_name])) {
@@ -110,102 +118,9 @@ class ReportController extends Controller
             }
         }
 
-        // foreach ($orders as $item) {
-        //     $product_quant = DB::table('order_products')
-        //     ->select(['id' => Product::select('id')->whereColumn('id', 'product_id')])
-        //     ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-        //     ->join('orders', 'orders.order_number', 'order_products.order_id')
-        //     ->addSelect(DB::raw('sum(quant) as quant'))
-        //     ->where('orders.withdraw', 'LIKE', $withdraw)
-        //     ->where('orders.complete_order', '=', 0)
-        //     ->where('delivery_date', '<=', $date)
-        //     ->whereIn('order_products.product_id', ($por_produto))
-        //     ->groupBY('product_id')
-        //     ->get();
-        // }
-        // dd($product_total);
-        // $product_total = array();
-        // if (!empty($product_quant)) {
-        //     foreach ($product_quant as $item) {
-        //         $product_total[$item->product_name] = [
-        //             'id' => $item->id,
-        //             'qt' => $item->quant
-        //         ];
-        //     }
-        // }
-
         return view('reports_delivery', [
             'orders' => $orders,
             'date' => $date,
-            'product_total' => $product_total
-        ]);
-    }
-
-    public function report_delivery_byPeriod() 
-    {
-        $withdraw = '%';
-        if (!empty($_GET['withdraw'])) {
-            $withdraw = $_GET['withdraw'];
-        }
-        
-        $por_produto = Product::get('id');
-        if (!empty($_GET['por_produto'])) {
-            $por_produto = $_GET['por_produto'] ?? $por_produto;
-        }
-        $orders = array();
-        if (!empty($_GET['date_ini'])) {
-            $date_ini = $_GET['date_ini'];
-            $date_fin = $_GET['date_fin'];
-
-            $orders = Order_product::select('order_products.order_id', 'order_products.delivery_date', 'product_id', 'quant', 'orders.withdraw')
-            ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->addSelect(DB::raw('sum(quant) as saldo'))
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
-            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
-            ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
-            ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
-            ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
-            ->where('orders.complete_order', 0)
-            ->where('orders.withdraw', 'LIKE', $withdraw)
-            ->whereIn('product_id', $por_produto)
-            ->havingRaw('SUM(order_products.quant) <> ?', [0])
-            ->orderBy('delivery_date', 'asc')
-            ->groupBy('product_id', 'order_id', 'client_address')
-            ->get();
-            
-            $orders = $orders->whereBetween('delivery_date', [$date_ini, $date_fin])
-            ->all();
-        }
-
-        foreach ($orders as $item) {
-            $product_quant = DB::table('order_products')
-            ->select(['id' => Product::select('id')->whereColumn('id', 'product_id')])
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->addSelect(DB::raw('sum(quant) as quant'))
-            ->where('orders.withdraw', 'LIKE', $withdraw)
-            ->where('orders.complete_order', '=', 0)
-            ->where('delivery_date', '<=', $date)
-            ->whereIn('order_products.product_id', ($por_produto))
-            ->groupBY('product_id')
-            ->get();
-        }
-
-        $product_total = array();
-        if (!empty($product_quant)) {
-            foreach ($product_quant as $item) {
-                $product_total[$item->product_name] = [
-                    'id' => $item->id,
-                    'qt' => $item->quant
-                ];
-            }
-        }
-        
-        return view('reports_delivery', [
-            'orders' => $orders,
-            'date_ini' => $date_ini,
-            'date_fin' => $date_fin,
             'product_total' => $product_total
         ]);
     }

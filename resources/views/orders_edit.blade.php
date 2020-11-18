@@ -3,6 +3,21 @@
 @section('title', 'Pedido')
 
 @section('content')
+
+    <div class="modal" id="loader">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: transparent;border:0;">
+
+            <!-- Modal body -->
+            <div class="modal-body" style="text-align: center;">
+                <div class="spinner-border" style="color: #fff;width:100px;height:100px;"></div>
+                <p style="color: #fff;font-size:24px;font-weight:bold;">Aguarde...</p>
+            </div>
+            
+            </div>
+        </div>
+    </div>
+
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         <h2>Editar Pedido nr. {{$order->order_number}}</h2>
         @if ($errors->any())
@@ -42,88 +57,44 @@
                                 <option @if($order->withdraw == 'Retirar') selected @endif value="Retirar">Retirar</option>
                             </select><small class="order_number_align_size" style="color:transparent;"></small>
                         </th>
-
+        </form>
                         <th colspan="1" style="text-align: center"><a class="add_line" style='color:green;' href='#' data-toggle='tooltip' title='Adicionar linha!'><i class='fas fa-fw fa-plus' style="font-size: 24px;"></i></a><br><small class="order_number_align_size" style="color:transparent;"></small></th>
                     </tr>
                     <tr style="text-align: center;">
-                        <th style="width: 250px;">Produto</th>
-                        <th style="width: 75px;">Quant.</th>
-                        <th style="width: 125px;">Vlr.Unit.</th>
-                        <th style="width: 125px;">Vlr.Total</th>
-                        <th style="width: 75px;">Previsão de Entrega</th>
-                        <th style="width: 25px;">Linha</th>
+                        <th>Produto</th>
+                        <th>Quant.</th>
+                        <th>Vlr.Unit.</th>
+                        <th>Vlr.Total</th>
+                        <th>Entrega</th>
+                        <th colspan="2">Linha</th>
                     </tr>
                 </thead>
                 <tbody class="table-prod">
 
                     @foreach ($order_products as $item)
-                    <tr class="line{{$item->id}}" style="text-align: center;">
+                    
+                    <tr class="@if($item->quant < 0) color-red @endif" style="text-align: center;">
+                        <td style="padding: 5px;">@foreach ($products as $product)
+                            <option class=" @if($item->quant < 0) color-red @endif" @if($item->product_id !== $product->id) style="display:none;" @else selected @endif value="{{$product->id}}">{{$product->name}}</option>
+                        @endforeach</td>
+                        <td style="padding: 5px;">{{number_format($item->quant, 0, '', '.')}}</td>
+                        <td style="padding: 5px;">{{number_format($item->unit_price, 2, ',', '.')}}</td>
+                        <td style="padding: 5px;">{{number_format($item->total_price, 2, ',', '.')}}</td>
                         <td style="padding: 5px;">
-                            <select readonly class="form-control product_name{{$item->id}} @if($item->quant < 0) color-red @endif" style="width: 100%;" name="prod[{{$item->id}}][product_name]">
-                                @foreach ($products as $product)
-                                    <option class=" @if($item->quant < 0) color-red @endif" @if($item->product_id !== $product->id) style="display:none;" @else selected @endif value="{{$product->id}}">{{$product->name}}</option>
-                                @endforeach
-                            </select>
+                            @if($item->quant < 0) 
+                                {{date('d/m/Y', strtotime($item->created_at))}}
+                            @else 
+                                {{date('d/m/Y', strtotime($item->delivery_date))}}
+                            @endif 
                         </td>
-                        <td style="padding: 5px;">
-                            <input readonly class="form-control quant{{$item->id}} @if($item->quant < 0) color-red @endif" style="width: 100%;" type="text" name="prod[{{$item->id}}][quant]" value="{{number_format($item->quant, 0, '', '.')}}">'
-                            <input type="hidden" name="id" value="{{$order->id}}">
-                        </td>
-                        <td style="padding: 5px;">
-                            <input readonly class="form-control unit_val{{$item->id}} @if($item->quant < 0) color-red @endif" style="width: 100%;" type="text" name="prod[{{$item->id}}][unit_val]" value="{{number_format($item->unit_price, 2, ',', '.')}}">'
-                        </td>
-                        <td style="padding: 5px;">
-                            <input readonly class="form-control total_val{{$item->id}} @if($item->quant < 0) color-red @endif" style="width: 100%;" type="text" name="prod[{{$item->id}}][total_val]" value="{{number_format($item->total_price, 2, ',', '.')}}" readonly>'
-                        </td>
-                        <td style="padding: 5px;">
-                            <input 
-                                class="form-control delivery_date{{$item->id}} @if($item->quant < 0) color-red @endif" 
-                                style="width: 100%;" 
-                                type="date" 
-                                name="prod[{{$item->id}}][delivery_date]" 
-                                @if($item->quant < 0) 
-                                    value="{{date('Y-m-d', strtotime($item->created_at))}}" 
-                                @else 
-                                    value="{{$item->delivery_date}}" 
-                                @endif 
-                                id="delivery_date{{$item->id}}" 
-                                onclick="calc_delivery_date($('.quant{{$item->id}}').val());">
-                        </td>
-                        <td style='padding: 5px;'>
-                            <a class='remove_line' style='color:red' href='#' data-toggle='tooltip' title='Excluir linha!' data-id="line{{$item->id}}">
-                                <i class='fas fa-fw fa-trash'></i>
-                            </a>
+                        <td>
+                            <form title="Excluir Linha!" action="{{route('orders.destroy', [ 'order' => $item->id ])}}" method="POST" onsubmit="return confirm('Confirma a exclusão da Linha?')">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt' style="font-size: 16px;"></i></button>
+                            </form>
                         </td>
                     </tr>
-                    <script>
-                        picker = document.getElementById('delivery_date{{$item->id}}');
-                        picker.addEventListener('input', function(e){
-                            var day = new Date(this.value).getUTCDay();
-                            if([0].includes(day)){
-                                e.preventDefault();
-                                calc_delivery_date($('.quant{{$item->id}}').val());
-                                alert('Agendamento para domingo não permitido!');
-                            }
-                        });
-                        function calc_delivery_date(obj) {
-                            let id = $('.product_name{{$item->id}}').val();
-                            let quant = obj;
-                            if (id === '') {
-                                alert('Selecionar o produto');
-                                $('.product_name{{$item->id}}').focus();
-                            } else {
-                                $.ajax({
-                                    url:"{{route('day_delivery_calc')}}",
-                                    type:'get',
-                                    data:{id:id, quant:quant},
-                                    dataType:'json',
-                                    success:function(json){
-                                        $('.delivery_date{{$item->id}}').val(json);
-                                    },
-                                });
-                            }
-                        }
-                    </script>
                     
                     @endforeach
 
@@ -133,17 +104,99 @@
                 <div>
                     <input class="btn btn-success" type="submit" value="Salvar">
                 </div>
-            </form>
+                
             <div class="d-flex justify-content-between">
                 <div>
-                    @if (Request::query('new') == 1)
+                    <a class="btn btn-danger mt-3" href="{{route('orders.index')}}">Sair</a>
+                    <hr>
+                    {{-- @if (Request::query('new') == 1)
                         <a class="btn btn-danger mt-3" href="{{route('orders.index')}}">Sair</a>
                     @else
                         <button class="btn btn-danger mt-3"  onclick="javascript:history.go(-1);">Voltar</button>
-                    @endif
+                    @endif --}}
                 </div>
             </div>
     </main>
+
+    <!-- MODAL ADD PRODUTO -->
+    <div class="modal fade" id="modal_addLine">
+        <div class="modal-dialog modal-lg">
+            <form method="post" action="{{route('add_line')}}" id="form_add_cliente">
+                @csrf
+                <div class="modal-content">
+        
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Adicionar Produto</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+            
+                    <!-- Modal body -->
+                    <div class="modal-body">
+
+                        <input type="hidden" name="order_id" value="{{$order->order_number}}">
+                        <input type="hidden" name="id_order" value="{{$order->id}}">
+                        
+                        <div class="row">
+                            <div class="col-sm-3"><label for="product_id">Produto:</label>
+                                <select required class="form-control @error('product_id') is-invalid @enderror" name="product_id" id="prod">
+                                    @foreach ($products as $product)
+                                        <option value="{{$product->id}}">{{$product->name}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-sm">
+                                <label for="quant">Quantidade:</label>
+                                <input required class="form-control quant @error('quant') is-invalid @enderror" style="width: 100%;" type="text" name="quant" value="{{old('quant')}}" placeholder="0">
+                            </div>
+
+                            <div class="col-sm">
+                                <label for="unit_price">Preço/Milheiro:</label>
+                                <input required class="form-control valor @error('unit_price') is-invalid @enderror" style="width: 100%;" type="text" name="unit_price" placeholder="0,00" value="{{old('unit_price')}}">
+                            </div>
+
+                            <div class="col-sm">
+                                <label>Valor Total:</label>
+                                <input required class="form-control total_val" type="text" readonly value="0,00">
+                            </div>
+
+                            <div class="col-sm-3">
+                                <label for="delivery_date">Previsão de Entrega:</label>
+                                <input
+                                required 
+                                class="form-control delivery_date @error('valor') is-invalid @enderror" 
+                                style="width: 100%;" 
+                                type="date" 
+                                name="delivery_date" 
+                                id="delivery_date" >
+                            </div>
+
+                        </div>
+
+                    </div>
+            
+                    <!-- Modal footer -->
+                    <div class="modal-footer justify-content-between">
+                        <input type="submit" class="btn btn-warning btn-salvar" value="Preencha todos os campos" disabled>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                    </div>
+        
+                </div>
+            
+            </form>
+        </div>
+    </div>
     
 @endsection
 
@@ -156,110 +209,47 @@
 @endsection
 
 @section('js')
+
+    @if (empty($_GET['q']) && !empty($_GET['new']))
+        <script>
+            $(function(){
+                $('#modal_addLine').modal();
+            })
+        </script>
+    @endif
+
     <script>
 
         $(function(){
 
-            // Inclusão de linhas
-            $('.add_line').click(function(e){
-                let linhas = $('tbody').children();
-                console.log(linhas);
-
-                $.ajax({
-                    url:"{{route('add_order_products')}}",
-                    type:'get',
-                    data:$('#form').serialize(),
-                    dataType:'json',
-                    success:function(json){
-                        window.location.reload();
-                    },
-                });
-                
+            $('#loader').modal('show');
+            $("#modal_addLine").on('shown.bs.modal', function () {
+                $('#loader').modal('hide');
             });
 
-            // Exclusão de linhas
-            $('.remove_line').on('click', function(){
-                if (confirm('Confirma a exclusão da linha?')) {
+            $('.valor').mask('000.000,00', {reverse:true});
+            $('.quant').mask('000.000', {reverse:true});
 
-                    let line = $(this).attr('data-id');
-                    let n_line = line.replace(/\D/g, '');
-                    
-                    $('[data-toggle="tooltip"]').tooltip('hide');
-                    let total = $('#total_order').val().replace('.', '').replace(',', '.');
-                    let deleted_val = $('.total_val'+n_line+'').val().replace('.', '').replace(',', '.');
-                    total = parseFloat(total) - parseFloat(deleted_val);
-                    let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                    $('#total_order').val(total_formatado);
+            $('.add_line').click(function(){
+                $('#modal_addLine').modal();
+            })
 
-                    $.ajax({
-                        url:"{{route('del_line')}}",
-                        type:'get',
-                        data:{n_line, total},
-                    });
-
-                    window.location.reload();
-
-                } else {
-                    return false;
+            picker = document.getElementById('delivery_date');
+            picker.addEventListener('input', function(e){
+                var day = new Date(this.value).getUTCDay();
+                if([0].includes(day)){
+                    e.preventDefault();
+                    calc_delivery_date($('.quant').val());
+                    alert('Agendamento para domingo não permitido!');
                 }
-            }); 
-
-            let html = "";
-            let r = new Date().getTime();
-
-            if ($('.prod'+r).length == 0) {
-
-                html += '<tr class="prod'+r+'" style="text-align: center;">';
-                html += '<td style="padding: 5px;">';
-                html += '<select class="form-control product_name'+r+'" style="width: 100%;" name="prod['+r+'][product_name]">'
-                html += '<option value=""></option>';
-                html += '@foreach ($products as $product)';
-                html += '<option value="{{$product->id}}">{{$product->name}}</option>';
-                html += '@endforeach';
-                html += '</select>';
-                html += '</td>';
-                html += '<td style="padding: 5px;">';
-                html += '<input class="form-control quant'+r+' qt_mask" style="width: 100%;" type="text" name="prod['+r+'][quant]" value="0">'
-                html += '</td>';
-                html += '<td style="padding: 5px;">';
-                html += '<input class="form-control unit_val'+r+'" style="width: 100%;" type="text" name="prod['+r+'][unit_val]" value="0">'
-                html += '</td>';
-                html += '<td style="padding: 5px;">';
-                html += '<input class="form-control total_val'+r+'" style="width: 100%;" type="text" name="prod['+r+'][total_val]" value="0" readonly>'
-                html += '</td>';
-                html += '<td style="padding: 5px;">';
-                html += '<input class="form-control delivery_date'+r+'" style="width: 100%;" type="date" name="prod['+r+'][delivery_date]" value="" id="delivery_date'+r+'">';
-                html += '</td>';
-                html += "<td style='padding: 5px;'><a class='new_line"+r+"' style='color:red' href='#' data-toggle='tooltip' title='Excluir linha!' id='"+r+"'><i class='fas fa-fw fa-trash'></i></a></td>";
-                html += '</tr>';
-            }
-
-            $('.table-prod').append(html);
-            $('[data-toggle="tooltip"]').tooltip({trigger: "hover"});
-
-            $('.unit_val'+r+'').blur(function(){
-                let total = 0;
-                total = $('#total_order').val().replace('.', '').replace(',', '.');
-                let vlr_alterado = $(this).val().replace('.', '').replace(',', '.');
-                let total_val = ($('.quant'+r+'').val().replace('.', '') * vlr_alterado) / 1000;
-                let formatado = total_val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('.total_val'+r+'').val(formatado);
-                total = parseFloat(total) + parseFloat(total_val);
-                let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('#total_order').val(total_formatado);
-            })
-
-            // Calcular Dia de Entrega
-            $('.quant'+r+'').blur(function(){
-                calc_delivery_date($(this).val());
-            })
+            });
 
             function calc_delivery_date(obj) {
-                let id = $('.product_name'+r+'').val()
+                let id = $('#prod').val();
                 let quant = obj;
                 if (id === '') {
                     alert('Selecionar o produto');
-                    $('.product_name'+r+'').focus();
+                    $('#prod').focus();
                 } else {
                     $.ajax({
                         url:"{{route('day_delivery_calc')}}",
@@ -267,50 +257,36 @@
                         data:{id:id, quant:quant},
                         dataType:'json',
                         success:function(json){
-                            $('.delivery_date'+r+'').val(json)
+                            $('.delivery_date').val(json);
                         },
                     });
                 }
             }
 
-            $('.quant'+r).blur(function(){
-                $(this).attr('readonly', 'readonly');
+            // Calcular Dia de Entrega
+            $('.quant').blur(function(){
+                let quant = $(this).val().replace(/[^\d]+/g,'');
+                calc_delivery_date(quant);
             })
 
-            $('.unit_val'+r).blur(function(){
-                $(this).attr('readonly', 'readonly');
+            // Calcular Valor Total do Produto
+            $('.valor').blur(function(){
+                let valor = $(this).val().replace('.', '').replace(',', '.');
+                let total_val = ($('.quant').val().replace('.', '') * valor) / 1000;
+                let formatado = total_val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                $('.total_val').val(formatado);
+                $('.btn-salvar').attr('disabled', false).attr('class', 'btn btn-success btn-salvar').val('Salvar');
             })
 
-            // Excluir Linha nova (Não Salva no BD)
-            $('.new_line'+r).click(function (e) {
-                e.preventDefault();
-                $('[data-toggle="tooltip"]').tooltip('hide');
-                let linha = $(this).attr('id');
-                let total = $('#total_order').val().replace('.', '').replace(',', '.');
-                let deleted_val = $('.total_val'+r+'').val().replace('.', '').replace(',', '.');
-                total = parseFloat(total) - parseFloat(deleted_val);
-                let total_formatado = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                $('#total_order').val(total_formatado);
-                $('.prod'+linha).remove();
-                window.location.reload();
-            })
-
-            $('.unit_val'+r+'').mask('000.000,00', {reverse:true});
-            $('.qt_mask').mask('000.000.000', {reverse:true}); 
-
-            picker = document.getElementById('delivery_date'+r+'');
-            picker.addEventListener('input', function(e){
-                var day = new Date(this.value).getUTCDay();
-                if([0].includes(day)){
-                    e.preventDefault();
-                    calc_delivery_date($('.quant'+r+'').val());
-                    alert('Agendamento para domingo não permitido!');
-                }
-            });
-
-            $('#quant_prod').mask('000.000.000', {reverse:true});
-            
         });
         
     </script>
+
+    @if (empty($_GET['q']) && empty($_GET['new']))
+        <script>
+            $(function(){
+                $('#loader').modal('hide');
+            })
+        </script>
+    @endif
 @endsection

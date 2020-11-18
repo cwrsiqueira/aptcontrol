@@ -418,7 +418,6 @@ class OrderController extends Controller
             "total_order",
             "payment",
             "withdraw",
-            "prod",
         ]);
         
         if ($data['order_number'] != $data['order_old_number']) {
@@ -434,12 +433,17 @@ class OrderController extends Controller
                 "total_order" => ['required'],
                 "payment" => ['required'],
                 "withdraw" => ['required'],
-                "prod" => ['required'],
             ]
         )->validate();
         
         $order_total = str_replace('.', '', $data['total_order']);
         $order_total = str_replace(',', '.', $order_total);
+
+        $change_order_products = Order_product::where('order_id', $data['order_old_number'])->get();
+        foreach ($change_order_products as $item) {
+            $item->order_id = $data['order_number'];
+            $item->save();
+        }
 
         $order = Order::find($id);
         $order->order_date = $data['order_date'];
@@ -449,33 +453,57 @@ class OrderController extends Controller
         $order->withdraw = $data['withdraw'];
         $order->save();
 
-        Order_product::where('order_id', $data['order_old_number'])->delete();
-
-        foreach($data['prod'] as $item) {
-            if (!empty($item['product_name'])) {
-
-                $quant = str_replace('.', '', $item['quant']);
-
-                $unit_price = str_replace('.', '', $item['unit_val']);
-                $unit_price = str_replace(',', '.', $unit_price);
-
-                $total_price = str_replace('.', '', $item['total_val']);
-                $total_price = str_replace(',', '.', $total_price);
-
-                $order_prod = new Order_product();
-                $order_prod->order_id = $data['order_number'];
-                $order_prod->product_id = $item['product_name'];
-                $order_prod->quant = $quant;
-                $order_prod->unit_price = $unit_price;
-                $order_prod->total_price = $total_price;
-                $order_prod->delivery_date = $item['delivery_date'];
-                $order_prod->save();
-            }
-        }
-
         Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->order_number, 'Pedidos');
 
-        return redirect()->route('orders.index', ['q' => $order_prod->order_id]);
+        return redirect()->route('orders.index', ['q' => $order->order_number]);
+    }
+
+    public function add_line(Request $request)
+    {
+        $data = $request->only([
+            'id_order',
+            "order_id",
+            "product_id",
+            "quant",
+            "unit_price",
+            "delivery_date",
+        ]);
+
+        $validator = Validator::make(
+            $data,
+            [
+                "id_order" => ['required'],
+                "order_id" => ['required', 'string'],
+                "product_id" => ['required'],
+                "quant" => ['required'],
+                "unit_price" => ['required'],
+                "delivery_date" => ['required', 'date'],
+            ]
+        )->validate();
+
+        $data['quant'] = str_replace('.', '', $data['quant']);
+
+        $data['unit_price'] = str_replace('.', '', $data['unit_price']);
+        $data['unit_price'] = str_replace(',', '.', $data['unit_price']);
+
+        $data['total_price'] = ( $data['quant'] * $data['unit_price'] ) / 1000;
+
+        $add_line = new Order_product();
+        $add_line->order_id = $data['order_id'];
+        $add_line->product_id = $data['product_id'];
+        $add_line->quant = $data['quant'];
+        $add_line->unit_price = $data['unit_price'];
+        $add_line->total_price = $data['total_price'];
+        $add_line->delivery_date = $data['delivery_date'];
+        $add_line->save();
+
+        $total_order = Order::where('order_number', $add_line->order_id)->first();
+        $total_order->order_total = $total_order->order_total + $data['total_price'];
+        $total_order->save();
+
+        Helper::saveLog(Auth::user()->id, 'Alteração', $add_line->id, $add_line->order_id, 'Pedidos');
+
+        return redirect()->route('orders.edit', ['order' => $data['id_order']]);
     }
 
     /**
@@ -486,6 +514,16 @@ class OrderController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $order_product = Order_product::find($id);
+        $order_number = $order_product->order_id;
+        $order = Order::where('order_number', $order_number)->first();
+        if($order_product->quant > 0)
+        {
+            $order->order_total = $order->order_total - $order_product->total_price;
+            $order->save();
+        }
+        $order_product->delete();
+        Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
+        return redirect()->route('orders.edit', ['order' => $order->id]); 
     }
 }

@@ -90,7 +90,7 @@
                         <!-- Modal footer -->
                         <div class="modal-footer justify-content-between">
                             <input type="submit" class="btn btn-success" value="Salvar">
-                            <button type="button" onclick="window.location.href = '../../permissions'" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" onclick="window.location.href = '../../permissions'" class="btn btn-danger" data-dismiss="modal">Fechar</button>
                         </div>
             
                     </div>

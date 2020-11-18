@@ -13,11 +13,13 @@
         <div class="row">
             <div class="card col-md-6 m-3">
             <div class="card-header"><span style="font-size: 24px; font_weight:bold;">
+                <i class='fas fa-arrow-left less-date' style='font-size:24px;'></i>
                 @if (!empty($date))
                 {{date('d/m/Y', strtotime($date ?? $date_ini.'/'.$date_fin))}}
                 @else
                 {{date('d/m/Y', strtotime($date_ini))}} a {{date('d/m/Y', strtotime($date_fin))}}
                 @endif
+                <i class='fas fa-arrow-right plus-date' style='font-size:24px;'></i>
                 </span></div>
 
                 @if (!empty($date))
@@ -95,7 +97,7 @@
                 @foreach ($orders as $item)
                     <tr @if($item->delivery_date < date('Y-m-d')) style="color:red;font-weight:bold;" @endif >
                         <td>{{$item->order_id}}</td>
-                        <td>{{date('d-m-Y', strtotime($item->delivery_date))}}</td>
+                        <td style="min-width:100px">{{date('d-m-Y', strtotime($item->delivery_date))}}</td>
                         <td>{{$item->client_name}}</td>
                         <td>{{$item->product_name}}</td>
                         <td>{{number_format($item->saldo, 0, '', '.')}}</td>
@@ -113,3 +115,34 @@
     </main>
 @endsection
 
+@section('css')
+    <style>
+        .plus-date, 
+        .less-date {
+            cursor:pointer;
+        }
+        .plus-date, 
+        .less-date {
+            color:gray;
+        }
+        .plus-date:hover, 
+        .less-date:hover {
+            color:black;
+        }
+    </style>
+@endsection
+
+@section('js')
+    <script>
+        $(function(){
+            $('.plus-date').click(function(){
+                let date = "{{date('Y-m-d', strtotime($_GET['delivery_date'].' + 1 days'))}}";
+                window.location.href = 'report_delivery?delivery_date=' + date;
+            })
+            $('.less-date').click(function(){
+                let date = "{{date('Y-m-d', strtotime($_GET['delivery_date'].' - 1 days'))}}";
+                window.location.href = 'report_delivery?delivery_date=' + date;
+            })
+        })
+    </script>
+@endsection

@@ -185,6 +185,8 @@ return [
         'total_val' => 'Vlr.Total',
         'delivery_date' => 'Previsão de Entrega',
         'auth' => 'Autorização',
+        'quant' => 'Quantidade',
+        'unit_price' => 'Valor Unitário',
     ],
 
 ];
