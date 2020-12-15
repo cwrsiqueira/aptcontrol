@@ -87,21 +87,21 @@ class ReportController extends Controller
             
             $saldo = [];
             foreach ($orders as $key => $value) {
-                if (!isset($saldo[$value->product_id][$value->client_id])) {
-                    $saldo[$value->product_id][$value->client_id] = $value->quant;
-                    $orders[$key]['saldo'] = $saldo[$value->product_id][$value->client_id];
+                if (!isset($saldo[$value->product_id][$value->order_id])) {
+                    $saldo[$value->product_id][$value->order_id] = $value->quant;
+                    $orders[$key]['saldo'] = $saldo[$value->product_id][$value->order_id];
                 } else {
-                    $saldo[$value->product_id][$value->client_id] += $value->quant;
-                    if ($saldo[$value->product_id][$value->client_id] > $value->quant) {
+                    $saldo[$value->product_id][$value->order_id] += $value->quant;
+                    if ($saldo[$value->product_id][$value->order_id] > $value->quant) {
                         $orders[$key]['saldo'] = $value->quant;
                     } else {
-                        $orders[$key]['saldo'] = $saldo[$value->product_id][$value->client_id];
+                        $orders[$key]['saldo'] = $saldo[$value->product_id][$value->order_id];
                     }
                 }
             }
         }
         // dd($orders);
-        $orders = $orders->where('saldo', '>', 0);
+        $orders = $orders->where('saldo', '>', 0)->where('delivery_date', '>', '0000-00-00');
 
         $product_total = [];
         foreach ($orders as $key => $value) {

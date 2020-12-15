@@ -81,7 +81,7 @@
                             @endif
                             @if ($item->complete_order === 2)
                             <td colspan="2" style="text-align: center; font-weight:bold;color:red">
-                                Cancelada
+                                Cancelado
                             </td>
                             @endif
                         @else

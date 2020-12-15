@@ -39,6 +39,7 @@ class AjaxController extends Controller
             $quant = $_GET['quant'];
             $quant = str_replace('.', '', $quant);
             $id = $_GET['id'];
+            Helper::day_delivery_recalc($id);
             $product = Product::find($id);
             $quant_total = Order_product::select('*')
             ->join('orders', 'order_number', 'order_id')
@@ -52,7 +53,7 @@ class AjaxController extends Controller
                     $days_necessary = 0;
                 }
                 
-                $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)+1).' days'));
+                $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)).' days'));
 
                 if (date('w', strtotime($delivery_in)) == 0) {
                     $delivery_in = date('Y-m-d', strtotime($delivery_in.' +1 days'));
@@ -160,6 +161,7 @@ class AjaxController extends Controller
             }
 
             Helper::saveLog(Auth::user()->id, 'Registro de Entrega', $order->id, $order->order_number, 'Pedidos');
+            Helper::day_delivery_recalc($order_product->product_id);
 
             return $id;
         }
@@ -172,6 +174,15 @@ class AjaxController extends Controller
             $order = Order::find($id);
             $order->complete_order = 2;
             $order->save();
+
+            $order_products = Order_product::select('*')->where('order_id', $order->order_number)->get();
+            
+            foreach ($order_products as $item) {
+                $product_id[] = $item->product_id;
+                foreach ($product_id as $product_id) {
+                    Helper::day_delivery_recalc($product_id);
+                }
+            }
 
             Helper::saveLog(Auth::user()->id, 'Cancelamento', $order->id, $order->order_number, 'Pedidos');
 

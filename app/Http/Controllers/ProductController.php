@@ -94,27 +94,27 @@ class ProductController extends Controller
         ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
         ->where('product_id', $id)
         ->where('orders.complete_order', 0)
-        // ->where('delivery_date', '<=', '2020-10-20')
+        // ->where('delivery_date', '>', '0000-00-00')
         ->whereIn('clients.id_categoria', $cats)
         ->orderBy('delivery_date')
         ->get();
         
         $saldo = [];
         foreach ($data as $key => $value) {
-            if (!isset($saldo[$value->client_id])) {
-                $saldo[$value->client_id] = $value->quant;
-                $data[$key]['saldo'] = $saldo[$value->client_id];
+            if (!isset($saldo[$value->order_id])) {
+                $saldo[$value->order_id] = $value->quant;
+                $data[$key]['saldo'] = $saldo[$value->order_id];
             } else {
-                $saldo[$value->client_id] += $value->quant;
-                if ($saldo[$value->client_id] > $value->quant) {
+                $saldo[$value->order_id] += $value->quant;
+                if ($saldo[$value->order_id] > $value->quant) {
                     $data[$key]['saldo'] = $value->quant;
                 } else {
-                    $data[$key]['saldo'] = $saldo[$value->client_id];
+                    $data[$key]['saldo'] = $saldo[$value->order_id];
                 }
             }
         }
-
-        $data = $data->where('saldo', '>', 0);
+        
+        $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '0000-00-00');
         
         // $data = Order_product::select('*')
         // ->join('orders', 'orders.order_number', 'order_products.order_id')
@@ -159,6 +159,13 @@ class ProductController extends Controller
         ]);
     }
 
+    public function day_delivery_recalc($id_product)
+    {
+        Helper::day_delivery_recalc($id_product);
+        return redirect()->route('cc_product', ['id' => $id_product]);
+
+    }
+
     private function day_delivery_calc($id) {
         $product = Product::find($id);
         $quant_total = Order_product::select('*')
@@ -173,7 +180,7 @@ class ProductController extends Controller
             if ($days_necessary <= 0) {
                 $days_necessary = 0;
             }
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)+1).' days'));
+            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)).' days'));
         } else {
             $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +1 days'));
         }

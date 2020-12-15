@@ -26,16 +26,6 @@ class OrderController extends Controller
         $this->middleware('can:menu-pedidos');
     }
 
-    public function get_permissions() {
-        $id = Auth::user()->id;
-        $user_permissions_obj = User::find($id)->permissions;
-        $user_permissions = array();
-        foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->id_permission_item;
-        }
-        return $user_permissions;
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -107,7 +97,7 @@ class OrderController extends Controller
         //     $q = '';
         // }
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         
         return view('orders', [
             'user_permissions' => $user_permissions,
@@ -125,7 +115,7 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         if (!in_array('14', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
@@ -139,7 +129,7 @@ class OrderController extends Controller
         }
 
         $products = Product::all();
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         $seq_order_number = $this->get_seq_order_number();
 
        return view('orders_create', [
@@ -180,7 +170,7 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         if (!in_array('14', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
@@ -254,7 +244,7 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         if (!in_array('17', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
@@ -281,7 +271,7 @@ class OrderController extends Controller
         ->orderBy('delivery_date')
         ->get();
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         $product = array();
         $products = json_decode($saldo_produtos);
         foreach ($products as $item) {
@@ -311,7 +301,7 @@ class OrderController extends Controller
             $id = $_GET['order'];
         }
         
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         if (!in_array('19', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
@@ -338,7 +328,7 @@ class OrderController extends Controller
         ->orderBy('delivery_date')
         ->get();
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         $product = array();
         $products = json_decode($saldo_produtos);
         foreach ($products as $item) {
@@ -364,7 +354,7 @@ class OrderController extends Controller
      */
     public function edit($id)
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         if (!in_array('18', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
@@ -382,7 +372,7 @@ class OrderController extends Controller
         ->orderBy('delivery_date')
         ->get();
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         $products = Product::all();
 
        return view('orders_edit', [
@@ -403,7 +393,7 @@ class OrderController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         if (!in_array('18', $user_permissions) && !Auth::user()->confirmed_user === 1) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
@@ -524,6 +514,7 @@ class OrderController extends Controller
         }
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
+        Helper::day_delivery_recalc($order_product->product_id);
         return redirect()->route('orders.edit', ['order' => $order->id]); 
     }
 }

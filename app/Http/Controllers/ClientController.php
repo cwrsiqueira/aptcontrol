@@ -109,12 +109,12 @@ class ClientController extends Controller
 
         $saldo = [];
         foreach ($data as $key => $value) {
-            if (!isset($saldo[$value->product_id])) {
-                $saldo[$value->product_id] = $value->quant;
-                $data[$key]['saldo'] = $saldo[$value->product_id];
+            if (!isset($saldo[$value->order_id])) {
+                $saldo[$value->order_id] = $value->quant;
+                $data[$key]['saldo'] = $saldo[$value->order_id];
             } else {
-                $saldo[$value->product_id] += $value->quant;
-                $data[$key]['saldo'] = $saldo[$value->product_id];
+                $saldo[$value->order_id] += $value->quant;
+                $data[$key]['saldo'] = $saldo[$value->order_id];
                 // if ($saldo[$value->product_id] > $value->quant) {
                 //     $data[$key]['saldo'] = $value->quant;
                 // } else {
@@ -124,7 +124,7 @@ class ClientController extends Controller
         }
 
         if(empty($_GET['entregas'])) {
-            $data = $data->where('saldo', '>', 0);
+            $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '0000-00-00');
         }
 
         foreach ($orders as $key => $value) {

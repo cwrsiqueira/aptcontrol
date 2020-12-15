@@ -41,9 +41,11 @@ Route::get('/log', 'LogController@index')->name('logs.index');
 
 Route::get('/products/cc_products/{id}', 'ProductController@cc_product')->name('cc_product');
 Route::get('/clients/cc_clients/{id}', 'ClientController@cc_client')->name('cc_client');
+Route::get('/products/day_delivery_recalc/{id}', 'ProductController@day_delivery_recalc')->name('day_delivery_recalc');
 
 Route::get('/logs', 'LogController@index')->name('logs');
 
+// AJAXCONTROLLERS
 Route::get('/edit_complete_order', 'AjaxController@edit_complete_order')->name('edit_complete_order');
 Route::get('/day_delivery_calc', 'AjaxController@day_delivery_calc')->name('day_delivery_calc');
 Route::get('/search', 'AjaxController@search')->name('search');
@@ -55,6 +57,7 @@ Route::get('/update_admin', 'AjaxController@update_admin')->name('update_admin')
 Route::get('/del_line', 'AjaxController@del_line')->name('del_line');
 Route::get('/add_order', 'AjaxController@add_order')->name('add_order');
 Route::get('/add_order_products', 'AjaxController@add_order_products')->name('add_order_products');
+//
 
 Route::get('/report_delivery', 'ReportController@report_delivery')->name('report_delivery');
 Route::get('/report_delivery_byPeriod', 'ReportController@report_delivery_byPeriod')->name('report_delivery_byPeriod');

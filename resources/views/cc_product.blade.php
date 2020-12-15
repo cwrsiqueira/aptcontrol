@@ -6,7 +6,7 @@
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         <h2>Conta Corrente Produto</h2>
         <div class="row">
-            <div class="card col-md-6 m-3">
+            <div class="card col-md m-3">
                 <div class="card-header"><span>{{$product->name}}</span></div>
                 <div class="card-body">
                     Total a entregar: {{number_format($quant_total ?? 0, 0, '', '.') ?? 0}} <br>
@@ -30,10 +30,16 @@
                 </div>
             </form>
 
-            <div class="col-md-3 m-3">
-                <div class="card-tools">
+            <div class="col-md m-3">
+                {{-- <div class="card-tools">
                     <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../../products'" id="btn_voltar">Voltar</button>
                     <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = '../../products';">Imprimir</button>
+                </div> --}}
+                <div class="card-tools">
+                    <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
+                    <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
+                    <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{route('products.index')}}">Sair</a>
+                    <a class="btn btn-sm btn-secondary" id="btn_recalc" href="{{route('day_delivery_recalc', ['id' => $product->id])}}">Recalcular datas de entrega</a>
                 </div>
             </div>
         </div>
@@ -85,6 +91,16 @@
                 $(this).attr('style', 'background-color:aquamarine;');
             }
         });
+        $('#btn_imprimir').click(function(){
+            $(this).hide();
+            $('#btn_voltar').hide();
+            $('#btn_sair').hide();
+            $('#btn_recalc').hide(); 
+            $('#search').hide();
+            $('#clean_search').hide(); 
+            window.print();
+            javascript:history.go(0);
+        })
     </script>
 @endsection
 
