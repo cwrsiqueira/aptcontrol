@@ -514,7 +514,6 @@ class OrderController extends Controller
         }
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
-        Helper::day_delivery_recalc($order_product->product_id);
         return redirect()->route('orders.edit', ['order' => $order->id]); 
     }
 }

@@ -162,6 +162,7 @@ class ProductController extends Controller
     public function day_delivery_recalc($id_product)
     {
         Helper::day_delivery_recalc($id_product);
+        Helper::saveLog(Auth::user()->id, 'Alteração', $id_product, $id_product, 'Produtos');
         return redirect()->route('cc_product', ['id' => $id_product]);
 
     }
