@@ -101,7 +101,7 @@ class ReportController extends Controller
             }
         }
         // dd($orders);
-        $orders = $orders->where('saldo', '>', 0)->where('delivery_date', '>', '0000-00-00');
+        $orders = $orders->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
 
         $product_total = [];
         foreach ($orders as $key => $value) {

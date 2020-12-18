@@ -5,6 +5,7 @@ namespace App\Helpers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Product;
+use App\Order;
 use App\Order_product;
 use App\Log;
 use App\User;
@@ -46,7 +47,7 @@ class Helper
         $quant_total = 0;
         for ($i=0; $i < count($order_products); $i++) { 
             if($order_products[$i]->quant >= 0) {
-                $delivery_in = '';
+                $delivery_in = '1970-01-01';
                 
                 $order_balance = Order_product::select(DB::raw('sum(order_products.quant) as saldo'))
                 ->join('orders', 'order_number', 'order_id')
@@ -70,14 +71,18 @@ class Helper
                     $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
                     
                     if ($days_necessary <= 0) {
-                        $days_necessary += 0;
+                        $days_necessary = 0;
                     }
-
+                    
                     $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)).' days'));
 
                     if (date('w', strtotime($delivery_in)) == 0) {
                         $delivery_in = date('Y-m-d', strtotime($delivery_in.' +1 days'));
                     }
+                } else {
+                    $complete_order = Order::where('order_number', $order_products[$i]->order_id)->first();
+                    $complete_order->complete_order = 1;
+                    $complete_order->save();
                 }
                 
                 $include_date = Order_product::find($order_products[$i]->id);
@@ -85,6 +90,5 @@ class Helper
                 $include_date->save();
             }
         }
-
     }
 }

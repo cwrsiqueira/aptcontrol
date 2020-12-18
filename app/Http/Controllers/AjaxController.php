@@ -143,7 +143,7 @@ class AjaxController extends Controller
             $checkoutorder->quant = $quant*(-1);
             $checkoutorder->unit_price = $order_product->unit_price;
             $checkoutorder->total_price = ($quant * $order_product->unit_price) / 1000;
-            $checkoutorder->delivery_date = '0000-00-00';
+            $checkoutorder->delivery_date = '1970-01-01';
             $checkoutorder->save();
 
             if ($delivered == 'total') {

@@ -124,7 +124,7 @@ class ClientController extends Controller
         }
 
         if(empty($_GET['entregas'])) {
-            $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '0000-00-00');
+            $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
         }
 
         foreach ($orders as $key => $value) {

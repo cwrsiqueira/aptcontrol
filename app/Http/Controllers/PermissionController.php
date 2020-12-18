@@ -37,6 +37,7 @@ class PermissionController extends Controller
     {
         $users = User::select('*')
         ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
+        ->orderBy('users.confirmed_user')
         ->orderBy('users.name')
         ->paginate(10);
 

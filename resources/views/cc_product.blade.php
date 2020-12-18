@@ -38,8 +38,8 @@
                 <div class="card-tools">
                     <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
                     <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
-                    <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{route('products.index')}}">Sair</a>
-                    <a class="btn btn-sm btn-secondary" id="btn_recalc" href="{{route('day_delivery_recalc', ['id' => $product->id])}}">Recalcular datas de entrega</a>
+                    <a class="btn btn-sm btn-secondary @if(Auth::user()->confirmed_user !== 1) hide @endif" id="btn_recalc" href="{{route('day_delivery_recalc', ['id' => $product->id])}}">Recalcular datas de entrega</a>
+                    <a class="btn btn-sm btn-danger" id="btn_sair" href="{{route('products.index')}}">Sair</a>
                 </div>
             </div>
         </div>
@@ -77,6 +77,9 @@
         tbody tr:hover {
             background-color:rgb(227, 236, 233);
             cursor: pointer;
+        }
+        .hide {
+            display: none;
         }
     </style>
 @endsection

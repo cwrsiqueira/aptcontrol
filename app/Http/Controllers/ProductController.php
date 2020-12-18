@@ -94,7 +94,7 @@ class ProductController extends Controller
         ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
         ->where('product_id', $id)
         ->where('orders.complete_order', 0)
-        // ->where('delivery_date', '>', '0000-00-00')
+        // ->where('delivery_date', '>', '1970-01-01')
         ->whereIn('clients.id_categoria', $cats)
         ->orderBy('delivery_date')
         ->get();
@@ -114,7 +114,7 @@ class ProductController extends Controller
             }
         }
         
-        $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '0000-00-00');
+        $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
         
         // $data = Order_product::select('*')
         // ->join('orders', 'orders.order_number', 'order_products.order_id')
@@ -143,7 +143,7 @@ class ProductController extends Controller
         ->where('orders.complete_order', 0)
         ->groupBy('clients.id_categoria')
         ->get();
-
+        
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
@@ -162,7 +162,7 @@ class ProductController extends Controller
     public function day_delivery_recalc($id_product)
     {
         Helper::day_delivery_recalc($id_product);
-        Helper::saveLog(Auth::user()->id, 'Alteração', $id_product, $id_product, 'Produtos');
+        Helper::saveLog(Auth::user()->id, 'Alteração', $id_product, 'Recalc Data Entrega', 'Produtos');
         return redirect()->route('cc_product', ['id' => $id_product]);
 
     }
@@ -184,6 +184,10 @@ class ProductController extends Controller
             $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)).' days'));
         } else {
             $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +1 days'));
+        }
+
+        if (date('w', strtotime($delivery_in)) == 0) {
+            $delivery_in = date('Y-m-d', strtotime($delivery_in.' +1 days'));
         }
 
         return array(
