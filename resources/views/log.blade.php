@@ -51,13 +51,24 @@
             </thead>
             <tbody>
                 <?php foreach($log as $item): ?>
+                {{-- Separa a data da hora pra pegar a data exata no campo Data/Hora --}}
+                <?php $hora = explode(' ', $item['created_at']); ?>
+                {{--  --}}
                 <tr>
                     <td><?php echo $item['action']; ?></td>
                     <td><?php echo $item['item_id']; ?></td>
                     <td><?php echo $item['item_name']; ?></td>
                     <td><?php echo $item['menu']; ?></td>
                     <td><?php echo $item['name']; ?></td>
-                    <td><?php echo date('d/m/Y - H:m:i', strtotime($item['created_at'].'-3 hours')); ?></td>
+
+                    {{-- Condicional para ajustar a data, pois antes das 22 horas do dia 17/12/2020 a hora do sistema estava com 3 horas de diferença --}}
+                    <?php if($item['created_at'] < '2020-12-17 22:00:00'): ?>
+                    <td><?php echo date('d/m/Y - H:m:i', strtotime($item['created_at'].' -3 hours')); ?></td>
+                    <?php else: ?>
+                    {{-- Pega a data com date() e a hora sem o date, pra pegar a data exata --}}
+                    <td><?php echo date('d/m/Y', strtotime($item['created_at'])).' - '.$hora[1]; ?></td>
+                    {{--  --}}
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
