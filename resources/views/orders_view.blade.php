@@ -28,6 +28,15 @@
                         window.print();
                         javascript:history.go(0);
                     ">Imprimir</button>
+                    @if ($order->complete_order !== 0)
+                        <label for="order_change_status">Alterar Status do Pedido:</label>
+                        <input type="hidden" name="order_change_id" id="order_change_id" value="{{$order->id}}">
+                        <select name="order_change_status" id="order_change_status">
+                            <option @if($order->complete_order === 0) selected @endif value="0">Aberto</option>
+                            <option @if($order->complete_order === 1) selected @endif value="1">Entregue</option>
+                            <option @if($order->complete_order === 2) selected @endif value="2">Cancelado</option>
+                        </select>
+                    @endif
                 </div>
             </div>
             <div class="col-md m-1 d-flex justify-content-center">
@@ -183,6 +192,21 @@
                     }
                 });
             }
+
+            $('#order_change_status').change(function(){
+                let stat = $(this).val();
+                let id = $('#order_change_id').val();
+                
+                $.ajax({
+                    url:"{{route('order_change_status')}}",
+                    type:'get',
+                    data:{id:id, stat:stat},
+                    dataType:'json',
+                    success:function(json){}
+                });
+                
+                window.location.reload();
+            });
 
             $('#deliver').click(function(){
 

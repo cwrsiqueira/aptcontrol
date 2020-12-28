@@ -289,4 +289,19 @@ class AjaxController extends Controller
             return $data;
         }
     }
+
+    public function order_change_status() {
+        if(isset($_GET['id']) && isset($_GET['stat'])) {
+            $id = $_GET['id'];
+            $stat = $_GET['stat'];
+
+            $order_change_status = Order::find($id);
+            $order_change_status->complete_order = $stat;
+            $order_change_status->save();
+
+            echo 'Ok!';
+        } else {
+            echo 'Erro na alteração!';
+        }
+    }
 }
