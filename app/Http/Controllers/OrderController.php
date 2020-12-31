@@ -98,13 +98,25 @@ class OrderController extends Controller
         // }
 
         $user_permissions = Helper::get_permissions();
+
+        $get_orders_repeated = Order::select('order_number')
+        ->addSelect(DB::raw('count(*) as contador'))
+        ->groupBy('order_number')
+        ->havingRaw('count(*) > ?', [1])
+        ->get();
+
+        $orders_repeated = array();
+        foreach($get_orders_repeated as $item){
+            $orders_repeated[$item->order_number] = Order::where('order_number', $item->order_number)->get();
+        }
         
         return view('orders', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'orders' => $orders,
             'q' => $q,
-            'comp' => $comp
+            'comp' => $comp,
+            'orders_repeated' => $orders_repeated
         ]);
     }
 

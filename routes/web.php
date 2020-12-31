@@ -58,6 +58,7 @@ Route::get('/del_line', 'AjaxController@del_line')->name('del_line');
 Route::get('/add_order', 'AjaxController@add_order')->name('add_order');
 Route::get('/add_order_products', 'AjaxController@add_order_products')->name('add_order_products');
 Route::get('/order_change_status', 'AjaxController@order_change_status')->name('order_change_status');
+Route::get('/del_dup_order', 'AjaxController@del_dup_order')->name('del_dup_order');
 //
 
 Route::get('/report_delivery', 'ReportController@report_delivery')->name('report_delivery');

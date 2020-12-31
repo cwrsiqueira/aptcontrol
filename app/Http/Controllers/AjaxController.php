@@ -210,6 +210,13 @@ class AjaxController extends Controller
         }
     }
 
+    public function del_dup_order() {
+        if(!empty($_GET['id'])) {
+            $id = $_GET['id'];
+            Order::find($id)->delete();
+        }
+    }
+
     public function add_order() {
         if(!empty($_GET)) {
             $data = $_GET;

@@ -4,6 +4,62 @@
 
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
+        
+        <!-- The Modal -->
+        <div class="modal" id="delete_order_repeated">
+            <div class="modal-dialog">
+            <div class="modal-content">
+        
+                <!-- Modal Header -->
+                <div class="modal-header">
+                <h4 class="modal-title">{{count($orders_repeated)}} Pedido(s) em Duplicidade
+                    @if(Auth::user()->confirmed_user === 1)
+                    <br><small>Exclua um dos pedidos em duplicidade
+                    @else
+                    <br><small>Solicite a regularização a um administrador
+                    @endif
+                    <br><span style="color:red;">Atenção: Os relatórios de produtos e de entrega ficarão comprometidos até a regularização</span></small></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+        
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Pedido nr.</th>
+                                <th>Valor do Pedido</th>
+                                <th colspan="2">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($orders_repeated as $item)
+                                @foreach ($item as $order)
+                                    <tr>
+                                        <td><span>{{$order->order_number}}</span></td>
+                                        <td><span>{{$order->order_total}}</span></td>
+                                        <td><a href="{{ route('orders.show', ['order' => $order->id]) }}">Detalhar</a></td>
+                                        <td>
+                                            @if(Auth::user()->confirmed_user === 1)
+                                            <a href="#" class="del_dup_order" data-id="{{$order->id}}">Deletar</a>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+        
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                </div>
+        
+            </div>
+            </div>
+        </div>
+
         <h2>Pedidos</h2>
 
         @if ($errors->has('cannot_exclude') || $errors->has('no-access'))
@@ -116,6 +172,26 @@
 @section('js')
     <script>
         $(function(){
+
+            // Receber e deletar ordens duplicadas
+            let orderRepeated = '{{ count($orders_repeated) }}';
+            if(orderRepeated > 0) {
+                $('#delete_order_repeated').modal();
+            }
+            $('.del_dup_order').click(function(e){
+                e.preventDefault();
+                let id = $(this).data('id');
+                if(confirm('Confirma a Exclusão do Pedido?')) {
+                    $.ajax({
+                        url:"{{route('del_dup_order')}}",
+                        type:'get',
+                        data:{id:id},
+                        success:function(){
+                            window.location.reload();
+                        },
+                    });
+                }
+            })
             
             if( window.localStorage ) {
 
