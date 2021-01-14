@@ -37,11 +37,11 @@ class Helper
     {
         $product = Product::find($id_product);
 
-        $order_products = Order_product::select('order_products.quant', 'order_products.created_at', 'order_products.order_id', 'order_products.id', 'order_products.delivery_date')
+        $order_products = Order_product::select('order_products.quant', 'order_products.order_id', 'order_products.id', 'order_products.delivery_date')
         ->join('orders', 'order_number', 'order_id')
         ->where('product_id', $id_product)
         ->where('orders.complete_order', 0)
-        ->orderBy('created_at')
+        ->orderBy('orders.created_at')
         ->get();
         
         $quant_total = 0;
