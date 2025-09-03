@@ -128,7 +128,7 @@ class OrderController extends Controller
     public function create()
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('14', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('14', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -183,7 +183,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('14', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('14', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -257,7 +257,7 @@ class OrderController extends Controller
     public function show($id)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('17', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('17', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -314,7 +314,7 @@ class OrderController extends Controller
         }
         
         $user_permissions = Helper::get_permissions();
-        if (!in_array('19', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('19', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -367,7 +367,7 @@ class OrderController extends Controller
     public function edit($id)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('18', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('18', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -406,7 +406,7 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('18', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('18', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];

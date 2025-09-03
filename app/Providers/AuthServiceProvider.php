@@ -63,17 +63,26 @@ class AuthServiceProvider extends ServiceProvider
         });
     }
 
-    private function getPermissions($user, $menu) {
-        
-        $permissions = [];
-        $id_permissions = $user->permissions;
-        foreach ($id_permissions as $item ) {
-            $permissions[] = $item['id_permission_item'];
-        }
-        $id_this_permission = Permission_item::where('slug', $menu)->first('id');
-        if (in_array($id_this_permission['id'], $permissions) || $user->confirmed_user === 1) {
+    private function getPermissions($user, string $menu): bool
+    {
+        // Admin bypass
+        if ($user->is_admin) {
             return true;
-        } 
-        return false;
+        }
+
+        // ID da permissão (pelo slug); retorna null se não existir
+        $permissionId = \App\Permission_item::where('slug', $menu)->value('id');
+        if (!$permissionId) {
+            return false;
+        }
+
+        // IDs de permissões do usuário (coleção de Permission_link)
+        $userPermissionIds = $user->permissions
+            ->pluck('id_permission_item')
+            ->map('intval')
+            ->all();
+
+        // Comparação estrita e tipada
+        return in_array((int) $permissionId, $userPermissionIds, true);
     }
 }

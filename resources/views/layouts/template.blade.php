@@ -51,49 +51,49 @@
                 </a>
               </li>
               
-              <li class="nav-item" @if(in_array('1', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(in_array('1', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is(['products', 'products/*'])) active @endif" href="{{route('products.index')}}">
                   <span data-feather="shopping-cart"></span>
                   Produtos
                 </a>
               </li>
 
-              <li class="nav-item" @if(in_array('2', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(in_array('2', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is(['clients', 'categories'])) active @endif" href="{{route('clients.index')}}">
                   <span data-feather="users"></span>
                   Clientes
                 </a>
               </li>
 
-              <li class="nav-item" @if(in_array('3', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(in_array('3', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is(['orders', 'orders/*'])) active @endif" href="{{route('orders.index')}}">
                   <span data-feather="file"></span>
                   Pedidos
                 </a>
               </li>
 
-              <li class="nav-item" @if(in_array('4', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(in_array('4', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('reports')) active @endif" href="{{route('reports.index')}}">
                   <span data-feather="bar-chart-2"></span>
                   Relatórios
                 </a>
               </li>
 
-              <li class="nav-item" @if(in_array('5', $user_permissions) || Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(in_array('5', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('integrations')) active @endif" href="{{route('integrations.index')}}">
                   <span data-feather="layers"></span>
                   Integrações
                 </a>
               </li>
 
-              <li class="nav-item" @if(Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('permissions')) active @endif" href="{{route('permissions.index')}}">
                   <span data-feather="layers"></span>
                   Permissões
                 </a>
               </li>
 
-              <li class="nav-item" @if(Auth::user()->confirmed_user === 1) @else style="display:none;" @endif>
+              <li class="nav-item" @if(Auth::user()->is_admin) @else style="display:none;" @endif>
                 <a class="nav-link @if(Request::is('logs')) active @endif" href="{{route('logs.index')}}">
                   <span data-feather="layers"></span>
                   Log do Sistema

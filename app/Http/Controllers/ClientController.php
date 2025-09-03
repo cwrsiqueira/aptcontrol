@@ -71,7 +71,7 @@ class ClientController extends Controller
     public function cc_client($id) 
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('15', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('15', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -181,7 +181,7 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('12', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('12', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -238,7 +238,7 @@ class ClientController extends Controller
     public function edit($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('13', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('13', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -281,7 +281,7 @@ class ClientController extends Controller
     public function update(Request $request, $id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('13', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('13', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -326,7 +326,7 @@ class ClientController extends Controller
     public function destroy($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('24', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('24', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];

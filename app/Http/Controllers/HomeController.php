@@ -36,7 +36,7 @@ class HomeController extends Controller
     public function index()
     {
         $user_permissions = $this->get_permissions();
-        if (Auth::user()->confirmed_user !== 0) {
+        if (Auth::user()->confirmed_user != 0) {
             return view('dashboard', [
                 'user_permissions' => $user_permissions,
                 'user' => Auth::user(),

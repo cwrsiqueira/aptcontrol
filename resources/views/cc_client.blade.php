@@ -72,14 +72,14 @@
                             @endif
                         </td>
                         <td class="btn_acoes">
-                            @if(in_array('18', $user_permissions) || Auth::user()->confirmed_user === 1)
+                            @if(in_array('18', $user_permissions) || Auth::user()->is_admin)
                             <a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->orders_order_id]) }}">Editar</a>
                             @else 
                             <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
                             @endif
                         </td>
                         <td class="btn_acoes">
-                            @if(in_array('19', $user_permissions) || Auth::user()->confirmed_user === 1)
+                            @if(in_array('19', $user_permissions) || Auth::user()->is_admin)
                             <a class="btn btn-sm btn-secondary" href="{{ route('orders_conclude', ['order' => $item->orders_order_id]) }}">Concluir</a>
                             @else 
                             <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Concluir</button>

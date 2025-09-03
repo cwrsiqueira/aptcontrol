@@ -13,7 +13,7 @@
                 <!-- Modal Header -->
                 <div class="modal-header">
                 <h4 class="modal-title">{{count($orders_repeated)}} Pedido(s) em Duplicidade
-                    @if(Auth::user()->confirmed_user === 1)
+                    @if(Auth::user()->is_admin)
                     <br><small>Exclua um dos pedidos em duplicidade
                     @else
                     <br><small>Solicite a regularização a um administrador
@@ -40,7 +40,7 @@
                                         <td><span>{{$order->order_total}}</span></td>
                                         <td><a href="{{ route('orders.show', ['order' => $order->id]) }}">Detalhar</a></td>
                                         <td>
-                                            @if(Auth::user()->confirmed_user === 1)
+                                            @if(Auth::user()->is_admin)
                                             <a href="#" class="del_dup_order" data-id="{{$order->id}}">Deletar</a>
                                             @endif
                                         </td>
@@ -80,7 +80,7 @@
         <form method="get" class="d-flex justify-content-between">
             <div class="form-check m-3">
                 <label class="form-check-label">
-                    @if(in_array('16', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                    @if(in_array('16', $user_permissions) || Auth::user()->is_admin) 
                     <input onclick="this.form.submit();" type="checkbox" class="form-check-input" name="comp" @if(@$_GET['comp'] === '1') checked @endif value="1">Mostrar Pedidos Concluídos
                     @else 
                     <input disabled title="Solicitar Acesso" type="checkbox" class="form-check-input">Mostrar Pedidos Concluídos
@@ -123,7 +123,7 @@
                         <td>{{$item['payment']}}</td>
                         <td>{{$item['withdraw']}}</td>
                         <td>
-                            @if(in_array('17', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            @if(in_array('17', $user_permissions) || Auth::user()->is_admin) 
                             <a class="btn btn-sm btn-secondary" href="{{ route('orders.show', ['order' => $item->id]) }}">Visualizar</a>
                             @else 
                             <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Visualizar</button>
@@ -142,14 +142,14 @@
                             @endif
                         @else
                             <td>
-                                @if(in_array('18', $user_permissions) || Auth::user()->confirmed_user === 1)
+                                @if(in_array('18', $user_permissions) || Auth::user()->is_admin)
                                 <a class="btn btn-sm btn-secondary" href="{{ route('orders.edit', ['order' => $item->id]) }}">Editar</a>
                                 @else 
                                 <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
                                 @endif
                             </td>
                             <td>
-                                @if(in_array('19', $user_permissions) || Auth::user()->confirmed_user === 1)
+                                @if(in_array('19', $user_permissions) || Auth::user()->is_admin)
                                 <a class="btn btn-sm btn-secondary" href="{{ route('orders_conclude', ['order' => $item->id]) }}">Concluir</a>
                                 @else 
                                 <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Concluir</button>

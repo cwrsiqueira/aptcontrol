@@ -67,7 +67,7 @@ class ProductController extends Controller
     {
 
         $user_permissions = $this->get_permissions();
-        if (!in_array('10', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -222,7 +222,7 @@ class ProductController extends Controller
         ]);
 
         $user_permissions = $this->get_permissions();
-        if (in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) {
+        if (in_array('7', $user_permissions) || Auth::user()->is_admin) {
             $data['auth'] = 'Autorizado';
         }
         
@@ -290,11 +290,11 @@ class ProductController extends Controller
         
         $user_permissions = $this->get_permissions();
         if ($action == 'edit') {
-            if (!in_array('8', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+            if (!in_array('8', $user_permissions) && !Auth::user()->is_admin) {
                 $action = 'Não Autorizado';
             }
         }  elseif ($action == 'add_estock') {
-            if (!in_array('9', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+            if (!in_array('9', $user_permissions) && !Auth::user()->is_admin) {
                 $action = 'Não Autorizado';
             }
         }
@@ -395,7 +395,7 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $user_permissions = $this->get_permissions();
-        if (!in_array('11', $user_permissions) && !Auth::user()->confirmed_user === 1) {
+        if (!in_array('11', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];

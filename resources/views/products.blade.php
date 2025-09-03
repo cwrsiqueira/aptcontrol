@@ -25,7 +25,7 @@
         <div>
             <div class="d-flex justify-content-between">
 
-                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addproduto" @if(in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) @else disabled title="Solicitar Acesso" @endif>Cadastrar Produto</button>
+                <button class="btn btn-secondary my-3" data-toggle="modal" data-target="#modal_addproduto" @if(in_array('7', $user_permissions) || Auth::user()->is_admin) @else disabled title="Solicitar Acesso" @endif>Cadastrar Produto</button>
 
                 <form method="get" class="d-flex align-items-center">
                     @if(!empty($q ?? ''))
@@ -59,28 +59,28 @@
                         <td><?php echo number_format($item['current_stock'], 0, '', '.'); ?></td>
                         <td><?php echo number_format($item['daily_production_forecast'], 0, '', '.'); ?></td>
                         <td>
-                            @if(in_array('8', $user_permissions) || Auth::user()->confirmed_user === 1)
+                            @if(in_array('8', $user_permissions) || Auth::user()->is_admin)
                             <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'edit']) }}">Editar</a> 
                             @else 
                             <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">Editar</button>
                             @endif
                         </td>
                         <td>
-                            @if(in_array('9', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            @if(in_array('9', $user_permissions) || Auth::user()->is_admin) 
                             <a class="btn btn-sm btn-secondary" href="{{ route('products.edit', ['product' => $item->id, 'action' => 'add_estock']) }}">+ Estoque</a>
                             @else 
                             <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">+ Estoque</button>
                             @endif
                         </td>
                         <td>
-                            @if(in_array('10', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            @if(in_array('10', $user_permissions) || Auth::user()->is_admin) 
                             <a class="btn btn-sm btn-secondary" href="{{ route('cc_product', ['id' => $item->id]) }}">C/C</a>
                             @else 
                             <button class="btn btn-sm btn-secondary" disabled title="Solicitar Acesso">C/C</button>
                             @endif
                         </td>
                         <td>
-                            @if(in_array('11', $user_permissions) || Auth::user()->confirmed_user === 1) 
+                            @if(in_array('11', $user_permissions) || Auth::user()->is_admin) 
                             <form title="Excluir" action=" {{ route('products.destroy', [ 'product' => $item->id ]) }} " method="POST" onsubmit="return confirm('Confirma a exclusão do produto?')" >
                                 @csrf
                                 @method('DELETE')
@@ -99,7 +99,7 @@
 
         
         <!-- MODAL ADD PRODUTOS -->
-        @if(in_array('7', $user_permissions) || Auth::user()->confirmed_user === 1) 
+        @if(in_array('7', $user_permissions) || Auth::user()->is_admin) 
         <div class="modal fade" id="modal_addproduto">
             @else <div class="modal fade" id=""> @endif
             <div class="modal-dialog">
