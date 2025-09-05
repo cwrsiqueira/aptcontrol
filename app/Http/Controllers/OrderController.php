@@ -10,8 +10,7 @@ use App\Order;
 use App\Client;
 use App\Product;
 use App\Order_product;
-use App\User;
-use Helper;
+use App\Helpers\Helper;
 
 class OrderController extends Controller
 {
@@ -34,49 +33,47 @@ class OrderController extends Controller
     public function index()
     {
         if (isset($_GET['comp']) && $_GET['comp'] == 1) {
-            $comps = array(1,2);
+            $comps = array(1, 2);
             $comp = 1;
-        }else {
+        } else {
             $comps = array(0);
             $comp = 0;
         }
-        
+
         $orders = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'orders.client_id')])
-        ->whereIn('complete_order', $comps)
-        ->orderBy('id', 'desc')
-        ->paginate(10);
+            ->whereColumn('id', 'orders.client_id')])
+            ->whereIn('complete_order', $comps)
+            ->orderBy('id', 'desc')
+            ->paginate(10);
 
         if (!empty($_GET['q'])) {
 
             $q = \DateTime::createFromFormat('d/m/Y', $_GET['q']);
-            if($q && $q->format('d/m/Y') === $_GET['q']){
+            if ($q && $q->format('d/m/Y') === $_GET['q']) {
                 $q = $_GET['q'];
                 $q = explode('/', $q);
                 $q = array_reverse($q);
                 $q = implode('-', $q);
                 // A consulta É por data
                 $orders = Order::whereIn('complete_order', $comps)
-                ->where('order_date', $q)
-                ->addSelect(['name_client' => Client::select('name')
-                ->whereColumn('clients.id', 'orders.client_id')])
-                ->orderBy('id', 'desc')
-                ->paginate(10);
+                    ->where('order_date', $q)
+                    ->addSelect(['name_client' => Client::select('name')
+                        ->whereColumn('clients.id', 'orders.client_id')])
+                    ->orderBy('id', 'desc')
+                    ->paginate(10);
 
                 $q = date('d/m/Y', strtotime($q));
-
             } else {
                 $q = $_GET['q'];
                 // A consulta NÃO é por data
 
-                $orders = Order::where('order_number', 'LIKE', '%'.$q.'%')
-                ->whereIn('complete_order', $comps)
-                ->addSelect(['name_client' => Client::select('name')
-                ->whereColumn('clients.id', 'orders.client_id')])
-                ->orderBy('id', 'desc')
-                ->paginate(10);
+                $orders = Order::where('order_number', 'LIKE', '%' . $q . '%')
+                    ->whereIn('complete_order', $comps)
+                    ->addSelect(['name_client' => Client::select('name')
+                        ->whereColumn('clients.id', 'orders.client_id')])
+                    ->orderBy('id', 'desc')
+                    ->paginate(10);
             }
-
         } else {
             $q = '';
         }
@@ -100,16 +97,16 @@ class OrderController extends Controller
         $user_permissions = Helper::get_permissions();
 
         $get_orders_repeated = Order::select('order_number')
-        ->addSelect(DB::raw('count(*) as contador'))
-        ->groupBy('order_number')
-        ->havingRaw('count(*) > ?', [1])
-        ->get();
+            ->addSelect(DB::raw('count(*) as contador'))
+            ->groupBy('order_number')
+            ->havingRaw('count(*) > ?', [1])
+            ->get();
 
         $orders_repeated = array();
-        foreach($get_orders_repeated as $item){
+        foreach ($get_orders_repeated as $item) {
             $orders_repeated[$item->order_number] = Order::where('order_number', $item->order_number)->get();
         }
-        
+
         return view('orders', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
@@ -144,21 +141,21 @@ class OrderController extends Controller
         $user_permissions = Helper::get_permissions();
         $seq_order_number = $this->get_seq_order_number();
 
-       return view('orders_create', [
+        return view('orders_create', [
             'user' => Auth::user(),
             'client' => $client,
             'products' => $products,
             'user_permissions' => $user_permissions,
             'seq_order_number' => $seq_order_number,
-       ]);
+        ]);
     }
 
-    private function get_seq_order_number() 
+    private function get_seq_order_number()
     {
         $items = array();
         $seq = 0;
         $sn_orders = Order::where('order_number', 'LIKE', '%sn%')->get('order_number');
-        
+
         foreach ($sn_orders as $item) {
             $item = explode('-', $item->order_number);
             if (!empty($item[1])) {
@@ -168,9 +165,9 @@ class OrderController extends Controller
         if (!empty($items)) {
             $seq = max($items);
         }
-        
-        $seq_order_number = 'sn-'.($seq+1);
-        
+
+        $seq_order_number = 'sn-' . ($seq + 1);
+
         return $seq_order_number;
     }
 
@@ -229,7 +226,7 @@ class OrderController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');
 
-        foreach($data['prod'] as $item) {
+        foreach ($data['prod'] as $item) {
             if (!empty($item['product_name'])) {
 
                 $quant = str_replace('.', '', $item['quant']);
@@ -265,23 +262,23 @@ class OrderController extends Controller
         }
 
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'orders.client_id')])
-        ->find($id);
-        
+            ->whereColumn('id', 'orders.client_id')])
+            ->find($id);
+
         $saldo_produtos = Order_product::where('order_id', $order->order_number)
-        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-        ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
-        ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
-        ->groupBy('product_id')
-        ->orderBy('product_id')
-        ->orderBy('delivery_date')
-        ->get();
-        
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+            ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
+            ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
+            ->groupBy('product_id')
+            ->orderBy('product_id')
+            ->orderBy('delivery_date')
+            ->get();
+
         $order_products = Order_product::where('order_id', $order->order_number)
-        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-        // ->orderBy('product_id')
-        ->orderBy('delivery_date')
-        ->get();
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+            // ->orderBy('product_id')
+            ->orderBy('delivery_date')
+            ->get();
 
         $user_permissions = Helper::get_permissions();
         $product = array();
@@ -291,8 +288,8 @@ class OrderController extends Controller
                 $product[$item->product_id] = $item->product_name;
             }
         }
-        
-        return view('orders_view',[
+
+        return view('orders_view', [
             'order' => $order,
             'order_products' => $order_products,
             'user_permissions' => $user_permissions,
@@ -312,7 +309,7 @@ class OrderController extends Controller
         if (!empty($_GET['order'])) {
             $id = $_GET['order'];
         }
-        
+
         $user_permissions = Helper::get_permissions();
         if (!in_array('19', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
@@ -322,23 +319,23 @@ class OrderController extends Controller
         }
 
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'orders.client_id')])
-        ->find($id);
-        
+            ->whereColumn('id', 'orders.client_id')])
+            ->find($id);
+
         $saldo_produtos = Order_product::where('order_id', $order->order_number)
-        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-        ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
-        ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
-        ->groupBy('product_id')
-        ->orderBy('product_id')
-        ->orderBy('delivery_date')
-        ->get();
-        
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+            ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
+            ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
+            ->groupBy('product_id')
+            ->orderBy('product_id')
+            ->orderBy('delivery_date')
+            ->get();
+
         $order_products = Order_product::where('order_id', $order->order_number)
-        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-        ->orderBy('product_id')
-        ->orderBy('delivery_date')
-        ->get();
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
+            ->orderBy('product_id')
+            ->orderBy('delivery_date')
+            ->get();
 
         $user_permissions = Helper::get_permissions();
         $product = array();
@@ -348,8 +345,8 @@ class OrderController extends Controller
                 $product[$item->product_id] = $item->product_name;
             }
         }
-        
-        return view('orders_conclude',[
+
+        return view('orders_conclude', [
             'order' => $order,
             'order_products' => $order_products,
             'user_permissions' => $user_permissions,
@@ -375,25 +372,25 @@ class OrderController extends Controller
         }
 
         $order = Order::addSelect(['name_client' => Client::select('name')
-        ->whereColumn('id', 'orders.client_id')])
-        ->find($id);
+            ->whereColumn('id', 'orders.client_id')])
+            ->find($id);
 
         $order_products = Order_product::where('order_id', $order->order_number)
-        ->addSelect(['product_name' => Product::select('name')
-        ->whereColumn('id', 'order_products.product_id')])
-        ->orderBy('delivery_date')
-        ->get();
+            ->addSelect(['product_name' => Product::select('name')
+                ->whereColumn('id', 'order_products.product_id')])
+            ->orderBy('delivery_date')
+            ->get();
 
         $user_permissions = Helper::get_permissions();
         $products = Product::all();
 
-       return view('orders_edit', [
+        return view('orders_edit', [
             'user' => Auth::user(),
             'user_permissions' => $user_permissions,
             'order' => $order,
             'order_products' => $order_products,
             'products' => $products,
-       ]);
+        ]);
     }
 
     /**
@@ -421,7 +418,7 @@ class OrderController extends Controller
             "payment",
             "withdraw",
         ]);
-        
+
         if ($data['order_number'] != $data['order_old_number']) {
             $validator = Validator::make($data, ['order_number' => 'unique:orders'])->validate();
         }
@@ -437,7 +434,7 @@ class OrderController extends Controller
                 "withdraw" => ['required'],
             ]
         )->validate();
-        
+
         $order_total = str_replace('.', '', $data['total_order']);
         $order_total = str_replace(',', '.', $order_total);
 
@@ -488,7 +485,7 @@ class OrderController extends Controller
         $data['unit_price'] = str_replace('.', '', $data['unit_price']);
         $data['unit_price'] = str_replace(',', '.', $data['unit_price']);
 
-        $data['total_price'] = ( $data['quant'] * $data['unit_price'] ) / 1000;
+        $data['total_price'] = ($data['quant'] * $data['unit_price']) / 1000;
 
         $add_line = new Order_product();
         $add_line->order_id = $data['order_id'];
@@ -519,13 +516,12 @@ class OrderController extends Controller
         $order_product = Order_product::find($id);
         $order_number = $order_product->order_id;
         $order = Order::where('order_number', $order_number)->first();
-        if($order_product->quant > 0)
-        {
+        if ($order_product->quant > 0) {
             $order->order_total = $order->order_total - $order_product->total_price;
             $order->save();
         }
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
-        return redirect()->route('orders.edit', ['order' => $order->id]); 
+        return redirect()->route('orders.edit', ['order' => $order->id]);
     }
 }

@@ -28,37 +28,37 @@ class AuthServiceProvider extends ServiceProvider
         $this->registerPolicies();
 
         // PERMISSÕES MENU CATEGORIAS DE CLIENTES
-        Gate::define('menu-categorias', function($user){
+        Gate::define('menu-categorias', function ($user) {
             return $this->getPermissions($user, 'menu-categorias');
         });
 
         // PERMISSÕES MENU PRODUTOS
-        Gate::define('menu-produtos', function($user){
+        Gate::define('menu-produtos', function ($user) {
             return $this->getPermissions($user, 'menu-produtos');
         });
 
         // PERMISSÕES MENU CLIENTES
-        Gate::define('menu-clientes', function($user){
+        Gate::define('menu-clientes', function ($user) {
             return $this->getPermissions($user, 'menu-clientes');
         });
 
         // PERMISSÕES MENU PEDIDOS
-        Gate::define('menu-pedidos', function($user){
+        Gate::define('menu-pedidos', function ($user) {
             return $this->getPermissions($user, 'menu-pedidos');
         });
 
         // PERMISSÕES MENU RELATORIOS
-        Gate::define('menu-relatorios', function($user){
+        Gate::define('menu-relatorios', function ($user) {
             return $this->getPermissions($user, 'menu-relatorios');
         });
 
         // PERMISSÕES MENU INTEGRACOES
-        Gate::define('menu-integracoes', function($user){
+        Gate::define('menu-integracoes', function ($user) {
             return $this->getPermissions($user, 'menu-integracoes');
         });
 
         // PERMISSÕES ADMINISTRADOR
-        Gate::define('admin', function($user){
+        Gate::define('admin', function ($user) {
             return $this->getPermissions($user, 'admin');
         });
     }
@@ -71,7 +71,7 @@ class AuthServiceProvider extends ServiceProvider
         }
 
         // ID da permissão (pelo slug); retorna null se não existir
-        $permissionId = \App\Permission_item::where('slug', $menu)->value('id');
+        $permissionId = Permission_item::where('slug', $menu)->value('id');
         if (!$permissionId) {
             return false;
         }

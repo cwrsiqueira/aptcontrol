@@ -8,47 +8,53 @@
 
         <div class="list-group">
             @foreach ($users as $item)
-            <div class="row mb-1">
-                <div class="col-sm-8">
-                    <a href="{{route('permissions.edit', ['permission' => $item['id']])}}" class="@if($item->confirmed_user === 1)list-group-item disabled @elseif($item->confirmed_user === 0) list-group-item list-group-item-action list-group-item-danger @else list-group-item list-group-item-action list-group-item-success @endif">Usuário: {{$item->name}} - Permissão: {{$item->group_name}} - @if($item->confirmed_user === 0) Usuário não Autorizado @else Usuário Autorizado @endif</a>
-                </div>
-                <div class="">
-                    <div class="p-3">
-                        <button class='fas fa-crown update_admin' data-id="{{$item['id']}}" style='font-size:18px;cursor: pointer;border:0; background-color:transparent;@if($item->confirmed_user === 1) color:orange; @else color:#ccc; @endif'></button>
+                <div class="row mb-1">
+                    <div class="col-sm-8">
+                        <a href="{{ route('permissions.edit', ['permission' => $item['id']]) }}"
+                            class="@if ($item->confirmed_user === 1) list-group-item disabled @elseif($item->confirmed_user === 0) list-group-item list-group-item-action list-group-item-danger @else list-group-item list-group-item-action list-group-item-success @endif">Usuário:
+                            {{ $item->name }} - Permissão: {{ $item->group_name }} - @if ($item->confirmed_user === 0)
+                                Usuário não Autorizado
+                            @else
+                                Usuário Autorizado
+                            @endif
+                        </a>
                     </div>
-                </div>
-                <div class="">
-                    <form class="p-3" action=" {{ route('users.destroy', [ 'user' => $item['id'] ]) }} " method="POST" 
-                        @if ($item->confirmed_user === 1)
-                            onsubmit="alert('Você não pode excluir o admin!');return false;"
+                    <div class="">
+                        <div class="p-3">
+                            <button class='fas fa-crown update_admin' data-id="{{ $item['id'] }}"
+                                style='font-size:18px;cursor: pointer;border:0; background-color:transparent;@if ($item->confirmed_user === 1) color:orange; @else color:#ccc; @endif'></button>
+                        </div>
+                    </div>
+                    <div class="">
+                        <form class="p-3" action=" {{ route('users.destroy', ['user' => $item['id']]) }} "
+                            method="POST"
+                            @if ($item->confirmed_user === 1) onsubmit="alert('Você não pode excluir o admin!');return false;"
                             style="display:none;"
                         @else
-                            onsubmit="return confirm('Confirma a exclusão do usuário?')"
-                        @endif 
-                    >
-                        @csrf
-                        @method('DELETE')
-                        <button class='fas fa-trash-alt' style='font-size:18px;color:red;cursor: pointer;border:0; background-color:transparent;'></button>
-                    </form>
+                            onsubmit="return confirm('Confirma a exclusão do usuário?')" @endif>
+                            @csrf
+                            @method('DELETE')
+                            <button class='fas fa-trash-alt'
+                                style='font-size:18px;color:red;cursor: pointer;border:0; background-color:transparent;'></button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-                
-                
             @endforeach
         </div>
         <div class="mt-3">
-            {{$users->links()}}
+            {{ $users->links() }}
         </div>
 
         <!-- MODAL EDIT CLIENTE -->
         <div class="modal fade" id="modal_editPermission">
             <div class="modal-dialog">
-                <form class="form-horizontal" method="POST" action="{{ route( 'permissions.update', [ 'permission' => $user_edit->id ?? 0 ] ) }}">
+                <form class="form-horizontal" method="POST"
+                    action="{{ route('permissions.update', ['permission' => $user_edit->id ?? 0]) }}">
                     @csrf
                     @method('PUT')
 
                     <div class="modal-content">
-            
+
                         <!-- Modal Header -->
                         <div class="modal-header">
                             <h4 class="modal-title">Editar Permissões do Usuário</h4>
@@ -64,37 +70,66 @@
                                 </ul>
                             </div>
                         @endif
-                
+
                         <!-- Modal body -->
                         <div class="modal-body">
-                                
+
                             <label for="name">Nome do Usuário:</label>
-                            <input readonly class="form-control @error('name') is-invalid @enderror" type="text" name="name" placeholder="Nome do Cliente" id="edit_name" value="{{$user_edit['name'] ?? ''}}">
-                            <input type="hidden" name="user_id" value="{{$user_edit->id ?? ''}}">
-            
+                            <input readonly class="form-control @error('name') is-invalid @enderror" type="text"
+                                name="name" placeholder="Nome do Cliente" id="edit_name"
+                                value="{{ $user_edit['name'] ?? '' }}">
+                            <input type="hidden" name="user_id" value="{{ $user_edit->id ?? '' }}">
+
                             <label for="contact">Permissões:</label>
+
+                            @php
+                                $perms = collect($permissions ?? [])->sortBy('id');
+                                $menus = [
+                                    1 => ['label' => 'Produtos', 'groups' => ['Produtos']],
+                                    2 => ['label' => 'Clientes', 'groups' => ['Clientes', 'Categorias']],
+                                    3 => ['label' => 'Pedidos', 'groups' => ['Pedidos']],
+                                    4 => ['label' => 'Relatórios', 'groups' => ['Relatórios']],
+                                    5 => ['label' => 'Integrações', 'groups' => ['Integrações']],
+                                ];
+                            @endphp
+
                             <ul class="list-group">
-                                <li class="list-group-item">
-                                    @foreach ($permissions ?? array() as $item)
-                                        <div class="form-check @if($item->ident == 'sub') ml-3 @endif">
-                                            <label class="form-check-label">
-                                                <input @if(in_array($item->id, $user_permissions)) checked @endif type="checkbox" class="form-check-input @error($item->slug) is-invalid @enderror" value="{{$item->id}}" name="permission_item[]" id="{{$item->slug}}">{{$item->name}}
+                                @foreach ($menus as $menuId => $conf)
+                                    @php
+                                        $items = $perms
+                                            ->filter(function ($p) use ($menuId, $conf) {
+                                                return (int) $p->id === (int) $menuId ||
+                                                    in_array($p->group_name, $conf['groups'], true);
+                                            })
+                                            ->sortBy('id')
+                                            ->values();
+                                    @endphp
+
+                                    @foreach ($items as $item)
+                                        @php $isMenu = ((int)$item->id === (int)$menuId); @endphp
+                                        <li class="list-group-item p-1 {{ $isMenu ? '' : 'pl-4' }}">
+                                            <label class="mb-0 {{ $isMenu ? 'font-weight-bold' : '' }}">
+                                                <input type="checkbox" class="mr-2" name="permission_item[]"
+                                                    id="perm_{{ $item->id }}" value="{{ $item->id }}"
+                                                    @if (in_array($item->id, $user_permissions)) checked @endif>
+                                                {{ $isMenu ? 'Menu ' . $conf['label'] : $item->name }}
                                             </label>
-                                        </div>
+                                        </li>
                                     @endforeach
-                                </li>
+                                @endforeach
                             </ul>
 
                         </div>
-                
+
                         <!-- Modal footer -->
                         <div class="modal-footer justify-content-between">
                             <input type="submit" class="btn btn-success" value="Salvar">
-                            <button type="button" onclick="window.location.href = '../../permissions'" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                            <button type="button" onclick="window.location.href = '../../permissions'"
+                                class="btn btn-danger" data-dismiss="modal">Fechar</button>
                         </div>
-            
+
                     </div>
-                
+
                 </form>
             </div>
         </div>
@@ -104,16 +139,18 @@
 @section('js')
 
     <script>
-        $(function(){
-            $('.update_admin').click(function(){
+        $(function() {
+            $('.update_admin').click(function() {
                 let id = $(this).attr('data-id');
-                let user_id = "{{$user['id']}}";
+                let user_id = "{{ $user['id'] }}";
                 if (id != user_id) {
                     $.ajax({
-                        url:"{{route('update_admin')}}",
-                        type:"get",
-                        data:{id:id},
-                        success:function(){
+                        url: "{{ route('update_admin') }}",
+                        type: "get",
+                        data: {
+                            id: id
+                        },
+                        success: function() {
                             location.reload();
                         }
                     })
@@ -126,7 +163,7 @@
 
     @if (!empty($user_edit))
         <script>
-            $(function(){
+            $(function() {
                 $('#modal_editPermission').modal();
             })
         </script>
