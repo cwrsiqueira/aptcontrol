@@ -19,15 +19,15 @@ class CreateOrdersTable extends Migration
 
             $table->decimal('order_total', 12, 2)->default(0);
 
-            $table->string('payment', 50);   // forma de pagamento
-            $table->string('withdraw', 50);  // retirada/envio (texto)
+            $table->string('payment', 50)->nullable();   // forma de pagamento
+            $table->string('withdraw', 50)->nullable();  // retirada/envio (texto)
             $table->tinyInteger('complete_order')->default(0); // 0=pending,1=delivered,2=canceled
 
             $table->timestamps();
 
             $table->foreign('client_id')
-                  ->references('id')->on('clients')
-                  ->onDelete('restrict');
+                ->references('id')->on('clients')
+                ->onDelete('restrict');
 
             $table->index(['client_id', 'complete_order']);
             $table->index('order_date');

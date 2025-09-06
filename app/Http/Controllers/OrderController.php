@@ -192,10 +192,6 @@ class OrderController extends Controller
             "client_name",
             "client_id",
             "order_number",
-            "total_order",
-            "withdraw",
-            "prod",
-            "payment",
         ]);
 
         $validator = Validator::make(
@@ -205,50 +201,40 @@ class OrderController extends Controller
                 "client_name" => ['required'],
                 "client_id" => ['required'],
                 "order_number" => ['required', 'unique:orders'],
-                "total_order" => ['required'],
-                "withdraw" => ['required'],
-                "prod" => ['required'],
-                "payment" => ['required'],
             ]
         )->validate();
-
-        $order_total = str_replace('.', '', $data['total_order']);
-        $order_total = str_replace(',', '.', $order_total);
 
         $order = new Order();
         $order->client_id = $data['client_id'];
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
-        $order->order_total = $order_total;
-        $order->payment = $data['payment'];
-        $order->withdraw = $data['withdraw'];
         $order->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');
 
-        foreach ($data['prod'] as $item) {
-            if (!empty($item['product_name'])) {
+        // foreach ($data['prod'] as $item) {
+        //     if (!empty($item['product_name'])) {
 
-                $quant = str_replace('.', '', $item['quant']);
+        //         $quant = str_replace('.', '', $item['quant']);
 
-                $unit_price = str_replace('.', '', $item['unit_val']);
-                $unit_price = str_replace(',', '.', $unit_price);
+        //         $unit_price = str_replace('.', '', $item['unit_val']);
+        //         $unit_price = str_replace(',', '.', $unit_price);
 
-                $total_price = str_replace('.', '', $item['total_val']);
-                $total_price = str_replace(',', '.', $total_price);
+        //         $total_price = str_replace('.', '', $item['total_val']);
+        //         $total_price = str_replace(',', '.', $total_price);
 
-                $order_prod = new Order_product();
-                $order_prod->order_id = $data['order_number'];
-                $order_prod->product_id = $item['product_name'];
-                $order_prod->quant = $quant;
-                $order_prod->unit_price = $unit_price;
-                $order_prod->total_price = $total_price;
-                $order_prod->delivery_date = $item['delivery_date'];
-                $order_prod->save();
-            }
-        }
+        //         $order_prod = new Order_product();
+        //         $order_prod->order_id = $data['order_number'];
+        //         $order_prod->product_id = $item['product_name'];
+        //         $order_prod->quant = $quant;
+        //         $order_prod->unit_price = $unit_price;
+        //         $order_prod->total_price = $total_price;
+        //         $order_prod->delivery_date = $item['delivery_date'];
+        //         $order_prod->save();
+        //     }
+        // }
 
-        return redirect()->route('orders.index', ['q' => $order_prod->order_id]);
+        return redirect()->route('orders.edit', ['order' => $order->id]);
     }
 
     public function show($id)

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Client;
 use App\Clients_category;
 use App\User;
-use Helper;
+use App\Helpers\Helper;
 
 class CategoryController extends Controller
 {
@@ -20,10 +20,11 @@ class CategoryController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('can:menu-categorias');
+        $this->middleware('can:menu-clientes');
     }
 
-    public function get_permissions() {
+    public function get_permissions()
+    {
         $id = Auth::user()->id;
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
@@ -41,9 +42,9 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Clients_category::orderBy('id')->paginate(10);
-        
+
         $user_permissions = $this->get_permissions();
-        
+
         return view('categories', [
             'user' => Auth::user(),
             'categories' => $categories,
@@ -115,7 +116,7 @@ class CategoryController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
-    {   
+    {
         $user_permissions = $this->get_permissions();
         if (!in_array('22', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
@@ -128,7 +129,7 @@ class CategoryController extends Controller
         $category = Clients_category::find($id);
         $user_permissions = $this->get_permissions();
 
-        return view('categories',[
+        return view('categories', [
             'user' => Auth::user(),
             'category' => $category,
             'categories' => $categories,
@@ -152,7 +153,7 @@ class CategoryController extends Controller
             ];
             return redirect()->route('categories.index')->withErrors($message);
         }
-        
+
         $data = $request->only([
             'name',
         ]);
@@ -190,7 +191,7 @@ class CategoryController extends Controller
         }
 
         $categories = Client::where('id_categoria', $id)->get();
-        
+
         if (count($categories) > 0) {
             $message = [
                 'cannot_exclude' => 'Categoria não pode ser excluída, pois possui clientes vinculados!',
