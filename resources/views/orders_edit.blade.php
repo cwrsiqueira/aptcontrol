@@ -101,8 +101,9 @@
                         @endif
                     </td>
                     <td>
-                        <form title="Excluir Linha!" action="{{ route('orders.destroy', ['order' => $item->id]) }}"
-                            method="POST" onsubmit="return confirm('Confirma a exclusão da Linha?')">
+                        <form title="Excluir Linha!"
+                            action="{{ route('orders.order_product_destroy', ['order_product' => $item]) }}" method="POST"
+                            onsubmit="return confirm('Confirma a exclusão da Linha?')">
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt'
@@ -117,7 +118,8 @@
         <hr>
         <div class="d-flex align-items-center">
             <input class="btn btn-success mr-3" type="submit" value="Salvar">
-            <a class="btn btn-danger" href="{{ route('orders.index') }}">Sair</a>
+            <a class="btn btn-warning mr-3" href="{{ route('orders.index') }}">Sair</a>
+            <a class="btn btn-danger mr-3" href="{{ route('orders.index') }}">Excluir</a>
         </div>
     </main>
 

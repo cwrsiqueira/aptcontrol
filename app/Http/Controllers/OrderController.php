@@ -194,7 +194,7 @@ class OrderController extends Controller
             "order_number",
         ]);
 
-        $validator = Validator::make(
+        Validator::make(
             $data,
             [
                 "order_date" => ['required'],
@@ -454,7 +454,7 @@ class OrderController extends Controller
             "delivery_date",
         ]);
 
-        $validator = Validator::make(
+        Validator::make(
             $data,
             [
                 "id_order" => ['required'],
@@ -497,8 +497,9 @@ class OrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function order_product_destroy(Order_product $order_product)
     {
+        $id = $order_product->id;
         $order_product = Order_product::find($id);
         $order_number = $order_product->order_id;
         $order = Order::where('order_number', $order_number)->first();
@@ -509,5 +510,10 @@ class OrderController extends Controller
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
         return redirect()->route('orders.edit', ['order' => $order->id]);
+    }
+
+    public function destroy(Order $order)
+    {
+        dd($order);
     }
 }
