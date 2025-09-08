@@ -30,6 +30,7 @@
 </head>
 
 <body>
+    {{-- Navbar --}}
     <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
         <div>
             <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="{{ route('home') }}">
@@ -45,6 +46,7 @@
         </ul>
     </nav>
 
+    {{-- Menu lateral --}}
     <div class="container-fluid">
         <div class="row">
             <nav class="col-md-2 d-none d-md-block bg-light sidebar">
@@ -120,6 +122,7 @@
                 </div>
             </nav>
 
+            {{-- Content --}}
             <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
 
                 @yield('content')

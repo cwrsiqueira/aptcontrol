@@ -38,7 +38,7 @@
                         <th colspan="1">Data: <input class="form-control" type="date" name="order_date"
                                 id="order_date" value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input
                                 type="hidden" name="order_id" id="order_id" value="{{ $order->id }}"></th>
-                        <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name"
+                        <th colspan="5">Cliente: <input readonly class="form-control" type="text" name="client_name"
                                 id="client_name" value="{{ $order->name_client }}"></th>
                     </tr>
                     <tr>
@@ -86,7 +86,7 @@
                     <td style="padding: 5px;">
                         @foreach ($products as $product)
                             <option class=" @if ($item->quant < 0) color-red @endif"
-                                @if ($item->product_id !== $product->id) style="display:none;" @else selected @endif
+                                @if ((int) $item->product_id !== (int) $product->id) style="display:none;" @else selected @endif
                                 value="{{ $product->id }}">{{ $product->name }}</option>
                         @endforeach
                     </td>
@@ -115,9 +115,9 @@
         </tbody>
         </table>
         <hr>
-        <div>
-            <input class="btn btn-success" type="submit" value="Salvar">
-            <a class="btn btn-danger mt-3" href="{{ route('orders.index') }}">Sair</a>
+        <div class="d-flex align-items-center">
+            <input class="btn btn-success mr-3" type="submit" value="Salvar">
+            <a class="btn btn-danger" href="{{ route('orders.index') }}">Sair</a>
         </div>
     </main>
 
