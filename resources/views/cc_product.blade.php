@@ -7,10 +7,10 @@
         <h2>Conta Corrente Produto</h2>
         <div class="row">
             <div class="card col-md m-3">
-                <div class="card-header"><span>{{$product->name}}</span></div>
+                <div class="card-header"><span>{{ $product->name }}</span></div>
                 <div class="card-body">
-                    Total a entregar: {{number_format($quant_total ?? 0, 0, '', '.') ?? 0}} <br>
-                    Entregas a partir de: {{date('d/m/Y', strtotime($delivery_in))}} <br>
+                    Total a entregar: {{ number_format($quant_total ?? 0, 0, '', '.') ?? 0 }} <br>
+                    Entregas a partir de: {{ date('d/m/Y', strtotime($delivery_in)) }} <br>
                 </div>
             </div>
             <form method="get">
@@ -21,11 +21,13 @@
 
                     <div class="card-body">
                         @foreach ($quant_por_categoria as $item)
-                            <input class="mr-1" type="checkbox" name="por_categoria[]"  value="{{$item['id']}}" @if(!empty($_GET['por_categoria']) && in_array($item['id'], $_GET['por_categoria'])) checked @endif>{{$item['name']}} = {{number_format($item['saldo'], 0, '', '.')}} <br>
+                            <input class="mr-1" type="checkbox" name="por_categoria[]" value="{{ $item['id'] }}"
+                                @if (!empty($_GET['por_categoria']) && in_array($item['id'], $_GET['por_categoria'])) checked @endif>{{ $item['name'] }} =
+                            {{ number_format($item['saldo'], 0, '', '.') }} <br>
                         @endforeach
                         <hr>
                         <input type="submit" value="Filtrar" id="search">
-                        <a href="{{route('cc_product', ['id' => $product->id])}}" id="clean_search">Limpar Filtro</a>
+                        <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search">Limpar Filtro</a>
                     </div>
                 </div>
             </form>
@@ -36,14 +38,14 @@
                     <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = '../../products';">Imprimir</button>
                 </div> --}}
                 <div class="card-tools">
-                    <button class="btn btn-sm btn-secondary" onclick="javascript:history.go(-1);" id="btn_voltar">Voltar</button>
+                    <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">Voltar</a>
                     <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
-                    <a class="btn btn-sm btn-secondary @if(Auth::user()->confirmed_user !== 1) hide @endif" id="btn_recalc" href="{{route('day_delivery_recalc', ['id' => $product->id])}}">Recalcular datas de entrega</a>
-                    <a class="btn btn-sm btn-danger" id="btn_sair" href="{{route('products.index')}}">Sair</a>
+                    <a class="btn btn-sm btn-secondary @if (Auth::user()->confirmed_user !== 1) hide @endif" id="btn_recalc"
+                        href="{{ route('day_delivery_recalc', ['id' => $product->id]) }}">Recalcular datas de entrega</a>
                 </div>
             </div>
         </div>
-        
+
         <table class="table">
             <thead>
                 <tr>
@@ -57,13 +59,13 @@
             </thead>
             <tbody>
                 @foreach ($data as $item)
-                    <tr class="linha" data-id="{{$item->id}}">
-                        <td>{{date('d/m/Y', strtotime($item->order_date))}}</td>
-                        <td>{{$item->client_name}}</td>
-                        <td>{{$item->category_name}}</td>
-                        <td>{{$item->order_id}}</td>
-                        <td>{{number_format($item->saldo, 0, '', '.')}}</td>
-                        <td>{{date('d/m/Y', strtotime($item->delivery_date))}}</td>
+                    <tr class="linha" data-id="{{ $item->id }}">
+                        <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
+                        <td>{{ $item->client_name }}</td>
+                        <td>{{ $item->category_name }}</td>
+                        <td>{{ $item->order_id }}</td>
+                        <td>{{ number_format($item->saldo, 0, '', '.') }}</td>
+                        <td>{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -75,9 +77,10 @@
 @section('css')
     <style>
         tbody tr:hover {
-            background-color:rgb(227, 236, 233);
+            background-color: rgb(227, 236, 233);
             cursor: pointer;
         }
+
         .hide {
             display: none;
         }
@@ -86,7 +89,7 @@
 
 @section('js')
     <script>
-        $('.linha').click(function(){
+        $('.linha').click(function() {
             let attr = $(this).attr('style');
             if (typeof attr !== typeof undefined && attr !== false) {
                 $(this).removeAttr('style');
@@ -94,16 +97,15 @@
                 $(this).attr('style', 'background-color:aquamarine;');
             }
         });
-        $('#btn_imprimir').click(function(){
+        $('#btn_imprimir').click(function() {
             $(this).hide();
             $('#btn_voltar').hide();
             $('#btn_sair').hide();
-            $('#btn_recalc').hide(); 
+            $('#btn_recalc').hide();
             $('#search').hide();
-            $('#clean_search').hide(); 
+            $('#clean_search').hide();
             window.print();
-            javascript:history.go(0);
+            javascript: history.go(0);
         })
     </script>
 @endsection
-

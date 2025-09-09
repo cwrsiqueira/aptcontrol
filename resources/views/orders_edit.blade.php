@@ -42,9 +42,13 @@
                                 id="client_name" value="{{ $order->name_client }}"></th>
                     </tr>
                     <tr>
-                        <th colspan="1">Pedido Nr.: <input class="form-control" type="text" name="order_number"
-                                id="order_number" value="{{ $order->order_number }}"></th><input class="form-control"
-                            type="hidden" name="order_old_number" id="order_old_number" value="{{ $order->order_number }}">
+                        <th colspan="1">Pedido Nr.:
+                            <input class="form-control" type="text" name="order_number" id="order_number"
+                                value="{{ $order->order_number }}" readonly>
+
+                            <input class="form-control" type="hidden" name="order_old_number" id="order_old_number"
+                                value="{{ $order->order_number }}">
+                        </th>
                         <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text"
                                 name="total_order" id="total_order"
                                 value="{{ number_format($order->order_total, 2, ',', '.') }}"></th>
@@ -65,10 +69,12 @@
                             </select><small class="order_number_align_size" style="color:transparent;"></small>
                         </th>
         </form>
-        <th colspan="1" style="text-align: center"><a class="add_line" style='color:green;' href='#'
-                data-toggle='tooltip' title='Adicionar linha!'><i class='fas fa-fw fa-plus'
-                    style="font-size: 24px;"></i></a><br><small class="order_number_align_size"
-                style="color:transparent;"></small></th>
+        @if ($order->complete_order == 0)
+            <th colspan="1" style="text-align: center"><a class="add_line" style='color:green;' href='#'
+                    data-toggle='tooltip' title='Adicionar linha!'><i class='fas fa-fw fa-plus'
+                        style="font-size: 24px;"></i></a><br><small class="order_number_align_size"
+                    style="color:transparent;"></small></th>
+        @endif
         </tr>
         <tr style="text-align: center;">
             <th>Produto</th>
@@ -101,14 +107,16 @@
                         @endif
                     </td>
                     <td>
-                        <form title="Excluir Linha!"
-                            action="{{ route('orders.order_product_destroy', ['order_product' => $item]) }}" method="POST"
-                            onsubmit="return confirm('Confirma a exclusão da Linha?')">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt'
-                                    style="font-size: 16px;"></i></button>
-                        </form>
+                        @if ($order->complete_order == 0)
+                            <form title="Excluir Linha!"
+                                action="{{ route('orders.order_product_destroy', ['order_product' => $item]) }}"
+                                method="POST" onsubmit="return confirm('Confirma a exclusão da Linha?')">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger"><i class='far fa-trash-alt'
+                                        style="font-size: 16px;"></i></button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @endforeach
@@ -116,11 +124,13 @@
         </tbody>
         </table>
         <hr>
-        <div class="d-flex align-items-center">
-            <input class="btn btn-success mr-3" type="submit" value="Salvar">
-            <a class="btn btn-warning mr-3" href="{{ route('orders.index') }}">Sair</a>
-            <a class="btn btn-danger mr-3" href="{{ route('orders.index') }}">Excluir</a>
-        </div>
+        @if ($order->complete_order == 0)
+            <div class="d-flex align-items-center mb-5">
+                <input class="btn btn-success mr-3" type="submit" value="Salvar">
+                <a class="btn btn-warning mr-3" href="{{ route('orders.index') }}">Sair</a>
+                {{-- <a class="btn btn-danger mr-3" href="{{ route('orders.index') }}">Excluir</a> --}}
+            </div>
+        @endif
     </main>
 
     <!-- MODAL ADD PRODUTO -->

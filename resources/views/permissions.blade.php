@@ -26,8 +26,7 @@
                         </div>
                     </div>
                     <div class="">
-                        <form class="p-3" action=" {{ route('users.destroy', ['user' => $item['id']]) }} "
-                            method="POST"
+                        <form class="p-3" action=" {{ route('users.destroy', ['user' => $item['id']]) }} " method="POST"
                             @if ($item->confirmed_user === 1) onsubmit="alert('Você não pode excluir o admin!');return false;"
                             style="display:none;"
                         @else
@@ -89,7 +88,7 @@
                                     2 => ['label' => 'Clientes', 'groups' => ['Clientes', 'Categorias']],
                                     3 => ['label' => 'Pedidos', 'groups' => ['Pedidos']],
                                     4 => ['label' => 'Relatórios', 'groups' => ['Relatórios']],
-                                    5 => ['label' => 'Integrações', 'groups' => ['Integrações']],
+                                    // 5 => ['label' => 'Integrações', 'groups' => ['Integrações']],
                                 ];
                             @endphp
 
@@ -107,14 +106,16 @@
 
                                     @foreach ($items as $item)
                                         @php $isMenu = ((int)$item->id === (int)$menuId); @endphp
-                                        <li class="list-group-item p-1 {{ $isMenu ? '' : 'pl-4' }}">
-                                            <label class="mb-0 {{ $isMenu ? 'font-weight-bold' : '' }}">
-                                                <input type="checkbox" class="mr-2" name="permission_item[]"
-                                                    id="perm_{{ $item->id }}" value="{{ $item->id }}"
-                                                    @if (in_array($item->id, $user_permissions)) checked @endif>
-                                                {{ $isMenu ? 'Menu ' . $conf['label'] : $item->name }}
-                                            </label>
-                                        </li>
+                                        @if ($item->name !== '+ Estoque (Produto)')
+                                            <li class="list-group-item p-1 {{ $isMenu ? '' : 'pl-4' }}">
+                                                <label class="mb-0 {{ $isMenu ? 'font-weight-bold' : '' }}">
+                                                    <input type="checkbox" class="mr-2" name="permission_item[]"
+                                                        id="perm_{{ $item->id }}" value="{{ $item->id }}"
+                                                        @if (in_array($item->id, $user_permissions)) checked @endif>
+                                                    {{ $isMenu ? 'Menu ' . $conf['label'] : $item->name }}
+                                                </label>
+                                            </li>
+                                        @endif
                                     @endforeach
                                 @endforeach
                             </ul>

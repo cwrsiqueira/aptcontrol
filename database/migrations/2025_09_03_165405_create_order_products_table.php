@@ -28,13 +28,13 @@ class CreateOrderProductsTable extends Migration
 
             // FK para products(id)
             $table->foreign('product_id')
-                  ->references('id')->on('products')
-                  ->onDelete('restrict');
+                ->references('id')->on('products')
+                ->onDelete('restrict');
 
             // FK para orders(order_number) — compatível com SQLite se a coluna referenciada for UNIQUE
             $table->foreign('order_id')
-                  ->references('order_number')->on('orders')
-                  ->onDelete('cascade');
+                ->references('order_number')->on('orders')
+                ->onDelete('cascade');
 
             $table->index(['order_id', 'product_id']);
             $table->index('delivery_date');

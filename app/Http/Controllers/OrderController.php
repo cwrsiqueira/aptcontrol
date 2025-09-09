@@ -424,6 +424,14 @@ class OrderController extends Controller
         $order_total = str_replace('.', '', $data['total_order']);
         $order_total = str_replace(',', '.', $order_total);
 
+        $order_products_qt = Order_product::where('order_id', $data['order_old_number'])->sum('id');
+        if ($order_products_qt <= 0) {
+            $message = [
+                'no-access' => 'O pedido precisa ter algum produto!',
+            ];
+            return redirect()->route('orders.edit', ['order' => $id])->withErrors($message);
+        }
+
         $change_order_products = Order_product::where('order_id', $data['order_old_number'])->get();
         foreach ($change_order_products as $item) {
             $item->order_id = $data['order_number'];

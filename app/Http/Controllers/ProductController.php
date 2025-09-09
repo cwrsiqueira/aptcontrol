@@ -14,7 +14,7 @@ use App\Order_product;
 use App\Stockmovement;
 use App\User;
 use App\Clients_category;
-use Helper;
+use App\Helpers\Helper;
 
 class ProductController extends Controller
 {
@@ -29,7 +29,8 @@ class ProductController extends Controller
         $this->middleware('can:menu-produtos');
     }
 
-    public function get_permissions() {
+    public function get_permissions()
+    {
         $id = Auth::user()->id;
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
@@ -50,11 +51,11 @@ class ProductController extends Controller
         $q = '';
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
-            $products = Product::where('name', 'LIKE', '%'.$q.'%')->paginate(5);
+            $products = Product::where('name', 'LIKE', '%' . $q . '%')->paginate(5);
         }
 
         $user_permissions = $this->get_permissions();
-        
+
         return view('products', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
@@ -63,7 +64,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function cc_product($id) 
+    public function cc_product($id)
     {
 
         $user_permissions = $this->get_permissions();
@@ -82,23 +83,23 @@ class ProductController extends Controller
         if (!empty($_GET['por_categoria'])) {
             $cats = $_GET['por_categoria'];
         }
-        
+
         $product = Product::find($id);
         $data = Order_product::select('*', 'quant as saldo')
-        ->join('orders', 'orders.order_number', 'order_products.order_id')
-        ->join('clients', 'clients.id', 'client_id')
-        ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
-        ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
-        ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
-        ->addSelect(['client_id_categoria' => Client::select('id_categoria')->whereColumn('clients.id', 'client_id')])
-        ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
-        ->where('product_id', $id)
-        ->where('orders.complete_order', 0)
-        // ->where('delivery_date', '>', '1970-01-01')
-        ->whereIn('clients.id_categoria', $cats)
-        ->orderBy('delivery_date')
-        ->get();
-        
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->join('clients', 'clients.id', 'client_id')
+            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
+            ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
+            ->addSelect(['client_id_categoria' => Client::select('id_categoria')->whereColumn('clients.id', 'client_id')])
+            ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
+            ->where('product_id', $id)
+            ->where('orders.complete_order', 0)
+            // ->where('delivery_date', '>', '1970-01-01')
+            ->whereIn('clients.id_categoria', $cats)
+            ->orderBy('delivery_date')
+            ->get();
+
         $saldo = [];
         foreach ($data as $key => $value) {
             if (!isset($saldo[$value->order_id])) {
@@ -113,9 +114,9 @@ class ProductController extends Controller
                 }
             }
         }
-        
+
         $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
-        
+
         // $data = Order_product::select('*')
         // ->join('orders', 'orders.order_number', 'order_products.order_id')
         // ->join('clients', 'clients.id', 'client_id')
@@ -134,20 +135,20 @@ class ProductController extends Controller
         // ->get();
 
         $quant_por_categoria = Order_product::join('orders', 'orders.order_number', 'order_products.order_id')
-        ->join('clients', 'clients.id', 'orders.client_id')
-        ->join('clients_categories', 'clients_categories.id', 'clients.id_categoria')
-        ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
-        ->addSelect(['name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'clients.id_categoria')])
-        ->addSelect(['id' => Clients_category::select('id')->whereColumn('clients_categories.id', 'clients.id_categoria')])
-        ->where('product_id', $id)
-        ->where('orders.complete_order', 0)
-        ->groupBy('clients.id_categoria')
-        ->get();
-        
+            ->join('clients', 'clients.id', 'orders.client_id')
+            ->join('clients_categories', 'clients_categories.id', 'clients.id_categoria')
+            ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
+            ->addSelect(['name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'clients.id_categoria')])
+            ->addSelect(['id' => Clients_category::select('id')->whereColumn('clients_categories.id', 'clients.id_categoria')])
+            ->where('product_id', $id)
+            ->where('orders.complete_order', 0)
+            ->groupBy('clients.id_categoria')
+            ->get();
+
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
-        
+
         return view('cc_product', [
             'data' => $data,
             'product' => $product,
@@ -164,30 +165,30 @@ class ProductController extends Controller
         Helper::day_delivery_recalc($id_product);
         Helper::saveLog(Auth::user()->id, 'Alteração', $id_product, 'Recalc Data Entrega', 'Produtos');
         return redirect()->route('cc_product', ['id' => $id_product]);
-
     }
 
-    private function day_delivery_calc($id) {
+    private function day_delivery_calc($id)
+    {
         $product = Product::find($id);
         $quant_total = Order_product::select('*')
-        ->join('orders', 'order_number', 'order_id')
-        ->where('order_products.product_id', $id)
-        ->where('orders.complete_order', 0)
-        ->sum('quant');
-        
+            ->join('orders', 'order_number', 'order_id')
+            ->where('order_products.product_id', $id)
+            ->where('orders.complete_order', 0)
+            ->sum('quant');
+
         if (!empty($quant_total)) {
             $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
-            
+
             if ($days_necessary <= 0) {
                 $days_necessary = 0;
             }
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +'.(ceil($days_necessary)).' days'));
+            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
         } else {
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d').' +1 days'));
+            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +1 days'));
         }
 
         if (date('w', strtotime($delivery_in)) == 0) {
-            $delivery_in = date('Y-m-d', strtotime($delivery_in.' +1 days'));
+            $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
         }
 
         return array(
@@ -225,7 +226,7 @@ class ProductController extends Controller
         if (in_array('7', $user_permissions) || Auth::user()->is_admin) {
             $data['auth'] = 'Autorizado';
         }
-        
+
         if (!empty($data['stock'])) {
             $data['stock'] = str_replace('.', '', $data['stock']);
         }
@@ -260,7 +261,6 @@ class ProductController extends Controller
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Produtos');
 
         return redirect()->route('products.index');
-
     }
 
     /**
@@ -287,19 +287,19 @@ class ProductController extends Controller
         if (!empty($_GET['action'])) {
             $action = $_GET['action'];
         }
-        
+
         $user_permissions = $this->get_permissions();
         if ($action == 'edit') {
             if (!in_array('8', $user_permissions) && !Auth::user()->is_admin) {
                 $action = 'Não Autorizado';
             }
-        }  elseif ($action == 'add_estock') {
+        } elseif ($action == 'add_estock') {
             if (!in_array('9', $user_permissions) && !Auth::user()->is_admin) {
                 $action = 'Não Autorizado';
             }
         }
 
-        return view('products',[
+        return view('products', [
             'user' => Auth::user(),
             'product' => $product,
             'products' => $products,
@@ -323,9 +323,9 @@ class ProductController extends Controller
                 'add_stock',
                 'dt_add_estoque',
             ]);
-    
+
             $data['add_stock'] = str_replace('.', '', $data['add_stock']);
-    
+
             $validator = Validator::make(
                 $data,
                 [
@@ -334,7 +334,7 @@ class ProductController extends Controller
                     'dt_add_estoque' => 'date|nullable'
                 ]
             )->validate();
-    
+
             $prod = Product::find($id);
             $prod->current_stock = $prod->current_stock + $data['add_stock'];
             $prod->save();
@@ -353,10 +353,10 @@ class ProductController extends Controller
                 'forecast',
                 'file',
             ]);
-    
+
             $data['stock'] = str_replace('.', '', $data['stock']);
             $data['forecast'] = str_replace('.', '', $data['forecast']);
-    
+
             $validator = Validator::make(
                 $data,
                 [
@@ -366,13 +366,13 @@ class ProductController extends Controller
                     'file' => 'image|mimes:jpeg,jpg,png|nullable',
                 ]
             )->validate();
-    
+
             if (!empty($data['file'])) {
                 $data['file'] = 'preenchido';
             } else {
                 $data['file'] = 'não informado';
             }
-    
+
             $prod = Product::find($id);
             $prod->name = $data['name'];
             $prod->current_stock = $data['stock'];
@@ -403,14 +403,21 @@ class ProductController extends Controller
         }
 
         $products = Order_product::where('product_id', $id)->get();
+        $stockmovements = Stockmovement::where('product_id', $id)->get();
+
         if (count($products) > 0) {
             $message = [
-                'cannot_exclude' => 'Produto não pode ser excluído, pois possui pedidos vinculados!',
+                'cannot_exclude' => 'Produto já possui pedidos vinculados e não pode mais ser excluído!',
+            ];
+            return redirect()->route('products.index')->withErrors($message);
+        } elseif (count($stockmovements) > 0) {
+            $message = [
+                'cannot_exclude' => 'Produto já possui movimentação e não pode ser excluído!',
             ];
             return redirect()->route('products.index')->withErrors($message);
         } else {
             $product = Product::find($id);
-            Product::find($id)->delete();
+            $del = Product::find($id)->delete();
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $product->name, 'Produtos');
             return redirect()->route('products.index');
         }

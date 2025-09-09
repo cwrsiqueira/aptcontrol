@@ -93,13 +93,13 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('5', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        {{-- <li class="nav-item" @if (in_array('5', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is('integrations')) active @endif"
                                 href="{{ route('integrations.index') }}">
                                 <span data-feather="link"></span>
                                 Integrações
                             </a>
-                        </li>
+                        </li> --}}
 
                         <li class="nav-item" @if (Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is('permissions')) active @endif"
