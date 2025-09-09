@@ -51,7 +51,7 @@
                     <tr>
                         <th>#Ref.</th>
                         <th>Nome</th>
-                        {{-- <th>Estoque</th> --}}
+                        <th>Estoque</th>
                         <th>Previsão Diária</th>
                         <th colspan="4" style="text-align:center;">Ações</th>
                     </tr>
@@ -61,7 +61,7 @@
                     <tr>
                         <td><?php echo $item['id']; ?></td>
                         <td><?php echo $item['name']; ?></td>
-                        {{-- <td><?php echo number_format($item['current_stock'], 0, '', '.'); ?></td> --}}
+                        <td><?php echo number_format($item['current_stock'], 0, '', '.'); ?></td>
                         <td><?php echo number_format($item['daily_production_forecast'], 0, '', '.'); ?></td>
                         <td>
                             @if (in_array('8', $user_permissions) || Auth::user()->is_admin)
@@ -144,10 +144,9 @@
                         <input class="form-control @error('name') is-invalid @enderror" type="text" name="name"
                             placeholder="Nome do Produto" id="name" value="{{ old('name') }}">
 
-                        {{-- <label for="stock">Estoque Inicial:</label>
+                        <label for="stock">Estoque Inicial:</label>
                         <input class="form-control @error('stock') is-invalid @enderror" type="text" name="stock"
-                            placeholder="Sem estoque inicial" id="stock" value="{{ old('stock') }}" readonly> --}}
-                        <input type="hidden" name="stock" value="0">
+                            placeholder="Sem estoque inicial" id="stock" value="{{ old('stock') }}">
 
                         <label for="forecast">Previsão Média Diária de Produção:</label>
                         <input class="form-control @error('forecast') is-invalid @enderror" type="text" name="forecast"
@@ -200,11 +199,10 @@
                             <input class="form-control @error('name') is-invalid @enderror" type="text" name="name"
                                 placeholder="Nome do Produto" id="edit_name" value="{{ $product->name ?? '' }}">
 
-                            {{-- <label for="stock">Estoque Inicial:</label>
+                            <label for="stock">Estoque Inicial:</label>
                             <input class="form-control @error('stock') is-invalid @enderror" type="text"
                                 name="stock" placeholder="Estoque Inicial" id="edit_stock"
-                                value="{{ $product->current_stock ?? 0 }}"> --}}
-                            <input type="hidden" name="stock" value="0">
+                                value="{{ $product->current_stock ?? 0 }}">
 
                             <label for="forecast">Previsão Média Diária de Produção:</label>
                             <input class="form-control @error('forecast') is-invalid @enderror" type="text"

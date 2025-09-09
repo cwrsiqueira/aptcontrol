@@ -68,7 +68,7 @@ class Helper
                     $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
 
                     if ($days_necessary <= 0) {
-                        $days_necessary = 0;
+                        $days_necessary = 1;
                     }
 
                     $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));

@@ -1,187 +1,118 @@
 @extends('layouts.template')
 
-@section('title', 'Dashboard')
+@section('title', 'Produtos')
 
 @section('content')
-
-<main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-      <h1 class="h2">Gráfico</h1>
-      <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group mr-2">
-          {{-- <button class="btn btn-sm btn-outline-secondary">Share</button>
-          <button class="btn btn-sm btn-outline-secondary">Export</button> --}}
+    <div class="container">
+        {{-- Cabeçalho --}}
+        <div class="row mb-3">
+            <div class="col">
+                <h4 class="mb-0">Dashboard</h4>
+                <small class="text-muted">Visão geral das entregas</small>
+            </div>
         </div>
-        {{-- <button class="btn btn-sm btn-outline-secondary dropdown-toggle">
-          <span data-feather="calendar"></span>
-          This week
-        </button> --}}
-      </div>
+
+        {{-- Cards de status --}}
+        <div class="row">
+            <div class="col-md-4 col-xl-2 mb-3">
+                <div class="card border-danger h-100">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-danger">Atrasadas</span>
+                            </div>
+                            <h3 class="mb-0">{{ number_format($cards['atrasadas'] ?? 0, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-xl-2 mb-3">
+                <div class="card border-warning h-100">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-warning">Para hoje</span>
+                            </div>
+                            <h3 class="mb-0">{{ number_format($cards['hoje'] ?? 0, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-xl-2 mb-3">
+                <div class="card border-info h-100">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-info">Pendentes</span>
+                            </div>
+                            <h3 class="mb-0">{{ number_format($cards['pendentes'] ?? 0, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-xl-2 mb-3">
+                <div class="card border-success h-100">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-success">Concluídas</span>
+                            </div>
+                            <h3 class="mb-0">{{ number_format($cards['concluidas'] ?? 0, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-xl-2 mb-3">
+                <div class="card border-secondary h-100">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-secondary">Canceladas</span>
+                            </div>
+                            <h3 class="mb-0">{{ number_format($cards['canceladas'] ?? 0, 0, ',', '.') }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Versão e últimas atualizações --}}
+        <div class="row mt-3">
+            <div class="col-lg-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <strong>Versão do sistema</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1">Versão: <span
+                                class="font-weight-bold">{{ $systemInfo['version'] ?? 'v0.0.0' }}</span></p>
+                        <small class="text-muted">Atualizado em {{ $systemInfo['updated_at'] ?? '-' }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <strong>Últimas atualizações</strong>
+                    </div>
+                    <div class="card-body">
+                        @if (!empty($systemInfo['updates']))
+                            <ul class="mb-0">
+                                @foreach ($systemInfo['updates'] as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-muted mb-0">Sem atualizações recentes.</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <canvas class="my-4" id="myChart" width="900" height="380"></canvas>
-
-    <h2>Tabela</h2>
-    <div class="table-responsive">
-      <table class="table table-striped table-sm">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Header</th>
-            <th>Header</th>
-            <th>Header</th>
-            <th>Header</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1,001</td>
-            <td>Lorem</td>
-            <td>ipsum</td>
-            <td>dolor</td>
-            <td>sit</td>
-          </tr>
-          <tr>
-            <td>1,002</td>
-            <td>amet</td>
-            <td>consectetur</td>
-            <td>adipiscing</td>
-            <td>elit</td>
-          </tr>
-          <tr>
-            <td>1,003</td>
-            <td>Integer</td>
-            <td>nec</td>
-            <td>odio</td>
-            <td>Praesent</td>
-          </tr>
-          <tr>
-            <td>1,003</td>
-            <td>libero</td>
-            <td>Sed</td>
-            <td>cursus</td>
-            <td>ante</td>
-          </tr>
-          <tr>
-            <td>1,004</td>
-            <td>dapibus</td>
-            <td>diam</td>
-            <td>Sed</td>
-            <td>nisi</td>
-          </tr>
-          <tr>
-            <td>1,005</td>
-            <td>Nulla</td>
-            <td>quis</td>
-            <td>sem</td>
-            <td>at</td>
-          </tr>
-          <tr>
-            <td>1,006</td>
-            <td>nibh</td>
-            <td>elementum</td>
-            <td>imperdiet</td>
-            <td>Duis</td>
-          </tr>
-          <tr>
-            <td>1,007</td>
-            <td>sagittis</td>
-            <td>ipsum</td>
-            <td>Praesent</td>
-            <td>mauris</td>
-          </tr>
-          <tr>
-            <td>1,008</td>
-            <td>Fusce</td>
-            <td>nec</td>
-            <td>tellus</td>
-            <td>sed</td>
-          </tr>
-          <tr>
-            <td>1,009</td>
-            <td>augue</td>
-            <td>semper</td>
-            <td>porta</td>
-            <td>Mauris</td>
-          </tr>
-          <tr>
-            <td>1,010</td>
-            <td>massa</td>
-            <td>Vestibulum</td>
-            <td>lacinia</td>
-            <td>arcu</td>
-          </tr>
-          <tr>
-            <td>1,011</td>
-            <td>eget</td>
-            <td>nulla</td>
-            <td>Class</td>
-            <td>aptent</td>
-          </tr>
-          <tr>
-            <td>1,012</td>
-            <td>taciti</td>
-            <td>sociosqu</td>
-            <td>ad</td>
-            <td>litora</td>
-          </tr>
-          <tr>
-            <td>1,013</td>
-            <td>torquent</td>
-            <td>per</td>
-            <td>conubia</td>
-            <td>nostra</td>
-          </tr>
-          <tr>
-            <td>1,014</td>
-            <td>per</td>
-            <td>inceptos</td>
-            <td>himenaeos</td>
-            <td>Curabitur</td>
-          </tr>
-          <tr>
-            <td>1,015</td>
-            <td>sodales</td>
-            <td>ligula</td>
-            <td>in</td>
-            <td>libero</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
-
-  <!-- Graphs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
-  <script>
-    var ctx = document.getElementById("myChart");
-    var myChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-        datasets: [{
-          data: [15339, 21345, 18483, 24003, 23489, 24092, 12034],
-          lineTension: 0,
-          backgroundColor: 'transparent',
-          borderColor: '#007bff',
-          borderWidth: 4,
-          pointBackgroundColor: '#007bff'
-        }]
-      },
-      options: {
-        scales: {
-          yAxes: [{
-            ticks: {
-              beginAtZero: false
-            }
-          }]
-        },
-        legend: {
-          display: false,
-        }
-      }
-    });
-  </script>
-    
-  @endsection
-  
+@endsection

@@ -194,7 +194,8 @@
                             <div class="col-sm-3">
                                 <label for="delivery_date">Previsão de Entrega:</label>
                                 <input required class="form-control delivery_date @error('valor') is-invalid @enderror"
-                                    style="width: 100%;" type="date" name="delivery_date" id="delivery_date">
+                                    style="width: 100%;" type="date" name="delivery_date" id="delivery_date"
+                                    readonly>
                             </div>
 
                         </div>
