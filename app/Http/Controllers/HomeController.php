@@ -8,6 +8,17 @@ use Carbon\Carbon;
 
 class HomeController extends Controller
 {
+    private function systemInfo()
+    {
+        return [
+            'version'    => env('APP_VERSION', 'v1.0.5'),
+            'updated_at' => '10/09/2025',
+            'updates'    => [
+                'Desabilita o botão Recalcular datas de entrega',
+                'Atualiza a versão no dashboard',
+            ],
+        ];
+    }
     public function index()
     {
         $today = Carbon::today()->toDateString();
@@ -34,16 +45,7 @@ class HomeController extends Controller
             ->count('o.order_number');
 
         // (Opcional) bloco manual de versão/atualizações
-        $systemInfo = [
-            'version'    => env('APP_VERSION', 'v1.0.4'),
-            'updated_at' => '09/09/2025',
-            'updates'    => [
-                'Altera dia de entrega mínimo para o próximo dia útil',
-                'Altera Previsão de entrega somente automático sem possibilidade de alteração manual',
-                'Altera possibilidade de inclusão e edição de estoque inicial.',
-                'Cria o Dashboard com as informações de entregas e atualizações do sistema',
-            ],
-        ];
+        $systemInfo = $this->systemInfo();
 
         $user_permissions = Helper::get_permissions();
 

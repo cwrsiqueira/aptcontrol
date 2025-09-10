@@ -40,8 +40,8 @@
                 <div class="card-tools">
                     <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">Voltar</a>
                     <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
-                    <a class="btn btn-sm btn-secondary @if (Auth::user()->confirmed_user !== 1) hide @endif" id="btn_recalc"
-                        href="{{ route('day_delivery_recalc', ['id' => $product->id]) }}">Recalcular datas de entrega</a>
+                    {{-- <a class="btn btn-sm btn-secondary @if (Auth::user()->confirmed_user !== 1) hide @endif" id="btn_recalc"
+                        href="{{ route('day_delivery_recalc', ['id' => $product->id]) }}">Recalcular datas de entrega</a> --}}
                 </div>
             </div>
         </div>
