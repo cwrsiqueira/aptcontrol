@@ -11,8 +11,8 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => env('APP_VERSION', 'v1.0.6'),
-            'updated_at' => '10/09/2025',
+            'version'    => 'v1.0.6',
+            'updated_at' => '11/09/2025',
             'updates'    => [
                 'Tela de login - Implementa visualizar senha no login',
                 'Tela de login - Melhora visual da mensagem do caps lock no login',
