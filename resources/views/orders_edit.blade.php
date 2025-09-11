@@ -1,9 +1,8 @@
 @extends('layouts.template')
-
 @section('title', 'Pedido')
-
 @section('content')
 
+    {{-- Modal Loader --}}
     <div class="modal" id="loader">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="background-color: transparent;border:0;">
@@ -131,7 +130,7 @@
         @endif
     </main>
 
-    <!-- MODAL ADD PRODUTO -->
+    <!-- MODAL ADICIONAR PRODUTO -->
     <div class="modal fade" id="modal_addLine">
         <div class="modal-dialog modal-lg">
             <form method="post" action="{{ route('add_line') }}" id="form_add_cliente">
@@ -144,6 +143,7 @@
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
 
+                    {{-- Show errors --}}
                     @if ($errors->any())
                         <div class="alert alert-danger">
                             <ul>
