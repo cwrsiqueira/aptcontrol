@@ -11,11 +11,11 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => env('APP_VERSION', 'v1.0.5'),
+            'version'    => env('APP_VERSION', 'v1.0.51'),
             'updated_at' => '10/09/2025',
             'updates'    => [
-                'Desabilita o botão Recalcular datas de entrega',
-                'Atualiza a versão no dashboard',
+                'Implementa visualizar senha no login',
+                'Melhora visual da mensagem do caps lock no login',
             ],
         ];
     }
