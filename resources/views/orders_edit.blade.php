@@ -126,9 +126,7 @@
         <hr>
         @if ($order->complete_order == 0)
             <div class="d-flex align-items-center mb-5">
-                <input class="btn btn-success mr-3" type="submit" value="Salvar">
-                <a class="btn btn-warning mr-3" href="{{ route('orders.index') }}">Sair</a>
-                {{-- <a class="btn btn-danger mr-3" href="{{ route('orders.index') }}">Excluir</a> --}}
+                <input class="btn btn-info mr-3" type="submit" value="Concluir">
             </div>
         @endif
     </main>

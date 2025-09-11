@@ -40,10 +40,11 @@ class OrderController extends Controller
             $comp = 0;
         }
 
-        $orders = Order::addSelect(['name_client' => Client::select('name')
-            ->whereColumn('id', 'orders.client_id')])
+        $orders = Order::addSelect(
+            ['name_client' => Client::select('name')->whereColumn('id', 'orders.client_id')]
+        )
             ->whereIn('complete_order', $comps)
-            ->orderBy('id', 'desc')
+            ->orderBy('order_date', 'asc')
             ->paginate(10);
 
         if (!empty($_GET['q'])) {
@@ -69,8 +70,9 @@ class OrderController extends Controller
 
                 $orders = Order::where('order_number', 'LIKE', '%' . $q . '%')
                     ->whereIn('complete_order', $comps)
-                    ->addSelect(['name_client' => Client::select('name')
-                        ->whereColumn('clients.id', 'orders.client_id')])
+                    ->addSelect(
+                        ['name_client' => Client::select('name')->whereColumn('clients.id', 'orders.client_id')]
+                    )
                     ->orderBy('id', 'desc')
                     ->paginate(10);
             }
@@ -208,6 +210,8 @@ class OrderController extends Controller
         $order->client_id = $data['client_id'];
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
+        $order->payment = 'Aberto';
+        $order->withdraw = 'Entregar';
         $order->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');

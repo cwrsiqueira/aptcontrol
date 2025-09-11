@@ -11,11 +11,14 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => env('APP_VERSION', 'v1.0.51'),
+            'version'    => env('APP_VERSION', 'v1.0.6'),
             'updated_at' => '10/09/2025',
             'updates'    => [
-                'Implementa visualizar senha no login',
-                'Melhora visual da mensagem do caps lock no login',
+                'Tela de login - Implementa visualizar senha no login',
+                'Tela de login - Melhora visual da mensagem do caps lock no login',
+                'Menu pedidos - altera ordem dos pedidos por Data do pedido',
+                'Menu pedidos - soluciona bug que não aparecia o pedido do cliente no relatório',
+                'Editar pedido - Muda botões Salvar e Sair pra Concluir',
             ],
         ];
     }
