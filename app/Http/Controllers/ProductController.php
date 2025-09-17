@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
+use App\Services\ProductDeliveryService;
 use App\Product;
 use App\Order;
 use App\Client;
@@ -170,31 +170,32 @@ class ProductController extends Controller
     private function day_delivery_calc($id)
     {
         $product = Product::find($id);
-        $quant_total = Order_product::select('*')
-            ->join('orders', 'order_number', 'order_id')
+        if (!$product) {
+            return [
+                'quant_total' => 0,
+                'delivery_in' => null,
+            ];
+        }
+
+        // Mesmo cálculo do total pendente
+        $quant_total = Order_product::query()
+            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
             ->where('order_products.product_id', $id)
             ->where('orders.complete_order', 0)
-            ->sum('quant');
+            ->sum('order_products.quant');
 
-        if (!empty($quant_total)) {
-            $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+        // Reutiliza a lógica única: próxima data viável para 1 unidade
+        /** @var ProductDeliveryService $svc */
+        $svc = app(ProductDeliveryService::class);
+        $delivery_in = $svc->firstFeasibleDate($product, 1, [
+            'extra_lead_days' => 0,   // ajuste pra 1 se quiser gordura
+            'hard_limit_days' => 365,
+        ]);
 
-            if ($days_necessary <= 0) {
-                $days_necessary = 0;
-            }
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
-        } else {
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +1 days'));
-        }
-
-        if (date('w', strtotime($delivery_in)) == 0) {
-            $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
-        }
-
-        return array(
-            'quant_total' => $quant_total,
-            'delivery_in' => $delivery_in
-        );
+        return [
+            'quant_total' => (int) $quant_total,
+            'delivery_in' => $delivery_in,
+        ];
     }
 
     /**

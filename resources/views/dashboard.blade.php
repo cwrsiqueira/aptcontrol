@@ -8,7 +8,7 @@
         <div class="row mb-3">
             <div class="col">
                 <h4 class="mb-0">Dashboard</h4>
-                <small class="text-muted">Visão geral das entregas</small>
+                <small class="text-muted">Visão geral dos pedidos</small>
             </div>
         </div>
 
@@ -19,7 +19,7 @@
                     <div class="card-body py-3">
                         <div class="d-flex align-items-center">
                             <div class="mr-3">
-                                <span class="badge badge-danger">Atrasadas</span>
+                                <span class="badge badge-danger">Atrasados</span>
                             </div>
                             <h3 class="mb-0">{{ number_format($cards['atrasadas'] ?? 0, 0, ',', '.') }}</h3>
                         </div>
@@ -58,7 +58,7 @@
                     <div class="card-body py-3">
                         <div class="d-flex align-items-center">
                             <div class="mr-3">
-                                <span class="badge badge-success">Concluídas</span>
+                                <span class="badge badge-success">Concluídos</span>
                             </div>
                             <h3 class="mb-0">{{ number_format($cards['concluidas'] ?? 0, 0, ',', '.') }}</h3>
                         </div>
@@ -71,7 +71,7 @@
                     <div class="card-body py-3">
                         <div class="d-flex align-items-center">
                             <div class="mr-3">
-                                <span class="badge badge-secondary">Canceladas</span>
+                                <span class="badge badge-secondary">Cancelados</span>
                             </div>
                             <h3 class="mb-0">{{ number_format($cards['canceladas'] ?? 0, 0, ',', '.') }}</h3>
                         </div>

@@ -12,6 +12,7 @@ use App\Product;
 use App\Order_product;
 use App\User;
 use App\Helpers\Helper;
+use App\Services\ProductDeliveryService;
 
 class AjaxController extends Controller
 {
@@ -33,35 +34,26 @@ class AjaxController extends Controller
         }
     }
 
-    public function day_delivery_calc()
+    public function day_delivery_calc(Request $request, ProductDeliveryService $svc)
     {
-        if (!empty($_GET['quant'])) {
-            $quant = $_GET['quant'];
-            $quant = str_replace('.', '', $quant);
-            $id = $_GET['id'];
-            $product = Product::find($id);
-            $quant_total = Order_product::select('*')
-                ->join('orders', 'order_number', 'order_id')
-                ->where('order_products.product_id', $id)
-                ->where('orders.complete_order', 0)
-                ->sum('quant');
-            $quant_total = $quant_total + $quant;
-            if (!empty($quant_total)) {
-                $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
-                if ($days_necessary <= 0) {
-                    $days_necessary = 1;
-                }
-
-                $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
-
-                if (date('w', strtotime($delivery_in)) == 0) {
-                    $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
-                }
-            } else {
-                $delivery_in = date('Y-m-d');
-            }
-            echo json_encode($delivery_in);
+        if (empty($request->query('quant'))) {
+            return json_encode(null);
         }
+
+        $quant = (int) str_replace('.', '', $request->query('quant'));
+        $id    = $request->query('id');
+
+        $product = Product::find($id);
+        if (!$product || $quant <= 0) {
+            return json_encode(null);
+        }
+
+        $delivery_in = $svc->firstFeasibleDate($product, $quant, [
+            'extra_lead_days' => 0,
+            'hard_limit_days' => 365,
+        ]);
+
+        return json_encode($delivery_in);
     }
 
     public function search()
