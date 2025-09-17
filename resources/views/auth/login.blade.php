@@ -18,8 +18,7 @@
                                 <div class="col-md-6">
                                     <input id="email" type="email"
                                         class="form-control @error('email') is-invalid @enderror" name="email"
-                                        value="{{ old('email') ?? 'admin@ceramica.test' }}" required autocomplete="email"
-                                        autofocus>
+                                        value="{{ old('email') }}" required autocomplete="email" autofocus>
 
                                     @error('email')
                                         <span class="invalid-feedback" role="alert">
@@ -37,7 +36,7 @@
                                     <div class="input-group">
                                         <input onkeypress="capLock(event)" id="password" type="password"
                                             class="form-control @error('password') is-invalid @enderror" name="password"
-                                            required autocomplete="current-password" value="secret123">
+                                            required autocomplete="current-password" value="">
 
                                         <div class="input-group-append eye-area" style="cursor: pointer">
                                             <span class="input-group-text eye-opened">👁️</span>
