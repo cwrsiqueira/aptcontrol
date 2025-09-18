@@ -11,13 +11,14 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.7',
-            'updated_at' => '17/09/2025',
+            'version'    => 'v1.0.6',
+            'updated_at' => '11/09/2025',
             'updates'    => [
-                'Altera a data da próxima entrega para a próxima data que houver saldo, a partir da data do pedido',
-                'Permite que o usuário delete um pedido de uma determinada data e ao incluir outro pedido aproveite o saldo daquela',
-                'Atualiza visual do dashboard',
-                'Corrige outros bugs, segurança e integridade de dados',
+                'Tela de login - Implementa visualizar senha no login',
+                'Tela de login - Melhora visual da mensagem do caps lock no login',
+                'Menu pedidos - altera ordem dos pedidos por Data do pedido',
+                'Menu pedidos - soluciona bug que não aparecia o pedido do cliente no relatório',
+                'Editar pedido - Muda botões Salvar e Sair pra Concluir',
             ],
         ];
     }
