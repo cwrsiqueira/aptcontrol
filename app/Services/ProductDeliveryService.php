@@ -4,24 +4,22 @@ namespace App\Services;
 
 use App\Product;
 use App\Order_product;
-use App\DeliveryReservation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 class ProductDeliveryService
 {
-    public function firstFeasibleDate(
-        Product $product,
-        int $newQty,
-        array $options = [],
-        ?int $actingUserId = null // usuário que está criando/consultando
-    ): ?string {
-        // Fallback: se não informado, usa o usuário autenticado
-        if ($actingUserId === null) {
-            $actingUserId = Auth::id(); // pode continuar null (ex.: CLI)
-        }
-
+    /**
+     * Retorna a primeira data (Y-m-d) em que é possível entregar $newQty,
+     * respeitando: entrega usa saldo de abertura do dia; produção entra no fim do dia;
+     * sem entrega em domingo (produção ocorre).
+     *
+     * $options:
+     *   - extra_lead_days (int): gordura extra além do +1 dia mínimo (default 0)
+     *   - hard_limit_days (int): limite de busca pra frente (default 365)
+     */
+    public function firstFeasibleDate(Product $product, int $newQty, array $options = []): ?string
+    {
         $extraLeadDays = $options['extra_lead_days'] ?? 0;
         $hardLimitDays = $options['hard_limit_days'] ?? 365;
 
@@ -30,50 +28,16 @@ class ProductDeliveryService
 
         $today = Carbon::today();
 
-        // 1) Entregas já agendadas de HOJE pra frente (sempre order_products.delivery_date)
-        $scheduledByDate = $this->buildScheduledMap($product->id, $today);
+        // Mapa de entregas já agendadas (Y-m-d => int), empurrando qualquer domingo para segunda
+        $scheduledByDate = $this->buildScheduleMap($product->id, $today);
 
-        // 2) Backlog: entregas vencidas (< hoje) e não concluídas
-        $backlog = (int) Order_product::query()
-            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
-            ->where('order_products.product_id', $product->id)
-            ->where('orders.complete_order', 0)
-            ->whereDate('order_products.delivery_date', '<', $today->toDateString())
-            ->sum('order_products.quant');
-
-        if ($backlog > 0) {
-            // agrega backlog em HOJE (ou na segunda se hoje for domingo)
-            $backlogDate = $today->copy();
-            if ($backlogDate->dayOfWeekIso === 7) { // domingo -> segunda
-                $backlogDate->addDay();
-            }
-            $bkKey = $backlogDate->toDateString();
-            $scheduledByDate[$bkKey] = ($scheduledByDate[$bkKey] ?? 0) + $backlog;
-        }
-
-        // 3) Reservas: limpa expiradas e monta bloqueios SÓ de terceiros
-        $this->purgeExpiredReservations();
-        $reservedByOthers = $this->buildReservedByOthersMap($product->id, $today, $actingUserId);
-
-        // 4) ABERTURA de hoje: rolar produção de ONTEM
-        //    (ajuste mínimo para não quebrar ao virar o dia)
-        $openingStock = $stock + max(0, $daily);
-
-        // 5) Caso daily == 0, ainda sim simulamos (sem produção futura)
-        $date        = $today->copy()->addDay()->addDays($extraLeadDays); // mínimo +1 dia para novas entregas
+        // Data inicial: mínimo +1 dia, com gordura opcional
+        $date        = $today->copy()->addDay()->addDays($extraLeadDays);
         $delivery_in = null;
 
         for ($i = 0; $i < $hardLimitDays; $i++) {
-            if ($date->dayOfWeekIso !== 7) { // nunca agenda no domingo
-                if ($this->canPlaceOnDateStrict(
-                    $today,
-                    $openingStock,     // <- saldo de abertura já com a produção de ontem
-                    $daily,
-                    $scheduledByDate,
-                    $reservedByOthers,
-                    $newQty,
-                    $date
-                )) {
+            if ($date->dayOfWeekIso !== 7) { // não agenda em domingo
+                if ($this->canPlaceOnDateStrict($today, $stock, $daily, $scheduledByDate, $newQty, $date)) {
                     $delivery_in = $date->toDateString();
                     break;
                 }
@@ -84,7 +48,11 @@ class ProductDeliveryService
         return $delivery_in;
     }
 
-    private function buildScheduledMap(int $productId, Carbon $fromDate): array
+    /**
+     * Constrói o mapa ['Y-m-d' => total] das entregas já agendadas, da data base pra frente.
+     * Se houver entrega marcada num domingo, desloca para segunda na simulação.
+     */
+    private function buildScheduleMap(int $productId, Carbon $fromDate): array
     {
         $rows = Order_product::query()
             ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
@@ -98,101 +66,59 @@ class ProductDeliveryService
             ->groupBy('d')
             ->get();
 
-        $map = [];
+        $scheduledByDate = [];
         foreach ($rows as $r) {
             $d = Carbon::parse($r->d);
-            if ($d->dayOfWeekIso === 7) { // domingo -> segunda (regra de negócio)
+            if ($d->dayOfWeekIso === 7) {  // domingo -> segunda
                 $d = $d->addDay();
             }
             $key = $d->toDateString();
-            $map[$key] = ($map[$key] ?? 0) + (int) $r->total;
-        }
-        return $map;
-    }
-
-    private function purgeExpiredReservations(): void
-    {
-        DeliveryReservation::where('expires_at', '<=', now())->delete();
-    }
-
-    private function buildReservedByOthersMap(int $productId, Carbon $fromDate, ?int $actingUserId): array
-    {
-        $q = DeliveryReservation::query()
-            ->where('product_id', $productId)
-            ->whereDate('delivery_date', '>=', $fromDate->toDateString())
-            ->where('expires_at', '>', now());
-
-        // EXCLUI as reservas do próprio usuário (se soubermos quem é)
-        if ($actingUserId !== null) {
-            $q->where('user_id', '!=', $actingUserId);
+            $scheduledByDate[$key] = ($scheduledByDate[$key] ?? 0) + (int) $r->total;
         }
 
-        $rows = $q->select([
-            DB::raw('DATE(delivery_date) as d'),
-            DB::raw('SUM(quant) as total')
-        ])
-            ->groupBy('d')
-            ->get();
-
-        $map = [];
-        foreach ($rows as $r) {
-            $d = Carbon::parse($r->d);
-            if ($d->dayOfWeekIso === 7) { // domingo -> segunda
-                $d = $d->addDay();
-            }
-            $key = $d->toDateString();
-            $map[$key] = ($map[$key] ?? 0) + (int) $r->total;
-        }
-        return $map;
+        return $scheduledByDate;
     }
 
     /**
-     * Simulação dia a dia:
-     *  - ENTREGAS usam saldo de abertura do dia;
-     *  - RESERVAS DE TERCEIROS não consomem saldo, mas BLOQUEIAM a janela do dia:
-     *      deliveries(dia) + reservedByOthers(dia) <= opening(dia)
-     *  - PRODUÇÃO entra no fim do dia.
+     * Simula dia a dia com a regra correta:
+     * - ENTREGAS usam apenas o saldo de abertura do dia (sem usar produção do mesmo dia);
+     * - PRODUÇÃO entra no fim do dia;
+     * - Sem entrega em domingo (produção ocorre normalmente).
+     * - Novo pedido ($newQty) é tentado em $candidateDate.
      */
     private function canPlaceOnDateStrict(
         Carbon $today,
-        int $stockOpeningToday,   // <- já com produção de ontem
+        int $stock,
         int $daily,
         array $scheduledByDate,
-        array $reservedByOthers,
         int $newQty,
         Carbon $candidateDate
     ): bool {
-        // Copia o calendário e insere o novo pedido no dia candidato
         $test = $scheduledByDate;
         $candKey = $candidateDate->toDateString();
         $test[$candKey] = ($test[$candKey] ?? 0) + $newQty;
 
-        // Horizonte até o último dia com entrega
+        // Horizonte: até o último dia que tenha entrega
         $keys    = array_keys($test);
-        $lastKey = $keys ? max($keys) : $candKey; // 'Y-m-d' funciona lexicograficamente
+        $lastKey = $keys ? max($keys) : $candKey;
         $horizon = (strcmp($lastKey, $candKey) >= 0) ? $lastKey : $candKey;
 
-        // Saldo de abertura de HOJE (já rolado)
         $date    = $today->copy();
-        $current = $stockOpeningToday;
+        $current = $stock; // saldo de abertura do primeiro dia
 
         while ($date->toDateString() <= $horizon) {
             $dk = $date->toDateString();
             $isSunday = ($date->dayOfWeekIso === 7);
 
+            // 1) ENTREGAS com saldo de abertura
             $deliveries = $isSunday ? 0 : (int) ($test[$dk] ?? 0);
-            $reserved   = $isSunday ? 0 : (int) ($reservedByOthers[$dk] ?? 0);
-
-            // A janela do dia precisa caber: entregas + reservas <= saldo de abertura
-            if ($deliveries + $reserved > $current) {
-                return false;
+            if ($deliveries > $current) {
+                return false; // não há saldo de abertura suficiente
             }
+            $current -= $deliveries;
 
-            // Consome do saldo TANTO as entregas reais quanto as reservas de terceiros
-            $current -= ($deliveries + $reserved);
-
-            // Produção entra no fim do dia (fica pro dia seguinte)
-            $current += max(0, $daily);
+            // 2) PRODUÇÃO entra no fim do dia
+            $current += $daily;
 
             $date->addDay();
         }
