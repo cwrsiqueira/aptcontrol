@@ -41,6 +41,16 @@ class ProductDeliveryService
             ->whereDate('order_products.delivery_date', '<', $today->toDateString())
             ->sum('order_products.quant');
 
+        if ($backlog > 0) {
+            // agrega backlog em HOJE (ou na segunda se hoje for domingo)
+            $backlogDate = $today->copy();
+            if ($backlogDate->dayOfWeekIso === 7) { // domingo -> segunda
+                $backlogDate->addDay();
+            }
+            $bkKey = $backlogDate->toDateString();
+            $scheduledByDate[$bkKey] = ($scheduledByDate[$bkKey] ?? 0) + $backlog;
+        }
+
         // 3) Reservas: limpa expiradas e monta bloqueios SÓ de terceiros
         $this->purgeExpiredReservations();
         $reservedByOthers = $this->buildReservedByOthersMap($product->id, $today, $actingUserId);
@@ -62,8 +72,7 @@ class ProductDeliveryService
                     $scheduledByDate,
                     $reservedByOthers,
                     $newQty,
-                    $date,
-                    $backlog
+                    $date
                 )) {
                     $delivery_in = $date->toDateString();
                     break;
@@ -138,76 +147,56 @@ class ProductDeliveryService
     }
 
     /**
-     * Simulação dia a dia (com "carry" do excedente):
+     * Simulação dia a dia:
      *  - ENTREGAS usam saldo de abertura do dia;
-     *  - RESERVAS DE TERCEIROS reduzem a janela do dia (não são carregadas para frente);
-     *  - Se ENTREGAS (incl. novo pedido) > capacidade restante do dia, o excedente vira BACKLOG
-     *    e é drenado nos próximos DIAS ÚTEIS antes de prometer novas datas;
-     *  - PRODUÇÃO entra no fim do dia (disponível no dia seguinte);
-     *  - Nunca entrega aos domingos.
+     *  - RESERVAS DE TERCEIROS não consomem saldo, mas BLOQUEIAM a janela do dia:
+     *      deliveries(dia) + reservedByOthers(dia) <= opening(dia)
+     *  - PRODUÇÃO entra no fim do dia.
      */
     private function canPlaceOnDateStrict(
         Carbon $today,
-        int $stockOpeningToday,   // abertura de HOJE (já com produção de ontem)
+        int $stockOpeningToday,   // <- já com produção de ontem
         int $daily,
         array $scheduledByDate,
         array $reservedByOthers,
         int $newQty,
-        Carbon $candidateDate,
-        int $backlogStart = 0
+        Carbon $candidateDate
     ): bool {
-        // Calendário de teste com o novo pedido
+        // Copia o calendário e insere o novo pedido no dia candidato
         $test = $scheduledByDate;
         $candKey = $candidateDate->toDateString();
         $test[$candKey] = ($test[$candKey] ?? 0) + $newQty;
 
-        // Horizonte até o último dia com entrega (inclui o candidato)
+        // Horizonte até o último dia com entrega
         $keys    = array_keys($test);
-        $lastKey = $keys ? max($keys) : $candKey; // 'Y-m-d' compara lexicograficamente bem
+        $lastKey = $keys ? max($keys) : $candKey; // 'Y-m-d' funciona lexicograficamente
         $horizon = (strcmp($lastKey, $candKey) >= 0) ? $lastKey : $candKey;
 
-        // Estado da simulação
+        // Saldo de abertura de HOJE (já rolado)
         $date    = $today->copy();
         $current = $stockOpeningToday;
-        $backlog = max(0, (int) $backlogStart); // atrasados a quitar ao longo dos dias
 
         while ($date->toDateString() <= $horizon) {
-            $dk       = $date->toDateString();
+            $dk = $date->toDateString();
             $isSunday = ($date->dayOfWeekIso === 7);
 
-            // Quantidades do dia (domingo não entrega)
             $deliveries = $isSunday ? 0 : (int) ($test[$dk] ?? 0);
             $reserved   = $isSunday ? 0 : (int) ($reservedByOthers[$dk] ?? 0);
 
-            // Reserva de terceiros não pode, sozinha, estourar a abertura
-            if ($reserved > $current) {
-                return false; // dia impossível (excesso de reserva) -> falha
+            // A janela do dia precisa caber: entregas + reservas <= saldo de abertura
+            if ($deliveries + $reserved > $current) {
+                return false;
             }
 
-            // Capacidade real do dia para "entrega/backlog" depois de descontar reservas
-            $capacity = $current - $reserved;
+            // Consome do saldo TANTO as entregas reais quanto as reservas de terceiros
+            $current -= ($deliveries + $reserved);
 
-            if (!$isSunday) {
-                // 1) Quita BACKLOG primeiro
-                $useBacklog = min($backlog, $capacity);
-                $backlog   -= $useBacklog;
-                $capacity  -= $useBacklog;
-
-                // 2) Atende ENTREGAS do próprio dia com a capacidade restante
-                $servedToday    = min($deliveries, $capacity);
-                $deliveriesLeft = $deliveries - $servedToday;
-
-                // 3) O excedente de entregas de hoje vira BACKLOG para os próximos dias úteis
-                $backlog += $deliveriesLeft;
-            }
-
-            // Fim do dia: entra a produção (fica disponível no dia seguinte)
-            $current = $capacity + max(0, $daily);
+            // Produção entra no fim do dia (fica pro dia seguinte)
+            $current += max(0, $daily);
 
             $date->addDay();
         }
 
-        // Só aceitamos a data se, até o fim do dia candidato, todo o passado foi "pago"
-        return $backlog === 0;
+        return true;
     }
 }
