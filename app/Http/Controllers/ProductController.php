@@ -117,23 +117,6 @@ class ProductController extends Controller
 
         $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
 
-        // $data = Order_product::select('*')
-        // ->join('orders', 'orders.order_number', 'order_products.order_id')
-        // ->join('clients', 'clients.id', 'client_id')
-        // ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
-        // ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
-        // ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
-        // ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
-        // ->addSelect(['client_id_categoria' => Client::select('id_categoria')->whereColumn('clients.id', 'client_id')])
-        // ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
-        // ->where('product_id', $id)
-        // ->where('orders.complete_order', 0)
-        // ->whereIn('clients.id_categoria', $cats)
-        // ->groupBy('order_products.order_id')
-        // ->havingRaw('SUM(order_products.quant) <> ?', [0])
-        // ->orderBy('delivery_date')
-        // ->get();
-
         $quant_por_categoria = Order_product::join('orders', 'orders.order_number', 'order_products.order_id')
             ->join('clients', 'clients.id', 'orders.client_id')
             ->join('clients_categories', 'clients_categories.id', 'clients.id_categoria')
@@ -190,7 +173,7 @@ class ProductController extends Controller
         $delivery_in = $svc->firstFeasibleDate($product, 1, [
             'extra_lead_days' => 0,   // ajuste pra 1 se quiser gordura
             'hard_limit_days' => 365,
-        ]);
+        ], Auth::id());
 
         return [
             'quant_total' => (int) $quant_total,

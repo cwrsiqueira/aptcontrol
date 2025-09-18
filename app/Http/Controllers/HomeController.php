@@ -11,11 +11,12 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.7',
-            'updated_at' => '17/09/2025',
+            'version'    => 'v1.0.8',
+            'updated_at' => '18/09/2025',
             'updates'    => [
                 'Altera a data da próxima entrega para a próxima data que houver saldo, a partir da data do pedido',
-                'Permite que o usuário delete um pedido de uma determinada data e ao incluir outro pedido aproveite o saldo daquela',
+                'Permite que o usuário exclua um produto de um pedido de uma determinada data e ao incluir outro pedido aproveite o saldo daquela data',
+                'Permite que somente o usuário que excluiu o produto do pedido utilize o saldo dispobilizado naquela data, por um período de 1 hora, depois disso o saldo é liberado pra qualquer usuário',
                 'Atualiza visual do dashboard',
                 'Corrige outros bugs, segurança e integridade de dados',
             ],

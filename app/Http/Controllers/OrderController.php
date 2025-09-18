@@ -6,11 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use App\Order;
 use App\Client;
 use App\Product;
 use App\Order_product;
+use App\DeliveryReservation;
 use App\Helpers\Helper;
+use App\Services\ProductDeliveryService;
 
 class OrderController extends Controller
 {
@@ -457,71 +460,181 @@ class OrderController extends Controller
 
     public function add_line(Request $request)
     {
+        // Captura apenas os campos esperados (mantém assinatura e payload atuais)
         $data = $request->only([
             'id_order',
-            "order_id",
-            "product_id",
-            "quant",
-            "unit_price",
-            "delivery_date",
+            'order_id',
+            'product_id',
+            'quant',
+            'unit_price',
+            'delivery_date', // data vista pelo usuário no Blade
         ]);
 
-        Validator::make(
-            $data,
-            [
-                "id_order" => ['required'],
-                "order_id" => ['required', 'string'],
-                "product_id" => ['required'],
-                "quant" => ['required'],
-                "unit_price" => ['required'],
-                "delivery_date" => ['required', 'date'],
-            ]
-        )->validate();
+        try {
+            $result = DB::transaction(function () use (&$data) {
+                // --- Normalizações mínimas antes do cálculo ---
+                $data['quant'] = (int) str_replace('.', '', $data['quant'] ?? '0');
 
-        $data['quant'] = str_replace('.', '', $data['quant']);
+                // --- Carrega e "trava" registros críticos (fila por produto/pedido) ---
+                $order   = Order::where('id', $data['id_order'] ?? null)->lockForUpdate()->firstOrFail();
+                $product = Product::where('id', $data['product_id'] ?? null)->lockForUpdate()->firstOrFail();
 
-        $data['unit_price'] = str_replace('.', '', $data['unit_price']);
-        $data['unit_price'] = str_replace(',', '.', $data['unit_price']);
+                // --- Calcula a primeira data viável (fonte única da verdade) ---
+                $svc = app(ProductDeliveryService::class);
+                $suggested = $svc->firstFeasibleDate(
+                    $product,
+                    (int) $data['quant'],
+                    ['extra_lead_days' => 0, 'hard_limit_days' => 365],
+                    Auth::id() // ignora reservas do próprio usuário
+                );
 
-        $data['total_price'] = ($data['quant'] * $data['unit_price']) / 1000;
+                if (!$suggested) {
+                    // não há capacidade — falha de validação amigável
+                    throw ValidationException::withMessages([
+                        'delivery_date' => 'Sem capacidade disponível para atender esta quantidade.',
+                    ]);
+                }
 
-        $add_line = new Order_product();
-        $add_line->order_id = $data['order_id'];
-        $add_line->product_id = $data['product_id'];
-        $add_line->quant = $data['quant'];
-        $add_line->unit_price = $data['unit_price'];
-        $add_line->total_price = $data['total_price'];
-        $add_line->delivery_date = $data['delivery_date'];
-        $add_line->save();
+                // Preenche o campo *_confirmation para usar a regra "confirmed"
+                $data['delivery_date_confirmation'] = $suggested;
 
-        $total_order = Order::where('order_number', $add_line->order_id)->first();
-        $total_order->order_total = $total_order->order_total + $data['total_price'];
-        $total_order->save();
+                // --- Validação completa (inclui confirmed da data) ---
+                Validator::make(
+                    $data,
+                    [
+                        'id_order'                    => ['required'],
+                        'order_id'                    => ['required', 'string'],
+                        'product_id'                  => ['required', 'integer', 'exists:products,id'],
+                        'quant'                       => ['required', 'integer', 'min:1'],
+                        'unit_price'                  => ['required'],
+                        'delivery_date'               => ['required', 'date', 'confirmed'],
+                        'delivery_date_confirmation'  => ['required', 'date'],
+                    ],
+                    [
+                        'delivery_date.confirmed' => 'A previsão de entrega mudou e precisa ser recalculada.',
+                    ]
+                )->validate();
 
-        Helper::saveLog(Auth::user()->id, 'Alteração', $add_line->id, $add_line->order_id, 'Pedidos');
+                // --- Normalizações finais numéricas ---
+                $data['unit_price'] = (float) str_replace(',', '.', str_replace('.', '', $data['unit_price'] ?? '0'));
+                $data['total_price'] = ($data['quant'] * $data['unit_price']) / 1000; // mantenho sua regra
 
-        return redirect()->route('orders.edit', ['order' => $data['id_order']]);
+                // --- Grava item com a data vigente (igual à sugerida, pois passou no confirmed) ---
+                $add = new Order_product();
+                $add->order_id      = $data['order_id'];      // = orders.order_number
+                $add->product_id    = $data['product_id'];
+                $add->quant         = $data['quant'];
+                $add->unit_price    = $data['unit_price'];
+                $add->total_price   = $data['total_price'];
+                $add->delivery_date = $data['delivery_date']; // igual à $suggested aqui
+                $add->save();
+
+                // --- Atualiza total do pedido de forma segura ---
+                $order->order_total = $order->order_total + $data['total_price'];
+                $order->save();
+
+                // --- Log ---
+                Helper::saveLog(Auth::id(), 'Alteração', $add->id, $order->id, 'Pedidos');
+
+                // --- Consome reservas do próprio usuário nessa data (se existir o método) ---
+                if (method_exists($this, 'consumeUserReservations')) {
+                    $this->consumeUserReservations(
+                        (int) $data['product_id'],
+                        $add->delivery_date,
+                        Auth::id(),
+                        (int) $data['quant']
+                    );
+                }
+
+                return ['_ok' => true, 'order_id' => $order->id];
+            });
+
+            return redirect()->route('orders.edit', ['order' => $result['order_id']]);
+        } catch (ValidationException $e) {
+            // Se falhou (inclui caso "confirmed"), devolve old() com a SUGESTÃO no campo delivery_date
+            $old = $data;
+            if (!empty($data['delivery_date_confirmation'])) {
+                $old['delivery_date'] = $data['delivery_date_confirmation'];
+            }
+            return back()->withErrors($e->errors())->withInput($old);
+        }
+    }
+
+    private function consumeUserReservations(int $productId, string $deliveryDate, int $userId, int $qty): void
+    {
+        DB::transaction(function () use ($productId, $deliveryDate, $userId, $qty) {
+            $left = $qty;
+
+            $reservations = DeliveryReservation::where('product_id', $productId)
+                ->whereDate('delivery_date', $deliveryDate)   // <- order_products.delivery_date
+                ->where('user_id', $userId)
+                ->where('expires_at', '>', now())
+                ->orderBy('expires_at')       // consome as que vencem primeiro
+                ->lockForUpdate()             // ok em MySQL/Postgres; em SQLite segue sem efeito
+                ->get();
+
+            foreach ($reservations as $r) {
+                if ($left <= 0) break;
+
+                $use   = min($left, (int)$r->quant);
+                $left -= $use;
+                $r->quant = (int)$r->quant - $use;
+
+                if ($r->quant <= 0) {
+                    $r->delete();
+                } else {
+                    $r->save();
+                }
+            }
+        });
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  \App\Order_product  $order_product
      * @return \Illuminate\Http\Response
      */
     public function order_product_destroy(Order_product $order_product)
     {
-        $id = $order_product->id;
-        $order_product = Order_product::find($id);
-        $order_number = $order_product->order_id;
-        $order = Order::where('order_number', $order_number)->first();
-        if ($order_product->quant > 0) {
-            $order->order_total = $order->order_total - $order_product->total_price;
-            $order->save();
-        }
-        $order_product->delete();
-        Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
-        return redirect()->route('orders.edit', ['order' => $order->id]);
+        $orderIdForRedirect = DB::transaction(function () use ($order_product) {
+            // Recarrega o item garantindo que existe (e pega os dados necessários antes do delete)
+            $item = Order_product::findOrFail($order_product->id);
+
+            // Em order_products, o campo order_id referencia orders.order_number
+            $order_number = $item->order_id;
+            $order        = Order::where('order_number', $order_number)->firstOrFail();
+
+            // 1) Cria RESERVA (TTL 60 min) somente se havia quantidade positiva
+            if ((int)$item->quant > 0) {
+                DeliveryReservation::create([
+                    'order_id'      => $order_number,          // origem opcional (order_number)
+                    'product_id'    => $item->product_id,
+                    'delivery_date' => $item->delivery_date,   // ATENÇÃO: coluna fica em order_products.*
+                    'quant'         => (int)$item->quant,
+                    'user_id'       => Auth::id(),
+                    'expires_at'    => now()->addMinutes(60),
+                ]);
+            }
+
+            // 2) Ajusta o total do pedido (se aplicável)
+            if ((int)$item->quant > 0) {
+                $order->order_total = $order->order_total - $item->total_price;
+                $order->save();
+            }
+
+            // 3) Remove o item
+            $deletedItemId = $item->id; // guarda para o log
+            $item->delete();
+
+            // 4) Log
+            Helper::saveLog(Auth::id(), 'Alteração', $deletedItemId, $order->id, 'Pedidos');
+
+            // retorna para o redirect fora da transação
+            return $order->id;
+        });
+
+        return redirect()->route('orders.edit', ['order' => $orderIdForRedirect]);
     }
 
     public function destroy(Order $order)

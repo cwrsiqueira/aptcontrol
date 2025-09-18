@@ -51,7 +51,7 @@ class AjaxController extends Controller
         $delivery_in = $svc->firstFeasibleDate($product, $quant, [
             'extra_lead_days' => 0,
             'hard_limit_days' => 365,
-        ]);
+        ], Auth::id());
 
         return json_encode($delivery_in);
     }

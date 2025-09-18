@@ -173,15 +173,14 @@
                             <div class="col-sm">
                                 <label for="quant">Quantidade:</label>
                                 <input required class="form-control quant @error('quant') is-invalid @enderror"
-                                    style="width: 100%;" type="text" name="quant" value="{{ old('quant') }}"
-                                    placeholder="0">
+                                    style="width: 100%;" type="text" name="quant" value="" placeholder="0">
                             </div>
 
                             <div class="col-sm">
                                 <label for="unit_price">Preço/Milheiro:</label>
                                 <input required class="form-control valor @error('unit_price') is-invalid @enderror"
                                     style="width: 100%;" type="text" name="unit_price" placeholder="0,00"
-                                    value="{{ old('unit_price') }}">
+                                    value="">
                             </div>
 
                             <div class="col-sm">
