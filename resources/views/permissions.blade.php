@@ -112,7 +112,7 @@
                                                     <input type="checkbox" class="mr-2" name="permission_item[]"
                                                         id="perm_{{ $item->id }}" value="{{ $item->id }}"
                                                         @if (in_array($item->id, $user_permissions)) checked @endif>
-                                                    {{ $isMenu ? 'Menu ' . $conf['label'] : $item->name }}
+                                                    {{ $isMenu ? $item->id . ' - ' . 'Menu ' . $conf['label'] : $item->id . ' - ' . $item->name }}
                                                 </label>
                                             </li>
                                         @endif

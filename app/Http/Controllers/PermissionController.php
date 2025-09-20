@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,8 @@ class PermissionController extends Controller
         $this->middleware('can:admin');
     }
 
-    public function get_permissions() {
+    public function get_permissions()
+    {
         $id = Auth::user()->id;
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
@@ -36,13 +38,13 @@ class PermissionController extends Controller
     public function index()
     {
         $users = User::select('*')
-        ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
-        ->orderBy('users.confirmed_user')
-        ->orderBy('users.name')
-        ->paginate(10);
+            ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
+            ->orderBy('users.confirmed_user')
+            ->orderBy('users.name')
+            ->paginate(10);
 
         $user_permissions = $this->get_permissions();
-        
+
         return view('permissions', [
             'user' => Auth::user(),
             'user_permissions' => $user_permissions,
@@ -91,9 +93,9 @@ class PermissionController extends Controller
     public function edit($id)
     {
         $users = User::select('*')
-        ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
-        ->orderBy('users.name')
-        ->paginate(10);
+            ->addSelect(['group_name' => Permission_group::select('name')->whereColumn('permission_groups.id', 'users.confirmed_user')])
+            ->orderBy('users.name')
+            ->paginate(10);
         $user_edit = User::find($id);
         $permissions = Permission_item::orderBy('slug')->get();
         $user_permissions_obj = User::find($id)->permissions;
@@ -109,7 +111,7 @@ class PermissionController extends Controller
                 $item['ident'] = 'pri';
             }
         }
-        
+
         return view('permissions', [
             'user' => Auth::user(),
             'user_edit' => $user_edit,
@@ -142,11 +144,14 @@ class PermissionController extends Controller
                 'permission_item' => 'nullable',
             ]
         )->validate();
-        
+
         $perm = Permission_link::where('id_user', $data['user_id'])->delete();
-        
+        $permissoes = ['Sem acessos'];
+
         if (!empty($data['permission_item'])) {
-            for($i = 0; $i < count($data['permission_item']); $i++) {
+            $permissoes = [];
+            for ($i = 0; $i < count($data['permission_item']); $i++) {
+                $permissoes[] = $data['permission_item'][$i];
                 $perm = new Permission_link();
                 $perm->id_user = $data['user_id'];
                 $perm->id_permission_item = $data['permission_item'][$i];
@@ -157,6 +162,8 @@ class PermissionController extends Controller
         $conf_user = User::find($data['user_id']);
         $conf_user->confirmed_user = 2;
         $conf_user->save();
+
+        Helper::saveLog(Auth::user()->id, 'Permissão', implode(',', $permissoes), $conf_user->name, 'Permissões');
 
         return redirect()->route('permissions.index');
     }

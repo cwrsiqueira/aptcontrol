@@ -11,14 +11,13 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.6',
-            'updated_at' => '11/09/2025',
+            'version'    => 'v1.0.7',
+            'updated_at' => '20/09/2025',
             'updates'    => [
-                'Tela de login - Implementa visualizar senha no login',
-                'Tela de login - Melhora visual da mensagem do caps lock no login',
-                'Menu pedidos - altera ordem dos pedidos por Data do pedido',
-                'Menu pedidos - soluciona bug que não aparecia o pedido do cliente no relatório',
-                'Editar pedido - Muda botões Salvar e Sair pra Concluir',
+                'Implementa Editar Linha do Produto por pedido',
+                'Implementa registro de log para concessão de acessos',
+                'Ajusta visuais',
+                'Resolve bugs diversos',
             ],
         ];
     }

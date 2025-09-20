@@ -66,6 +66,15 @@
 
         <h2>Pedidos</h2>
 
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
         @if ($errors->has('cannot_exclude') || $errors->has('no-access'))
             <div class="alert alert-danger alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
@@ -209,17 +218,6 @@
                     });
                 }
             })
-
-            if (window.localStorage) {
-
-                if (!localStorage.getItem('firstLoad')) {
-                    localStorage['firstLoad'] = true;
-                    window.location.reload();
-
-                } else {
-                    localStorage.removeItem('firstLoad');
-                }
-            }
 
             $('.complete_order').click(function() {
                 if (confirm('Confirma a entrega do pedido?')) {

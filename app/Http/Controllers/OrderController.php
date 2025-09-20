@@ -504,6 +504,113 @@ class OrderController extends Controller
     }
 
     /**
+     * Atualiza uma linha (item) de um pedido e recalcula o total da ordem.
+     *
+     * Este método:
+     * 1. Valida os dados enviados do formulário.
+     * 2. Converte os valores numéricos do formato brasileiro (1.234,56) para decimal.
+     * 3. Atualiza as informações de um item específico na tabela `order_products`.
+     * 4. Recalcula o valor total da ordem, somando todos os `total_price` de
+     *    `order_products` vinculados a esta ordem (`order_products.order_id = orders.order_number`).
+     * 5. Atualiza o campo `order_total` na tabela `orders` com o valor recalculado.
+     * 6. Registra a alteração no log do sistema.
+     *
+     * @param  \Illuminate\Http\Request  $request  Dados da requisição contendo informações do item do pedido.
+     * @return \Illuminate\Http\RedirectResponse   Redireciona de volta para a tela de edição do pedido.
+     */
+    public function edit_line(Request $request)
+    {
+        if (!Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Acesso permitido somente para administradores!',
+            ];
+            return redirect()->route('orders.index')->with('error', 'Acesso permitido somente para administradores!');
+        }
+
+        // Coleta somente os campos necessários vindos do formulário
+        $data = $request->only([
+            'id',
+            'order_id',     // número da ordem (orders.order_number)
+            'id_order',     // id do item (order_products.id)
+            'product_id',   // produto selecionado
+            'quant',        // quantidade
+            'unit_price',   // valor unitário
+            'delivery_date', // data de entrega
+            'total_price',  // total (pode vir do form, senão calculamos)
+        ]);
+
+        /**
+         * Validação dos campos obrigatórios
+         */
+        Validator::make($data, [
+            'id'            => 'required',
+            'order_id'      => 'required',
+            'id_order'      => 'required',
+            'product_id'    => 'required',
+            'quant'         => 'required',
+            'unit_price'    => 'required',
+            'delivery_date' => 'required',
+        ])->validate();
+
+        /**
+         * Converte valores do formato brasileiro (1.234,56) para decimal
+         * - Primeiro remove os pontos dos milhares
+         * - Depois troca vírgula decimal por ponto
+         */
+        $data['quant']       = (float) str_replace(',', '.', str_replace('.', '', $data['quant']));
+        $data['unit_price']  = (float) str_replace(',', '.', str_replace('.', '', $data['unit_price']));
+
+        /**
+         * Se o total_price não vier do formulário, calcula multiplicando quantidade * valor unitário
+         */
+        if (!isset($data['total_price']) || $data['total_price'] === null || $data['total_price'] === '') {
+            $data['total_price'] = ($data['quant'] * $data['unit_price']) / 1000;
+        } else {
+            $data['total_price'] = (float) str_replace(',', '.', str_replace('.', '', $data['total_price']));
+        }
+
+        /**
+         * DB::transaction -> garante que todas as operações serão executadas juntas
+         * - Se algum passo falhar, nada será salvo (rollback)
+         */
+        DB::transaction(function () use ($data) {
+            /**
+             * 1) Atualiza a linha (item) da ordem na tabela order_products
+             */
+            $edit_line = Order_product::findOrFail($data['id']);
+            $edit_line->product_id    = $data['product_id'];
+            $edit_line->quant         = $data['quant'];
+            $edit_line->unit_price    = $data['unit_price'];
+            $edit_line->total_price   = $data['total_price'];
+            $edit_line->delivery_date = $data['delivery_date'];
+            $edit_line->save();
+
+            /**
+             * 2) Recalcula o total da ordem:
+             *    Soma todos os total_price de order_products vinculados a esta ordem
+             */
+            $novoTotal = Order_product::where('order_id', $edit_line->order_id)
+                ->sum('total_price');
+
+            /**
+             * 3) Atualiza o campo orders.order_total com a soma calculada
+             */
+            Order::where('order_number', $edit_line->order_id)
+                ->update(['order_total' => $novoTotal]);
+
+            /**
+             * 4) Grava log da alteração (usuário, ação, id, etc.)
+             */
+            Helper::saveLog(Auth::user()->id, 'Alteração', $edit_line->id, $edit_line->order_id, 'Pedidos');
+        });
+
+        /**
+         * Redireciona de volta para a tela de edição da ordem
+         */
+        return redirect()->route('orders.edit', ['order' => $data['id_order']]);
+    }
+
+    /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id

@@ -34,14 +34,14 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th colspan="1">Data: <input class="form-control" type="date" name="order_date"
+                        <th colspan="2">Data: <input class="form-control" type="date" name="order_date"
                                 id="order_date" value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input
                                 type="hidden" name="order_id" id="order_id" value="{{ $order->id }}"></th>
                         <th colspan="5">Cliente: <input readonly class="form-control" type="text" name="client_name"
                                 id="client_name" value="{{ $order->name_client }}"></th>
                     </tr>
                     <tr>
-                        <th colspan="1">Pedido Nr.:
+                        <th colspan="2">Pedido Nr.:
                             <input class="form-control" type="text" name="order_number" id="order_number"
                                 value="{{ $order->order_number }}" readonly>
 
@@ -81,7 +81,7 @@
             <th>Vlr.Unit.</th>
             <th>Vlr.Total</th>
             <th>Entrega</th>
-            <th colspan="2">Linha</th>
+            <th colspan="2">Ações</th>
         </tr>
         </thead>
         <tbody class="table-prod">
@@ -105,6 +105,13 @@
                             {{ date('d/m/Y', strtotime($item->delivery_date)) }}
                         @endif
                     </td>
+                    @if (Auth::user()->is_admin)
+                        <td>
+                            <a class="edit_line" style='color:orange;' href='#' data-toggle='tooltip'
+                                data-item="{{ $item }}" title='Editar linha!'><i class='fas fa-fw fa-edit'
+                                    style="font-size: 24px;"></i></a>
+                        </td>
+                    @endif
                     <td>
                         @if ($order->complete_order == 0)
                             <form title="Excluir Linha!"
@@ -213,6 +220,94 @@
         </div>
     </div>
 
+    @if (Auth::user()->is_admin)
+        <!-- MODAL EDITAR PRODUTO -->
+        <div class="modal fade" id="modal_editLine">
+            <div class="modal-dialog modal-lg">
+                <form method="post" action="{{ route('edit_line') }}" id="form_edit_cliente">
+                    @csrf
+                    <div class="modal-content">
+
+                        <!-- Modal Header -->
+                        <div class="modal-header">
+                            <h4 class="modal-title">Editar Produto</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+
+                        {{-- Show errors --}}
+                        @if ($errors->any())
+                            <div class="alert alert-danger">
+                                <ul>
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        <!-- Modal body -->
+                        <div class="modal-body">
+
+                            <input type="hidden" name="order_id" id="edit_order_id"
+                                value="{{ $order->order_number }}">
+                            <input type="hidden" name="id_order" id="edit_id_order" value="{{ $order->id }}">
+                            <input type="hidden" name="id" id="edit_order_product_id" value="">
+
+                            <div class="row">
+                                <div class="col-sm-3"><label for="product_id">Produto:</label>
+                                    <select required class="form-control @error('product_id') is-invalid @enderror"
+                                        name="product_id" id="edit_prod">
+                                        @foreach ($products as $product)
+                                            <option value="{{ $product->id }}">{{ $product->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-sm">
+                                    <label for="quant">Quantidade:</label>
+                                    <input required class="form-control edit_quant @error('quant') is-invalid @enderror"
+                                        style="width: 100%;" type="text" name="quant" id="edit_quant"
+                                        value="{{ old('quant') }}" placeholder="0">
+                                </div>
+
+                                <div class="col-sm">
+                                    <label for="unit_price">Preço/Milheiro:</label>
+                                    <input required class="form-control valor @error('unit_price') is-invalid @enderror"
+                                        style="width: 100%;" type="text" name="unit_price" id="edit_unit_price"
+                                        placeholder="0,00" id="edit_unit_price" value="{{ old('unit_price') }}">
+                                </div>
+
+                                <div class="col-sm">
+                                    <label>Valor Total:</label>
+                                    <input required class="form-control edit_total_val" type="text" readonly
+                                        id="edit_total_val" value="0,00">
+                                </div>
+
+                                <div class="col-sm-3">
+                                    <label for="delivery_date">Previsão de Entrega:</label>
+                                    <input required
+                                        class="form-control edit_delivery_date @error('valor') is-invalid @enderror"
+                                        style="width: 100%;" type="date" name="delivery_date"
+                                        id="edit_delivery_date">
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Modal footer -->
+                        <div class="modal-footer justify-content-between">
+                            <input type="submit" class="btn btn-success" value="Salvar">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Fechar</button>
+                        </div>
+
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    @endif
+
 @endsection
 
 @section('css')
@@ -301,7 +396,6 @@
                 $('.btn-salvar').attr('disabled', false).attr('class', 'btn btn-success btn-salvar').val(
                     'Salvar');
             })
-
         });
     </script>
 
@@ -312,4 +406,84 @@
             })
         </script>
     @endif
+
+    {{-- EDITAR LINHA / PRODUTO --}}
+
+    @if (empty($_GET['q']) && !empty($_GET['new-edit']))
+        <script>
+            $(function() {
+                $('#modal_editLine').modal();
+            })
+        </script>
+    @endif
+
+    <script>
+        $(function() {
+            // Pega valores dos campos
+            var editProd = document.querySelector('#edit_prod');
+            var editQuant = document.querySelector('#edit_quant');
+            var editUnitPrice = document.querySelector('#edit_unit_price');
+            var editTotalVal = document.querySelector('#edit_total_val');
+            var editDeliveryDate = document.querySelector('#edit_delivery_date');
+
+            $('#edit_quant').mask('000.000', {
+                reverse: true
+            });
+
+            // Exibir loader/spin antes de carregar o modal
+            $("#modal_editLine").on('shown.bs.modal', function() {
+                $('#loader').modal('hide');
+            });
+
+            // Preencher o modal Editar Produto quando clicar em editar
+            $('.edit_line').click(function() {
+                const item = JSON.parse(this.dataset.item);
+
+                document.querySelector('#edit_prod').value = item.product_id;
+                document.querySelector('#edit_order_product_id').value = item.id;
+
+                // Converta para número
+                const q = Number(item.quant); // ou parseInt(item.quant, 10)
+                const up = Number(item.unit_price); // ou parseFloat(item.unit_price)
+
+                // Formatações
+                editQuant.value = q.toLocaleString('pt-BR'); // 1.000, 10.000 etc.
+
+                editUnitPrice.value = up.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+                editTotalVal.value = ((q * up) / 1000).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
+                editDeliveryDate.value = item.delivery_date;
+
+                $('#modal_editLine').modal();
+            });
+
+            // Calcular Valor Total do Produto
+            $('#edit_unit_price').blur(function() {
+                calcularValorTotalProduto();
+            })
+            $('#edit_quant').blur(function() {
+                calcularValorTotalProduto();
+            })
+
+            function calcularValorTotalProduto() {
+                var quantidade = editQuant.value.replace('.', '').replace(',', '.');
+                var precoMilheiro = editUnitPrice.value.replace('.', '').replace(',', '.');
+                var valorTotal = (quantidade * precoMilheiro) / 1000;
+
+                console.log(quantidade, precoMilheiro, valorTotal);
+
+                var formatado = valorTotal.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2
+                });
+                $('.edit_total_val').val(formatado);
+            }
+        });
+    </script>
 @endsection
