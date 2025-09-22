@@ -27,6 +27,7 @@ class Order extends Model
         'order_date'     => 'date',
         'order_total'    => 'decimal:2', // ajuste conforme seu tipo/escala
         'complete_order' => 'integer',
+        'favorite_date' => 'boolean',
     ];
 
     public function seller()

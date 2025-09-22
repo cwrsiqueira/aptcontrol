@@ -449,6 +449,36 @@ class OrderController extends Controller
         return redirect()->route('orders.index', ['q' => $order->order_number]);
     }
 
+    public function toggleDateFavorite($orderId)
+    {
+        $user_permissions = Helper::get_permissions();
+        // Mantendo mesma permissão '10' da tela C/C Produto
+        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+            return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
+        }
+
+        $order = \App\Order::findOrFail($orderId);
+        $order->favorite_date = !$order->favorite_date;
+        $order->save();
+
+        return response()->json(['ok' => true, 'favorite_date' => (bool) $order->favorite_date]);
+    }
+
+    public function toggleDeliveryFavorite($orderProductId)
+    {
+        $user_permissions = Helper::get_permissions();
+        // mesma permissão que você já usa na tela C/C Produto
+        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+            return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
+        }
+
+        $op = Order_product::findOrFail($orderProductId);
+        $op->favorite_delivery = !$op->favorite_delivery;
+        $op->save();
+
+        return response()->json(['ok' => true, 'favorite_delivery' => (bool) $op->favorite_delivery, 'id' => $orderProductId]);
+    }
+
     public function add_line(Request $request)
     {
         $data = $request->only([
@@ -457,6 +487,7 @@ class OrderController extends Controller
             "product_id",
             "quant",
             "delivery_date",
+            "fixar_data",
         ]);
 
         Validator::make(
@@ -479,6 +510,7 @@ class OrderController extends Controller
         $add_line->unit_price = 0;
         $add_line->total_price = 0;
         $add_line->delivery_date = $data['delivery_date'];
+        $add_line->favorite_delivery = isset($data['fixar_data']) ? 1 : 0;
         $add_line->save();
 
         $total_order = Order::where('order_number', $add_line->order_id)->first();
@@ -522,6 +554,7 @@ class OrderController extends Controller
             'product_id',   // produto selecionado
             'quant',        // quantidade
             'delivery_date', // data de entrega
+            'edit_fixar_data',
         ]);
 
         /**
@@ -557,6 +590,7 @@ class OrderController extends Controller
             $edit_line->unit_price    = 0;
             $edit_line->total_price   = 0;
             $edit_line->delivery_date = $data['delivery_date'];
+            $edit_line->favorite_delivery = isset($data['edit_fixar_data']) ? 1 : 0;
             $edit_line->save();
 
             /**

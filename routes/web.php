@@ -63,6 +63,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/order_change_status',  'AjaxController@order_change_status')->name('order_change_status');
     Route::get('/del_dup_order',        'AjaxController@del_dup_order')->name('del_dup_order');
 
+    // Toggle favorito de cliente
+    Route::post('/clients/{client}/toggle-favorite', 'ClientController@toggleFavorite')
+        ->name('clients.toggle_favorite');
+    // Toggle favorito da data do pedido (order_date)
+    Route::post('/orders/{order}/toggle-date-favorite', 'OrderController@toggleDateFavorite')
+        ->name('orders.toggle_date_favorite');
+    // Toggle favorito da DATA DE ENTREGA por item (order_products)
+    Route::post('/order-products/{orderProduct}/toggle-delivery-favorite', 'OrderController@toggleDeliveryFavorite')
+        ->name('order_products.toggle_delivery_favorite');
+
     // Relatórios adicionais e concluídos
     Route::get('/report_delivery',           'ReportController@report_delivery')->name('report_delivery');
     Route::get('/report_delivery_byPeriod',  'ReportController@report_delivery_byPeriod')->name('report_delivery_byPeriod');

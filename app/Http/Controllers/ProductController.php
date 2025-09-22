@@ -85,7 +85,7 @@ class ProductController extends Controller
         }
 
         $product = Product::find($id);
-        $data = Order_product::select('*', 'quant as saldo')
+        $data = Order_product::select('*', 'order_products.id', 'quant as saldo')
             ->join('orders', 'orders.order_number', 'order_products.order_id')
             ->join('clients', 'clients.id', 'client_id')
             ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
@@ -94,9 +94,10 @@ class ProductController extends Controller
             ->addSelect(['client_id_categoria' => Client::select('id_categoria')->whereColumn('clients.id', 'client_id')])
             ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
             ->addSelect(['seller_name' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id')])
+            ->addSelect(['client_favorite' => Client::select('is_favorite')->whereColumn('clients.id', 'client_id')])
+            ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'clients.id_categoria')])
             ->where('product_id', $id)
             ->where('orders.complete_order', 0)
-            // ->where('delivery_date', '>', '1970-01-01')
             ->whereIn('clients.id_categoria', $cats)
             ->orderBy('delivery_date')
             ->get();

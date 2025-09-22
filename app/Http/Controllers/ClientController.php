@@ -12,7 +12,7 @@ use App\Order;
 use App\Order_product;
 use App\User;
 use App\Clients_category;
-use Helper;
+use App\Helpers\Helper;
 
 class ClientController extends Controller
 {
@@ -27,7 +27,8 @@ class ClientController extends Controller
         $this->middleware('can:menu-clientes');
     }
 
-    public function get_permissions() {
+    public function get_permissions()
+    {
         $id = Auth::user()->id;
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
@@ -48,17 +49,17 @@ class ClientController extends Controller
         $q = '';
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
-            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(10);
+            $clients = Client::where('name', 'LIKE', '%' . $q . '%')->paginate(10);
             $category = Clients_category::where('name', $q)->first();
             if ($category != null) {
                 $clients = Client::where('id_categoria', $category['id'])
-                ->paginate(10);
+                    ->paginate(10);
             }
         }
 
         $user_permissions = $this->get_permissions();
         $categories = Clients_category::orderBy('id')->get();
-        
+
         return view('clients', [
             'user' => Auth::user(),
             'clients' => $clients,
@@ -68,7 +69,7 @@ class ClientController extends Controller
         ]);
     }
 
-    public function cc_client($id) 
+    public function cc_client($id)
     {
         $user_permissions = $this->get_permissions();
         if (!in_array('15', $user_permissions) && !Auth::user()->is_admin) {
@@ -87,23 +88,23 @@ class ClientController extends Controller
         //     $date_fin = $_GET['date_fin'];
         // }
         if (!empty($_GET['por_produto'])) {
-                $por_produto = $_GET['por_produto'] ?? $por_produto;
-            }
+            $por_produto = $_GET['por_produto'] ?? $por_produto;
+        }
         $client = Client::find($id);
         $orders = Order::select('order_number')->where('client_id', $id)->get();
         $data = Order_product::whereIn('order_id', $orders)
-        ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
-        ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-        ->addSelect(['orders_order_id' => Order::select('id')->whereColumn('order_number', 'order_id')])
-        ->join('orders', 'order_number', 'order_id')
-        ->whereIn('product_id', $por_produto)
-        // ->whereBetween('delivery_date', [$date_ini, $date_fin])
-        ->where('complete_order', 0)
-        ->orderBy('delivery_date')
-        ->get();
+            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
+            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+            ->addSelect(['orders_order_id' => Order::select('id')->whereColumn('order_number', 'order_id')])
+            ->join('orders', 'order_number', 'order_id')
+            ->whereIn('product_id', $por_produto)
+            // ->whereBetween('delivery_date', [$date_ini, $date_fin])
+            ->where('complete_order', 0)
+            ->orderBy('delivery_date')
+            ->get();
 
         $data_sum = array();
-        foreach($data as $item) {
+        foreach ($data as $item) {
             $data_sum[] = $item->order_id;
         }
 
@@ -123,21 +124,21 @@ class ClientController extends Controller
             }
         }
 
-        if(empty($_GET['entregas'])) {
+        if (empty($_GET['entregas'])) {
             $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
         }
 
         foreach ($orders as $key => $value) {
             $total_product[$value->order_number] = DB::table('order_products')
-            ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(DB::raw('sum(quant) as quant_total'))
-            ->where('order_id', $value->order_number)
-            ->join('orders', 'order_number', 'order_id')
-            ->where('complete_order', 0)
-            ->whereIn('order_id', $data_sum)
-            ->groupBY('product_id')
-            ->get();
+                ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
+                ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+                ->addSelect(DB::raw('sum(quant) as quant_total'))
+                ->where('order_id', $value->order_number)
+                ->join('orders', 'order_number', 'order_id')
+                ->where('complete_order', 0)
+                ->whereIn('order_id', $data_sum)
+                ->groupBY('product_id')
+                ->get();
         }
 
         $product_total = array();
@@ -161,6 +162,22 @@ class ClientController extends Controller
             'user_permissions' => $user_permissions
         ]);
     }
+
+    public function toggleFavorite($clientId)
+    {
+        $user_permissions = Helper::get_permissions();
+        // Mesma permissão da tela C/C Produto (você usa '10' lá)
+        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+            return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
+        }
+
+        $client = \App\Client::findOrFail($clientId);
+        $client->is_favorite = !$client->is_favorite;
+        $client->save();
+
+        return response()->json(['ok' => true, 'is_favorite' => (bool) $client->is_favorite]);
+    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -215,7 +232,6 @@ class ClientController extends Controller
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Clientes');
 
         return redirect()->route("clients.index", ['q' => $prod->name]);
-
     }
 
     /**
@@ -249,19 +265,19 @@ class ClientController extends Controller
         $q = '';
         if (!empty($_GET['q'])) {
             $q = $_GET['q'];
-            $clients = Client::where('name', 'LIKE', '%'.$q.'%')->paginate(10);
+            $clients = Client::where('name', 'LIKE', '%' . $q . '%')->paginate(10);
             $category = Clients_category::where('name', $q)->first();
             if ($category != null) {
                 $clients = Client::where('id_categoria', $category['id'])
-                ->paginate(10);
+                    ->paginate(10);
             }
         }
-        
+
         $client = Client::find($id);
         $user_permissions = $this->get_permissions();
         $categories = Clients_category::orderBy('id')->get();
 
-        return view('clients',[
+        return view('clients', [
             'user' => Auth::user(),
             'client' => $client,
             'clients' => $clients,
@@ -343,7 +359,7 @@ class ClientController extends Controller
             $client = Client::find($id);
             Client::find($id)->delete();
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $client->name, 'Clientes');
-            
+
             return redirect()->route('clients.index', ['q' => $_GET['q']]);
         }
     }

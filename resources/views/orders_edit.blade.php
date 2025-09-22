@@ -164,7 +164,7 @@
                         <input type="hidden" name="id_order" value="{{ $order->id }}">
 
                         <div class="row">
-                            <div class="col-sm-3"><label for="product_id">Produto:</label>
+                            <div class="col-sm-5"><label for="product_id">Produto:</label>
                                 <select required class="form-control @error('product_id') is-invalid @enderror"
                                     name="product_id" id="prod">
                                     @foreach ($products as $product)
@@ -185,6 +185,11 @@
                                 <input required class="form-control delivery_date @error('valor') is-invalid @enderror"
                                     style="width: 100%;" type="date" name="delivery_date" id="delivery_date"
                                     readonly>
+                            </div>
+
+                            <div class="col-sm">
+                                <label for="fixar_data">Fixar data:</label>
+                                <input type="checkbox" class="form-control" id="fixar_data" name="fixar_data">
                             </div>
 
                         </div>
@@ -238,7 +243,7 @@
                             <input type="hidden" name="id" id="edit_order_product_id" value="">
 
                             <div class="row">
-                                <div class="col-sm-3"><label for="product_id">Produto:</label>
+                                <div class="col-sm-5"><label for="product_id">Produto:</label>
                                     <select required class="form-control @error('product_id') is-invalid @enderror"
                                         name="product_id" id="edit_prod">
                                         @foreach ($products as $product)
@@ -260,6 +265,12 @@
                                         class="form-control edit_delivery_date @error('valor') is-invalid @enderror"
                                         style="width: 100%;" type="date" name="delivery_date"
                                         id="edit_delivery_date">
+                                </div>
+
+                                <div class="col-sm">
+                                    <label for="edit_fixar_data">Fixar data:</label>
+                                    <input type="checkbox" class="form-control" id="edit_fixar_data"
+                                        name="edit_fixar_data">
                                 </div>
 
                             </div>
@@ -381,6 +392,7 @@
             var editProd = document.querySelector('#edit_prod');
             var editQuant = document.querySelector('#edit_quant');
             var editDeliveryDate = document.querySelector('#edit_delivery_date');
+            var editFixarData = document.querySelector('#edit_fixar_data');
 
             $('#edit_quant').mask('000.000', {
                 reverse: true
@@ -394,6 +406,7 @@
             // Preencher o modal Editar Produto quando clicar em editar
             $('.edit_line').click(function() {
                 const item = JSON.parse(this.dataset.item);
+                editFixarData.removeAttribute('checked');
 
                 document.querySelector('#edit_prod').value = item.product_id;
                 document.querySelector('#edit_order_product_id').value = item.id;
@@ -405,6 +418,12 @@
                 editQuant.value = q.toLocaleString('pt-BR'); // 1.000, 10.000 etc.
 
                 editDeliveryDate.value = item.delivery_date;
+
+                console.log(item);
+
+                if (item.favorite_delivery == 1) {
+                    editFixarData.setAttribute('checked', true);
+                }
 
                 $('#modal_editLine').modal();
             });

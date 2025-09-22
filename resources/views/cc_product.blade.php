@@ -33,15 +33,17 @@
             </form>
 
             <div class="col-md m-3">
-                {{-- <div class="card-tools">
-                    <button class="btn btn-sm btn-secondary" onclick="window.location.href = '../../products'" id="btn_voltar">Voltar</button>
-                    <button class="btn btn-sm btn-secondary" onclick="this.remove();document.getElementById('btn_voltar').remove();window.print();window.location.href = '../../products';">Imprimir</button>
-                </div> --}}
-                <div class="card-tools">
-                    <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">Voltar</a>
-                    <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
-                    {{-- <a class="btn btn-sm btn-secondary @if (Auth::user()->confirmed_user !== 1) hide @endif" id="btn_recalc"
-                        href="{{ route('day_delivery_recalc', ['id' => $product->id]) }}">Recalcular datas de entrega</a> --}}
+                <div class="row">
+                    <div class="card-tools">
+                        <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">Voltar</a>
+                        <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
+                    </div>
+                </div>
+                <div class="row mt-5">
+                    <div class="d-flex flex-column">
+                        <div class="fav-client is-fav-client mb-3">Cliente aguardando antecipação</div>
+                        <div class="fav-date is-fav-date">Data fixa para entrega</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,12 +65,26 @@
                 @foreach ($data as $item)
                     <tr class="linha" data-id="{{ $item->id }}">
                         <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
-                        <td>{{ $item->client_name }}</td>
+                        <td>
+                            <a href="#"
+                                class="fav-client {{ (int) $item->client_favorite === 1 ? 'is-fav-client' : '' }}"
+                                data-client-id="{{ $item->client_id }}"
+                                data-url="{{ route('clients.toggle_favorite', $item->client_id) }}">
+                                {{ $item->client_name }}
+                            </a>
+                        </td>
                         <td>{{ $item->seller_name ?? ' - ' }}</td>
                         <td>{{ $item->category_name }}</td>
                         <td>{{ $item->order_id }}</td>
                         <td>{{ number_format($item->saldo, 0, '', '.') }}</td>
-                        <td>{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
+                        <td>
+                            <a href="#"
+                                class="fav-date {{ (int) $item->favorite_delivery === 1 ? 'is-fav-date' : '' }}"
+                                data-op-id="{{ $item->id }}"
+                                data-url="{{ route('order_products.toggle_delivery_favorite', $item->id) }}">
+                                {{ date('d/m/Y', strtotime($item->delivery_date)) }}
+                            </a>
+                        </td>
                         <td>{{ $item->withdraw }} ({{ $item->withdraw === 'Entregar' ? 'CIF' : 'FOB' }})</td>
                     </tr>
                 @endforeach
@@ -88,28 +104,99 @@
         .hide {
             display: none;
         }
+
+        /* Padrão: texto normal (sem cara de link) */
+        a.fav-client,
+        a.fav-date {
+            color: inherit;
+            text-decoration: none;
+            font-weight: 400;
+        }
+
+        /* Destaque CLIENTE (amarelo forte/contrastante) */
+        .is-fav-client {
+            background: #ffde59;
+            color: #111;
+            font-weight: 700 !important;
+            font-size: 1.06em;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Destaque DATA (azul/roxo forte, distinto do cliente) */
+        .is-fav-date {
+            background: #6f42c1;
+            /* roxo bootstrap-ish */
+            color: #fff !important;
+            font-weight: 700 !important;
+            font-size: 1.06em;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
     </style>
 @endsection
 
 @section('js')
     <script>
-        $('.linha').click(function() {
-            let attr = $(this).attr('style');
-            if (typeof attr !== typeof undefined && attr !== false) {
-                $(this).removeAttr('style');
-            } else {
-                $(this).attr('style', 'background-color:aquamarine;');
+        // CSRF para Ajax
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         });
+
+        // Imprimir (mantém seu comportamento)
         $('#btn_imprimir').click(function() {
             $(this).hide();
-            $('#btn_voltar').hide();
-            $('#btn_sair').hide();
-            $('#btn_recalc').hide();
-            $('#search').hide();
-            $('#clean_search').hide();
+            $('#btn_voltar, #btn_sair, #btn_recalc, #search, #clean_search').hide();
             window.print();
             javascript: history.go(0);
-        })
+        });
+
+        // Toggle favorito do CLIENTE (com confirmação)
+        $(document).on('click', 'a.fav-client', function(e) {
+            e.preventDefault();
+            var $el = $(this);
+            var url = $el.data('url');
+            var marcando = !$el.hasClass('is-fav-client');
+            var msg = marcando ? 'Favoritar este cliente?' : 'Remover favorito deste cliente?';
+            if (!confirm(msg)) return;
+
+            $.post(url, {}, function(resp) {
+                if (resp && resp.ok) {
+                    if (resp.is_favorite) {
+                        $el.addClass('is-fav-client');
+                    } else {
+                        $el.removeClass('is-fav-client');
+                    }
+                }
+            }).fail(function(xhr) {
+                console.error('Falha ao favoritar cliente', xhr.responseText);
+                alert('Não foi possível alterar o favorito do cliente.');
+            });
+        });
+
+        // Toggle favorito da DATA DE ENTREGA por item (com confirmação)
+        $(document).on('click', 'a.fav-date', function(e) {
+            e.preventDefault();
+            var $el = $(this);
+            var url = $el.data('url'); // rota /order-products/{id}/toggle-delivery-favorite
+            var marcando = !$el.hasClass('is-fav-date');
+            var msg = marcando ? 'Destacar esta DATA DE ENTREGA?' : 'Remover destaque desta DATA DE ENTREGA?';
+            if (!confirm(msg)) return;
+
+            $.post(url, {}, function(resp) {
+                if (resp && resp.ok) {
+                    if (resp.favorite_delivery) {
+                        $el.addClass('is-fav-date');
+                    } else {
+                        $el.removeClass('is-fav-date');
+                    }
+                }
+            }).fail(function(xhr) {
+                console.error('Falha ao favoritar data de entrega', xhr.responseText);
+                alert('Não foi possível alterar o destaque da data de entrega.');
+            });
+        });
     </script>
 @endsection

@@ -6,5 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Client extends Model
 {
-    //
+    protected $casts = [
+        'is_favorite' => 'boolean',
+    ];
 }

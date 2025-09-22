@@ -11,13 +11,18 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.7',
-            'updated_at' => '20/09/2025',
+            'version'    => 'v1.0.8',
+            'updated_at' => '22/09/2025',
             'updates'    => [
-                'Implementa Editar Linha do Produto por pedido',
-                'Implementa registro de log para concessão de acessos',
-                'Ajusta visuais',
-                'Resolve bugs diversos',
+                'Implementa cadastro de vendedores',
+                'Implementa informações na tabela de conta corrente do produto: Tipo de entrega e vendedor',
+                'Implementa informações de vendedores em todas as tabelas e formulários pertinentes',
+                'Tira todas as referências e cálculos de valores do sistema, foca somente na quantidade de produtos',
+                'Implementa fixar data ao cadastrar/editar produto no pedido',
+                'Implementa fixar data ao clicar na data de entrega no conta corrente do produto',
+                'Implementa favoritar cliente ao clicar no seu nome no conta corrente do produto',
+                'Altera alguns visuais do sistema',
+                'Faz pequenos ajustes de performance e segurança',
             ],
         ];
     }
