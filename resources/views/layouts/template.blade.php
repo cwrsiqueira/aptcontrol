@@ -85,6 +85,14 @@
                             </a>
                         </li>
 
+                        <li class="nav-item" @if (in_array('30', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                            <a class="nav-link @if (Request::is(['sellers', 'sellers/*'])) active @endif"
+                                href="{{ route('sellers.index') }}">
+                                <span data-feather="dollar-sign"></span>
+                                Vendedores
+                            </a>
+                        </li>
+
                         <li class="nav-item" @if (in_array('4', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is('reports')) active @endif"
                                 href="{{ route('reports.index') }}">

@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('/permissions',   'PermissionController');
     Route::resource('/users',         'UserController');
     Route::resource('/categories',    'CategoryController');
+    Route::resource('/sellers',       'SellerController');
 
     //
     // Rotas já existentes (mantidas)
