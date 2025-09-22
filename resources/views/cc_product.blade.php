@@ -54,7 +54,8 @@
                     <th>Categoria</th>
                     <th>Pedido</th>
                     <th>Saldo</th>
-                    <th>Entrega</th>
+                    <th>Data Entrega</th>
+                    <th>Tipo Entrega</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,6 +67,7 @@
                         <td>{{ $item->order_id }}</td>
                         <td>{{ number_format($item->saldo, 0, '', '.') }}</td>
                         <td>{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
+                        <td>{{ $item->withdraw }} ({{ $item->withdraw === 'Entregar' ? 'CIF' : 'FOB' }})</td>
                     </tr>
                 @endforeach
             </tbody>
