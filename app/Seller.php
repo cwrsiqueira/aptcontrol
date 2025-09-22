@@ -13,4 +13,9 @@ class Seller extends Model
         'contact_type',
         'contact_value',
     ];
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'seller_id');
+    }
 }

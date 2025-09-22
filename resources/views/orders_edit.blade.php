@@ -34,32 +34,32 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th colspan="2">Data: <input class="form-control" type="date" name="order_date"
-                                id="order_date" value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input
-                                type="hidden" name="order_id" id="order_id" value="{{ $order->id }}"></th>
-                        <th colspan="5">Cliente: <input readonly class="form-control" type="text" name="client_name"
-                                id="client_name" value="{{ $order->name_client }}"></th>
-                    </tr>
-                    <tr>
-                        <th colspan="2">Pedido Nr.:
+                        <th colspan="1">Pedido Nr.:
                             <input class="form-control" type="text" name="order_number" id="order_number"
                                 value="{{ $order->order_number }}" readonly>
 
                             <input class="form-control" type="hidden" name="order_old_number" id="order_old_number"
                                 value="{{ $order->order_number }}">
                         </th>
-                        <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text"
-                                name="total_order" id="total_order"
-                                value="{{ number_format($order->order_total, 2, ',', '.') }}"></th>
-                        <th colspan="1">
-                            Pagamento:
-                            <select class="form-control" name="payment" id="payment">
-                                <option @if ($order->payment == 'Aberto') selected @endif value="Aberto">Aberto</option>
-                                <option @if ($order->payment == 'Parcial') selected @endif value="Parcial">Parcial</option>
-                                <option @if ($order->payment == 'Total') selected @endif value="Total">Total</option>
+                        <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name"
+                                id="client_name" value="{{ $order->name_client }}"></th>
+                    </tr>
+
+                    <tr>
+                        <th colspan="1">Data: <input class="form-control" type="date" name="order_date"
+                                id="order_date" value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input
+                                type="hidden" name="order_id" id="order_id" value="{{ $order->id }}"></th>
+                        <th colspan="1">Vendedor:
+                            <select class="form-control" name="seller_id" id="seller_id">
+                                <option value="">— Sem vendedor —</option>
+                                @foreach ($sellers as $s)
+                                    <option value="{{ $s->id }}"
+                                        {{ (int) $order->seller_id === (int) $s->id ? 'selected' : '' }}>
+                                        {{ $s->name }}
+                                    </option>
+                                @endforeach
                             </select>
                         </th>
-
                         <th colspan="1">
                             Recebimento do Material:
                             <select class="form-control" name="withdraw" id="withdraw">
@@ -69,7 +69,7 @@
                         </th>
         </form>
         @if ($order->complete_order == 0)
-            <th colspan="1" style="text-align: center"><a class="add_line" style='color:green;' href='#'
+            <th colspan="2" style="text-align: center"><a class="add_line" style='color:green;' href='#'
                     data-toggle='tooltip' title='Adicionar linha!'><i class='fas fa-fw fa-plus'
                         style="font-size: 24px;"></i></a><br><small class="order_number_align_size"
                     style="color:transparent;"></small></th>
@@ -78,8 +78,6 @@
         <tr style="text-align: center;">
             <th>Produto</th>
             <th>Quant.</th>
-            <th>Vlr.Unit.</th>
-            <th>Vlr.Total</th>
             <th>Entrega</th>
             <th colspan="2">Ações</th>
         </tr>
@@ -96,8 +94,6 @@
                         @endforeach
                     </td>
                     <td style="padding: 5px;">{{ number_format($item->quant, 0, '', '.') }}</td>
-                    <td style="padding: 5px;">{{ number_format($item->unit_price, 2, ',', '.') }}</td>
-                    <td style="padding: 5px;">{{ number_format($item->total_price, 2, ',', '.') }}</td>
                     <td style="padding: 5px;">
                         @if ($item->quant < 0)
                             {{ date('d/m/Y', strtotime($item->created_at)) }}
@@ -184,18 +180,6 @@
                                     placeholder="0">
                             </div>
 
-                            <div class="col-sm">
-                                <label for="unit_price">Preço/Milheiro:</label>
-                                <input required class="form-control valor @error('unit_price') is-invalid @enderror"
-                                    style="width: 100%;" type="text" name="unit_price" placeholder="0,00"
-                                    value="{{ old('unit_price') }}">
-                            </div>
-
-                            <div class="col-sm">
-                                <label>Valor Total:</label>
-                                <input required class="form-control total_val" type="text" readonly value="0,00">
-                            </div>
-
                             <div class="col-sm-3">
                                 <label for="delivery_date">Previsão de Entrega:</label>
                                 <input required class="form-control delivery_date @error('valor') is-invalid @enderror"
@@ -220,8 +204,8 @@
         </div>
     </div>
 
+    <!-- MODAL EDITAR PRODUTO -->
     @if (Auth::user()->is_admin)
-        <!-- MODAL EDITAR PRODUTO -->
         <div class="modal fade" id="modal_editLine">
             <div class="modal-dialog modal-lg">
                 <form method="post" action="{{ route('edit_line') }}" id="form_edit_cliente">
@@ -268,19 +252,6 @@
                                     <input required class="form-control edit_quant @error('quant') is-invalid @enderror"
                                         style="width: 100%;" type="text" name="quant" id="edit_quant"
                                         value="{{ old('quant') }}" placeholder="0">
-                                </div>
-
-                                <div class="col-sm">
-                                    <label for="unit_price">Preço/Milheiro:</label>
-                                    <input required class="form-control valor @error('unit_price') is-invalid @enderror"
-                                        style="width: 100%;" type="text" name="unit_price" id="edit_unit_price"
-                                        placeholder="0,00" id="edit_unit_price" value="{{ old('unit_price') }}">
-                                </div>
-
-                                <div class="col-sm">
-                                    <label>Valor Total:</label>
-                                    <input required class="form-control edit_total_val" type="text" readonly
-                                        id="edit_total_val" value="0,00">
                                 </div>
 
                                 <div class="col-sm-3">
@@ -336,9 +307,6 @@
                 $('#loader').modal('hide');
             });
 
-            $('.valor').mask('000.000,00', {
-                reverse: true
-            });
             $('.quant').mask('000.000', {
                 reverse: true
             });
@@ -382,19 +350,9 @@
             // Calcular Dia de Entrega
             $('.quant').blur(function() {
                 let quant = $(this).val().replace(/[^\d]+/g, '');
-                calc_delivery_date(quant);
-            })
-
-            // Calcular Valor Total do Produto
-            $('.valor').blur(function() {
-                let valor = $(this).val().replace('.', '').replace(',', '.');
-                let total_val = ($('.quant').val().replace('.', '') * valor) / 1000;
-                let formatado = total_val.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                });
-                $('.total_val').val(formatado);
                 $('.btn-salvar').attr('disabled', false).attr('class', 'btn btn-success btn-salvar').val(
                     'Salvar');
+                calc_delivery_date(quant);
             })
         });
     </script>
@@ -422,8 +380,6 @@
             // Pega valores dos campos
             var editProd = document.querySelector('#edit_prod');
             var editQuant = document.querySelector('#edit_quant');
-            var editUnitPrice = document.querySelector('#edit_unit_price');
-            var editTotalVal = document.querySelector('#edit_total_val');
             var editDeliveryDate = document.querySelector('#edit_delivery_date');
 
             $('#edit_quant').mask('000.000', {
@@ -444,46 +400,14 @@
 
                 // Converta para número
                 const q = Number(item.quant); // ou parseInt(item.quant, 10)
-                const up = Number(item.unit_price); // ou parseFloat(item.unit_price)
 
                 // Formatações
                 editQuant.value = q.toLocaleString('pt-BR'); // 1.000, 10.000 etc.
-
-                editUnitPrice.value = up.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-
-                editTotalVal.value = ((q * up) / 1000).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
 
                 editDeliveryDate.value = item.delivery_date;
 
                 $('#modal_editLine').modal();
             });
-
-            // Calcular Valor Total do Produto
-            $('#edit_unit_price').blur(function() {
-                calcularValorTotalProduto();
-            })
-            $('#edit_quant').blur(function() {
-                calcularValorTotalProduto();
-            })
-
-            function calcularValorTotalProduto() {
-                var quantidade = editQuant.value.replace('.', '').replace(',', '.');
-                var precoMilheiro = editUnitPrice.value.replace('.', '').replace(',', '.');
-                var valorTotal = (quantidade * precoMilheiro) / 1000;
-
-                console.log(quantidade, precoMilheiro, valorTotal);
-
-                var formatado = valorTotal.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                });
-                $('.edit_total_val').val(formatado);
-            }
         });
     </script>
 @endsection

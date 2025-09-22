@@ -51,6 +51,7 @@
                 <tr>
                     <th>Data</th>
                     <th>Cliente</th>
+                    <th>Vendedor</th>
                     <th>Categoria</th>
                     <th>Pedido</th>
                     <th>Saldo</th>
@@ -63,6 +64,7 @@
                     <tr class="linha" data-id="{{ $item->id }}">
                         <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
                         <td>{{ $item->client_name }}</td>
+                        <td>{{ $item->seller_name ?? ' - ' }}</td>
                         <td>{{ $item->category_name }}</td>
                         <td>{{ $item->order_id }}</td>
                         <td>{{ number_format($item->saldo, 0, '', '.') }}</td>

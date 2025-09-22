@@ -11,6 +11,7 @@ use App\Client;
 use App\Product;
 use App\Order_product;
 use App\Helpers\Helper;
+use App\Seller;
 
 class OrderController extends Controller
 {
@@ -40,10 +41,19 @@ class OrderController extends Controller
             $comp = 0;
         }
 
-        $orders = Order::addSelect(
-            ['name_client' => Client::select('name')->whereColumn('id', 'orders.client_id')]
-        )
+        $sellerId = 0;
+        if (!empty($_GET['seller_id']) && is_numeric($_GET['seller_id'])) {
+            $sellerId = (int) $_GET['seller_id'];
+        }
+
+        $orders = Order::addSelect([
+            'name_client' => Client::select('name')->whereColumn('clients.id', 'orders.client_id'),
+            'name_seller' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id'),
+        ])
             ->whereIn('complete_order', $comps)
+            ->when($sellerId > 0, function ($q) use ($sellerId) {
+                $q->where('seller_id', $sellerId);
+            })
             ->orderBy('order_date', 'asc')
             ->paginate(10);
 
@@ -70,31 +80,19 @@ class OrderController extends Controller
 
                 $orders = Order::where('order_number', 'LIKE', '%' . $q . '%')
                     ->whereIn('complete_order', $comps)
-                    ->addSelect(
-                        ['name_client' => Client::select('name')->whereColumn('clients.id', 'orders.client_id')]
-                    )
+                    ->when($sellerId > 0, function ($q2) use ($sellerId) {
+                        $q2->where('seller_id', $sellerId);
+                    })
+                    ->addSelect([
+                        'name_client' => Client::select('name')->whereColumn('clients.id', 'orders.client_id'),
+                        'name_seller' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id'),
+                    ])
                     ->orderBy('id', 'desc')
                     ->paginate(10);
             }
         } else {
             $q = '';
         }
-
-        // if (!empty($_GET['q'])) {
-
-        //     $q = $_GET['q'];
-
-        //     $orders = Order::where('order_number', 'LIKE', '%'.$q.'%')
-        //     ->where('complete_order', $comp)
-        //     ->addSelect(['name_client' => Client::select('name')
-        //     ->whereColumn('clients.id', 'orders.client_id')])
-        //     ->orderBy('order_date')
-        //     ->orderBy('order_number')
-        //     ->paginate(10);
-
-        // } else {
-        //     $q = '';
-        // }
 
         $user_permissions = Helper::get_permissions();
 
@@ -109,13 +107,17 @@ class OrderController extends Controller
             $orders_repeated[$item->order_number] = Order::where('order_number', $item->order_number)->get();
         }
 
+        $sellers = Seller::orderBy('name')->get(['id', 'name']);
+
         return view('orders', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'orders' => $orders,
             'q' => $q,
             'comp' => $comp,
-            'orders_repeated' => $orders_repeated
+            'orders_repeated' => $orders_repeated,
+            'sellers' => $sellers,
+            'sellerId' => $sellerId,
         ]);
     }
 
@@ -143,12 +145,15 @@ class OrderController extends Controller
         $user_permissions = Helper::get_permissions();
         $seq_order_number = $this->get_seq_order_number();
 
+        $sellers = Seller::orderBy('name')->get(['id', 'name']);
+
         return view('orders_create', [
             'user' => Auth::user(),
             'client' => $client,
             'products' => $products,
             'user_permissions' => $user_permissions,
             'seq_order_number' => $seq_order_number,
+            'sellers' => $sellers, // <--
         ]);
     }
 
@@ -194,6 +199,7 @@ class OrderController extends Controller
             "client_name",
             "client_id",
             "order_number",
+            "seller_id",
         ]);
 
         Validator::make(
@@ -203,6 +209,7 @@ class OrderController extends Controller
                 "client_name" => ['required'],
                 "client_id" => ['required'],
                 "order_number" => ['required', 'unique:orders'],
+                'seller_id' => 'nullable|integer|exists:sellers,id',
             ]
         )->validate();
 
@@ -212,31 +219,10 @@ class OrderController extends Controller
         $order->order_number = $data['order_number'];
         $order->payment = 'Aberto';
         $order->withdraw = 'Entregar';
+        $order->seller_id = $request->input('seller_id');
         $order->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');
-
-        // foreach ($data['prod'] as $item) {
-        //     if (!empty($item['product_name'])) {
-
-        //         $quant = str_replace('.', '', $item['quant']);
-
-        //         $unit_price = str_replace('.', '', $item['unit_val']);
-        //         $unit_price = str_replace(',', '.', $unit_price);
-
-        //         $total_price = str_replace('.', '', $item['total_val']);
-        //         $total_price = str_replace(',', '.', $total_price);
-
-        //         $order_prod = new Order_product();
-        //         $order_prod->order_id = $data['order_number'];
-        //         $order_prod->product_id = $item['product_name'];
-        //         $order_prod->quant = $quant;
-        //         $order_prod->unit_price = $unit_price;
-        //         $order_prod->total_price = $total_price;
-        //         $order_prod->delivery_date = $item['delivery_date'];
-        //         $order_prod->save();
-        //     }
-        // }
 
         return redirect()->route('orders.edit', ['order' => $order->id]);
     }
@@ -308,8 +294,10 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
-        $order = Order::addSelect(['name_client' => Client::select('name')
-            ->whereColumn('id', 'orders.client_id')])
+        $order = Order::addSelect([
+            'name_client' => Client::select('name')->whereColumn('id', 'orders.client_id'),
+            'seller_name' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id')
+        ])
             ->find($id);
 
         $saldo_produtos = Order_product::where('order_id', $order->order_number)
@@ -374,12 +362,15 @@ class OrderController extends Controller
         $user_permissions = Helper::get_permissions();
         $products = Product::all();
 
+        $sellers = Seller::orderBy('name')->get(['id', 'name']);
+
         return view('orders_edit', [
             'user' => Auth::user(),
             'user_permissions' => $user_permissions,
             'order' => $order,
             'order_products' => $order_products,
             'products' => $products,
+            'sellers' => $sellers, // <--
         ]);
     }
 
@@ -407,6 +398,7 @@ class OrderController extends Controller
             "total_order",
             "payment",
             "withdraw",
+            "seller_id",
         ]);
 
         if ($data['order_number'] != $data['order_old_number']) {
@@ -422,6 +414,7 @@ class OrderController extends Controller
                 "total_order" => ['required'],
                 "payment" => ['required'],
                 "withdraw" => ['required'],
+                'seller_id' => 'nullable|integer|exists:sellers,id',
             ]
         )->validate();
 
@@ -448,6 +441,7 @@ class OrderController extends Controller
         $order->order_total = $order_total;
         $order->payment = $data['payment'];
         $order->withdraw = $data['withdraw'];
+        $order->seller_id = $request->input('seller_id');
         $order->save();
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->order_number, 'Pedidos');
@@ -462,7 +456,6 @@ class OrderController extends Controller
             "order_id",
             "product_id",
             "quant",
-            "unit_price",
             "delivery_date",
         ]);
 
@@ -473,29 +466,23 @@ class OrderController extends Controller
                 "order_id" => ['required', 'string'],
                 "product_id" => ['required'],
                 "quant" => ['required'],
-                "unit_price" => ['required'],
                 "delivery_date" => ['required', 'date'],
             ]
         )->validate();
 
         $data['quant'] = str_replace('.', '', $data['quant']);
 
-        $data['unit_price'] = str_replace('.', '', $data['unit_price']);
-        $data['unit_price'] = str_replace(',', '.', $data['unit_price']);
-
-        $data['total_price'] = ($data['quant'] * $data['unit_price']) / 1000;
-
         $add_line = new Order_product();
         $add_line->order_id = $data['order_id'];
         $add_line->product_id = $data['product_id'];
         $add_line->quant = $data['quant'];
-        $add_line->unit_price = $data['unit_price'];
-        $add_line->total_price = $data['total_price'];
+        $add_line->unit_price = 0;
+        $add_line->total_price = 0;
         $add_line->delivery_date = $data['delivery_date'];
         $add_line->save();
 
         $total_order = Order::where('order_number', $add_line->order_id)->first();
-        $total_order->order_total = $total_order->order_total + $data['total_price'];
+        $total_order->order_total = 0;
         $total_order->save();
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $add_line->id, $add_line->order_id, 'Pedidos');
@@ -534,9 +521,7 @@ class OrderController extends Controller
             'id_order',     // id do item (order_products.id)
             'product_id',   // produto selecionado
             'quant',        // quantidade
-            'unit_price',   // valor unitário
             'delivery_date', // data de entrega
-            'total_price',  // total (pode vir do form, senão calculamos)
         ]);
 
         /**
@@ -548,7 +533,6 @@ class OrderController extends Controller
             'id_order'      => 'required',
             'product_id'    => 'required',
             'quant'         => 'required',
-            'unit_price'    => 'required',
             'delivery_date' => 'required',
         ])->validate();
 
@@ -558,16 +542,6 @@ class OrderController extends Controller
          * - Depois troca vírgula decimal por ponto
          */
         $data['quant']       = (float) str_replace(',', '.', str_replace('.', '', $data['quant']));
-        $data['unit_price']  = (float) str_replace(',', '.', str_replace('.', '', $data['unit_price']));
-
-        /**
-         * Se o total_price não vier do formulário, calcula multiplicando quantidade * valor unitário
-         */
-        if (!isset($data['total_price']) || $data['total_price'] === null || $data['total_price'] === '') {
-            $data['total_price'] = ($data['quant'] * $data['unit_price']) / 1000;
-        } else {
-            $data['total_price'] = (float) str_replace(',', '.', str_replace('.', '', $data['total_price']));
-        }
 
         /**
          * DB::transaction -> garante que todas as operações serão executadas juntas
@@ -580,23 +554,10 @@ class OrderController extends Controller
             $edit_line = Order_product::findOrFail($data['id']);
             $edit_line->product_id    = $data['product_id'];
             $edit_line->quant         = $data['quant'];
-            $edit_line->unit_price    = $data['unit_price'];
-            $edit_line->total_price   = $data['total_price'];
+            $edit_line->unit_price    = 0;
+            $edit_line->total_price   = 0;
             $edit_line->delivery_date = $data['delivery_date'];
             $edit_line->save();
-
-            /**
-             * 2) Recalcula o total da ordem:
-             *    Soma todos os total_price de order_products vinculados a esta ordem
-             */
-            $novoTotal = Order_product::where('order_id', $edit_line->order_id)
-                ->sum('total_price');
-
-            /**
-             * 3) Atualiza o campo orders.order_total com a soma calculada
-             */
-            Order::where('order_number', $edit_line->order_id)
-                ->update(['order_total' => $novoTotal]);
 
             /**
              * 4) Grava log da alteração (usuário, ação, id, etc.)

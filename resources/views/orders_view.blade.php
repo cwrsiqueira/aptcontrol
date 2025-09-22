@@ -43,15 +43,6 @@
                         window.print();
                         javascript:history.go(0);
                     ">Imprimir</button>
-                    {{-- @if ($order->complete_order !== 0)
-                        <label for="order_change_status">Alterar Status do Pedido:</label>
-                        <input type="hidden" name="order_change_id" id="order_change_id" value="{{$order->id}}">
-                        <select name="order_change_status" id="order_change_status">
-                            <option @if ($order->complete_order === 0) selected @endif value="0">Aberto</option>
-                            <option @if ($order->complete_order === 1) selected @endif value="1">Entregue</option>
-                            <option @if ($order->complete_order === 2) selected @endif value="2">Cancelado</option>
-                        </select>
-                    @endif --}}
                 </div>
             </div>
             <div class="col-md m-1 d-flex justify-content-center">
@@ -72,8 +63,10 @@
                             value="{{ date('Y-m-d', strtotime($order->order_date)) }}">
                         <input type="hidden" name="order_id" id="order_id" value="{{ $order->id }}">
                     </th>
-                    <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name"
+                    <th colspan="2">Cliente: <input readonly class="form-control" type="text" name="client_name"
                             id="client_name" value="{{ $order->name_client }}"></th>
+                    <th colspan="2">Vendedor: <input readonly class="form-control" type="text" name="client_name"
+                            id="client_name" value="{{ optional($order->seller)->name ?? '—' }}"></th>
                 </tr>
                 <tr>
                     <th colspan="1">Pedido Nr.: <input readonly class="form-control" type="text" name="order_number"

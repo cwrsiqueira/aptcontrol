@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Order_product as OrderProduct;
+use App\Seller;
 
 class Order extends Model
 {
@@ -19,6 +20,7 @@ class Order extends Model
         'payment',
         'withdraw',
         'complete_order',
+        'seller_id',
     ];
 
     protected $casts = [
@@ -26,6 +28,11 @@ class Order extends Model
         'order_total'    => 'decimal:2', // ajuste conforme seu tipo/escala
         'complete_order' => 'integer',
     ];
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class, 'seller_id');
+    }
 
     /**
      * Itens da ordem (tabela pivot/itens): orders -> order_products

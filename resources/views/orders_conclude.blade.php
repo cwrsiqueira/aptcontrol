@@ -57,8 +57,10 @@
                     <th colspan="1">Data: <input readonly class="form-control" type="date" name="order_date"
                             id="order_date" value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input type="hidden"
                             name="order_id" id="order_id" value="{{ $order->id }}"></th>
-                    <th colspan="4">Cliente: <input readonly class="form-control" type="text" name="client_name"
+                    <th colspan="2">Cliente: <input readonly class="form-control" type="text" name="client_name"
                             id="client_name" value="{{ $order->name_client }}"></th>
+                    <th colspan="2">Vendedor: <input readonly class="form-control" type="text" name="client_name"
+                            id="client_name" value="{{ $order->seller_name ?? ' - ' }}"></th>
                 </tr>
                 <tr>
                     <th colspan="1">Pedido Nr.: <input readonly class="form-control" type="text" name="order_number"

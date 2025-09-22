@@ -105,16 +105,38 @@
             </div>
 
             <div class="d-flex align-items-center">
-                @if (!empty($q))
-                    <a class="btn btn-sm btn-secondary mr-3" style="width:160px" href="{{ route('orders.index') }}">Limpar
-                        Busca</a>
-                @endif
-                <input type="search" class="form-control" name="q" id="q" placeholder="Procurar Pedido"
-                    value="{{ $q }}">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-default">
-                        <i class="fas fa-search"></i>
-                    </button>
+                {{-- SELETOR DE VENDEDOR --}}
+                <div class="input-group mr-3" style="min-width:240px">
+                    <select name="seller_id" class="form-control">
+                        <option value="0">Todos os vendedores</option>
+                        @foreach ($sellers as $s)
+                            <option value="{{ $s->id }}"
+                                {{ (int) ($sellerId ?? 0) === (int) $s->id ? 'selected' : '' }}>
+                                {{ $s->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="input-group-append">
+                        <button class="btn btn-default" type="submit"><i class="fas fa-filter"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center">
+
+                <div class="d-flex align-items-center">
+                    @if (!empty($q))
+                        <a class="btn btn-sm btn-secondary mr-3" style="width:160px"
+                            href="{{ route('orders.index') }}">Limpar
+                            Busca</a>
+                    @endif
+                    <input type="search" class="form-control" name="q" id="q" placeholder="Procurar Pedido"
+                        value="{{ $q }}">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-default">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </form>
@@ -127,7 +149,7 @@
                         <th>Nr.Pedido</th>
                         <th>Dt Pedido</th>
                         <th>Cliente</th>
-                        <th>Pagamento</th>
+                        <th>Vendedor</th>
                         <th>Entrega</th>
                         <th colspan="3" style="text-align: center">Ações</th>
                     </tr>
@@ -138,7 +160,7 @@
                         <td><?php echo $item['order_number']; ?></td>
                         <td><?php echo date('d/m/Y', strtotime($item['order_date'])); ?></td>
                         <td><?php echo $item['name_client']; ?></td>
-                        <td>{{ $item['payment'] }}</td>
+                        <td>{{ $item->name_seller ?? '—' }}</td>
                         <td>{{ $item['withdraw'] }}</td>
                         <td>
                             @if (in_array('17', $user_permissions) || Auth::user()->is_admin)

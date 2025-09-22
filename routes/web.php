@@ -35,8 +35,8 @@ Route::middleware('auth')->group(function () {
     // Rotas já existentes (mantidas)
     //
     Route::get('/orders_client', 'OrderController@orders_client')->name('orders_client');
-    Route::post('/edit_line', 'OrderController@edit_line')->name('edit_line');
     Route::post('/add_line', 'OrderController@add_line')->name('add_line');
+    Route::post('/edit_line', 'OrderController@edit_line')->name('edit_line');
     Route::delete('/order/order_product/{order_product}/destroy', 'OrderController@order_product_destroy')->name('orders.order_product_destroy');
 
     Route::get('/log',  'LogController@index')->name('logs.index');

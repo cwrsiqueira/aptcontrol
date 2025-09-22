@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Seller;
 use App\Client;
 use App\Product;
 use App\Order;
@@ -24,7 +24,8 @@ class ReportController extends Controller
         $this->middleware('can:menu-relatorios');
     }
 
-    public function get_permissions() {
+    public function get_permissions()
+    {
         $id = Auth::user()->id;
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
@@ -49,13 +50,13 @@ class ReportController extends Controller
         ]);
     }
 
-    public function report_delivery() 
+    public function report_delivery()
     {
         $withdraw = '%';
         if (!empty($_GET['withdraw'])) {
             $withdraw = $_GET['withdraw'];
         }
-        
+
         $produtos = Product::all();
         $por_produto = array();
         foreach ($produtos as $value) {
@@ -64,27 +65,28 @@ class ReportController extends Controller
         if (!empty($_GET['por_produto'])) {
             $por_produto = ($_GET['por_produto']) ?? $por_produto;
         }
-        
+
         $orders = array();
         if (!empty($_GET['delivery_date'])) {
             $date = $_GET['delivery_date'];
-            
+
             $orders = Order_product::select('*')
-            ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
-            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
-            ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
-            ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
-            ->where('orders.complete_order', 0)
-            ->where('orders.withdraw', 'LIKE', $withdraw)
-            ->where('delivery_date', '<=', $date)
-            ->whereIn('product_id', $por_produto)
-            // ->havingRaw('SUM(order_products.quant) <> ?', [0])
-            ->orderBy('delivery_date')
-            ->get();
-            
+                ->join('orders', 'orders.order_number', 'order_products.order_id')
+                ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
+                ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
+                ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
+                ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
+                ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
+                ->addSelect(['seller_name' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id')])
+                ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
+                ->where('orders.complete_order', 0)
+                ->where('orders.withdraw', 'LIKE', $withdraw)
+                ->where('delivery_date', '<=', $date)
+                ->whereIn('product_id', $por_produto)
+                // ->havingRaw('SUM(order_products.quant) <> ?', [0])
+                ->orderBy('delivery_date')
+                ->get();
+
             $saldo = [];
             foreach ($orders as $key => $value) {
                 if (!isset($saldo[$value->product_id][$value->order_id])) {
