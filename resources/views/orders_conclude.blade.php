@@ -54,35 +54,26 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th colspan="1">Data: <input readonly class="form-control" type="date" name="order_date"
-                            id="order_date" value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input type="hidden"
-                            name="order_id" id="order_id" value="{{ $order->id }}"></th>
+                    <th>Data: <input readonly class="form-control" type="date" name="order_date" id="order_date"
+                            value="{{ date('Y-m-d', strtotime($order->order_date)) }}"><input type="hidden" name="order_id"
+                            id="order_id" value="{{ $order->id }}"></th>
                     <th colspan="2">Cliente: <input readonly class="form-control" type="text" name="client_name"
                             id="client_name" value="{{ $order->name_client }}"></th>
-                    <th colspan="2">Vendedor: <input readonly class="form-control" type="text" name="client_name"
-                            id="client_name" value="{{ $order->seller_name ?? ' - ' }}"></th>
                 </tr>
                 <tr>
-                    <th colspan="1">Pedido Nr.: <input readonly class="form-control" type="text" name="order_number"
+                    <th>Pedido Nr.: <input readonly class="form-control" type="text" name="order_number"
                             id="order_number" value="{{ $order->order_number }}"></th>
-                    <th colspan="2">Valor do Pedido: <input class="form-control" readonly type="text"
-                            name="total_order" id="total_order"
-                            value="R$ {{ number_format($order->order_total, 2, ',', '.') }}"></th>
+                    <th>Vendedor: <input readonly class="form-control" type="text" name="client_name" id="client_name"
+                            value="{{ $order->seller_name ?? ' - ' }}"></th>
                     <th>
-                        <label for="payment">Pagamento:</label><br>
-                        {{ $order->payment }}
-                    </th>
-                    <th>
-                        <label for="withdraw">Entrega:</label><br>
-                        {{ $order->withdraw }}
+                        <label for="withdraw">Tipo de entrega:</label><br>
+                        {{ $order->withdraw }} ({{ $order->withdraw == 'Entregar' ? 'CIF' : 'FOB' }})
                     </th>
                 </tr>
                 <tr style="text-align: center;">
-                    <th style="width: 250px;">Produto</th>
-                    <th style="width: 75px;">Quant.</th>
-                    <th style="width: 125px;">Vlr.Unit.</th>
-                    <th style="width: 125px;">Vlr.Total</th>
-                    <th style="width: 75px;">Entrega</th>
+                    <th>Produto</th>
+                    <th>Quant.</th>
+                    <th>Entrega</th>
                 </tr>
             </thead>
             <tbody>
@@ -93,12 +84,6 @@
                         </td>
                         <td style="padding: 5px; id="quant_prod">
                             {{ number_format($item->quant, 0, '', '.') }}
-                        </td>
-                        <td style="padding: 5px;">
-                            R$ {{ number_format($item->unit_price, 2, ',', '.') }}
-                        </td>
-                        <td style="padding: 5px;">
-                            R$ {{ number_format($item->total_price, 2, ',', '.') }}
                         </td>
                         <td style="padding: 5px;">
                             @if ($item->quant < 0)

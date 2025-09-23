@@ -16,8 +16,6 @@ class Order extends Model
         'client_id',
         'order_date',
         'order_number',
-        'order_total',
-        'payment',
         'withdraw',
         'complete_order',
         'seller_id',

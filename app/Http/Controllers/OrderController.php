@@ -395,8 +395,6 @@ class OrderController extends Controller
             "order_date",
             "order_number",
             'order_old_number',
-            "total_order",
-            "payment",
             "withdraw",
             "seller_id",
         ]);
@@ -411,15 +409,10 @@ class OrderController extends Controller
                 "order_date" => ['required'],
                 "order_number" => ['required'],
                 "order_old_number" => ['required'],
-                "total_order" => ['required'],
-                "payment" => ['required'],
                 "withdraw" => ['required'],
                 'seller_id' => 'nullable|integer|exists:sellers,id',
             ]
         )->validate();
-
-        $order_total = str_replace('.', '', $data['total_order']);
-        $order_total = str_replace(',', '.', $order_total);
 
         $order_products_qt = Order_product::where('order_id', $data['order_old_number'])->sum('id');
         if ($order_products_qt <= 0) {
@@ -438,8 +431,6 @@ class OrderController extends Controller
         $order = Order::find($id);
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
-        $order->order_total = $order_total;
-        $order->payment = $data['payment'];
         $order->withdraw = $data['withdraw'];
         $order->seller_id = $request->input('seller_id');
         $order->save();

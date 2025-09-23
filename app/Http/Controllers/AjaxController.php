@@ -254,8 +254,6 @@ class AjaxController extends Controller
                     "order_date" => ['required'],
                     "order_number" => ['required'],
                     "order_old_number" => ['required'],
-                    "total_order" => ['required'],
-                    "payment" => ['required'],
                     "withdraw" => ['required'],
                     "prod" => ['required'],
                 ]
