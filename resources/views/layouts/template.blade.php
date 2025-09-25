@@ -70,7 +70,7 @@
                         </li>
 
                         <li class="nav-item" @if (in_array('menu-clientes', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
-                            <a class="nav-link @if (Request::is(['clients', 'categories'])) active @endif"
+                            <a class="nav-link @if (Request::is(['clients', 'categories', 'clients/*', 'categories/*'])) active @endif"
                                 href="{{ route('clients.index') }}">
                                 <span data-feather="users"></span>
                                 Clientes

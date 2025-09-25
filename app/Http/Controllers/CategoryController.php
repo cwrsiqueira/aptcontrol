@@ -47,7 +47,16 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('categories.create', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('categories.index')->withErrors($message);
+        }
+
+        return view('categories.categories_create', [
+            'user' => Auth::user(),
+            'user_permissions' => $user_permissions
+        ]);
     }
 
     /**
@@ -70,7 +79,7 @@ class CategoryController extends Controller
             'name',
         ]);
 
-        $validator = Validator::make(
+        Validator::make(
             $data,
             [
                 'name' => 'required|unique:clients|max:100',
@@ -92,9 +101,19 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Clients_category $category)
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('categories.view', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
+
+        return view('categories.categories_view', [
+            'user'             => Auth::user(),
+            'category'           => $category,
+            'user_permissions' => $user_permissions,
+        ]);
     }
 
     /**
@@ -103,7 +122,7 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Clients_category $category)
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.update', $user_permissions) && !Auth::user()->is_admin) {
@@ -113,14 +132,9 @@ class CategoryController extends Controller
             return redirect()->route('categories.index')->withErrors($message);
         }
 
-        $categories = Clients_category::orderBy('id')->paginate(10);
-        $category = Clients_category::find($id);
-        $user_permissions = Helper::get_permissions();
-
-        return view('categories.categories', [
+        return view('categories.categories_edit', [
             'user' => Auth::user(),
             'category' => $category,
-            'categories' => $categories,
             'user_permissions' => $user_permissions
         ]);
     }

@@ -12,6 +12,8 @@ use App\Order;
 use App\Order_product;
 use App\Clients_category;
 use App\Helpers\Helper;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
@@ -31,29 +33,36 @@ class ClientController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clients = Client::orderBy('name')->paginate(10);
-        $q = '';
-        if (!empty($_GET['q'])) {
-            $q = $_GET['q'];
-            $clients = Client::where('name', 'LIKE', '%' . $q . '%')->paginate(10);
-            $category = Clients_category::where('name', $q)->first();
-            if ($category != null) {
-                $clients = Client::where('id_categoria', $category['id'])
-                    ->paginate(10);
-            }
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('menu-clientes', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
         }
 
-        $user_permissions = Helper::get_permissions();
-        $categories = Clients_category::orderBy('id')->get();
+        $q = trim((string) $request->input('q'));
+
+        $clients = Client::query()
+            ->select('clients.*', 'clients_categories.name as category_name')
+            ->join('clients_categories', 'clients_categories.id', 'clients.id_categoria')
+            ->when($q, function ($qb) use ($q) {
+                $needle = mb_strtolower(Str::ascii($q));
+                $qb->where(function ($sub) use ($needle) {
+                    $sub->whereRaw('LOWER(unaccent(clients.name)) LIKE ?', ["%{$needle}%"])
+                        ->orWhereRaw('LOWER(unaccent(clients_categories.name)) LIKE ?', ["%{$needle}%"]);
+                });
+            })
+            ->orderBy('clients.name')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('clients.clients', [
             'user' => Auth::user(),
             'clients' => $clients,
             'q' => $q,
             'user_permissions' => $user_permissions,
-            'categories' => $categories
         ]);
     }
 
@@ -165,7 +174,6 @@ class ClientController extends Controller
         return response()->json(['ok' => true, 'is_favorite' => (bool) $client->is_favorite]);
     }
 
-
     /**
      * Show the form for creating a new resource.
      *
@@ -173,7 +181,17 @@ class ClientController extends Controller
      */
     public function create()
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.create', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
+        return view('clients.clients_create', [
+            'user' => Auth::user(),
+            'user_permissions' => $user_permissions,
+            'categories' => Clients_category::all(),
+        ]);
     }
 
     /**
@@ -194,26 +212,26 @@ class ClientController extends Controller
 
         $data = $request->only([
             'name',
-            'category',
+            'id_category',
             'contact',
-            'address',
+            'full_address',
         ]);
 
-        $validator = Validator::make(
+        Validator::make(
             $data,
             [
                 'name' => 'required|unique:clients|max:100',
-                'category' => 'required',
+                'id_category' => 'required',
                 'contact' => 'max:50|nullable',
-                'address' => 'nullable',
+                'full_address' => 'nullable',
             ]
         )->validate();
 
         $prod = new Client();
         $prod->name = $data['name'];
-        $prod->id_categoria = $data['category'];
+        $prod->id_categoria = $data['id_category'];
         $prod->contact = $data['contact'];
-        $prod->full_address = $data['address'];
+        $prod->full_address = $data['full_address'];
         $prod->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Clientes');
@@ -227,9 +245,19 @@ class ClientController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Client $client)
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.view', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
+
+        return view('clients.clients_view', [
+            'user'             => Auth::user(),
+            'client'           => $client,
+            'user_permissions' => $user_permissions,
+        ]);
     }
 
     /**
@@ -238,7 +266,7 @@ class ClientController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Client $client)
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('clients.update', $user_permissions) && !Auth::user()->is_admin) {
@@ -247,30 +275,18 @@ class ClientController extends Controller
             ];
             return redirect()->route('clients.index')->withErrors($message);
         }
-
-        $clients = Client::orderBy('name')->paginate(10);
-        $q = '';
-        if (!empty($_GET['q'])) {
-            $q = $_GET['q'];
-            $clients = Client::where('name', 'LIKE', '%' . $q . '%')->paginate(10);
-            $category = Clients_category::where('name', $q)->first();
-            if ($category != null) {
-                $clients = Client::where('id_categoria', $category['id'])
-                    ->paginate(10);
-            }
+        if (!in_array('clients.cc', $user_permissions) && !Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
         }
 
-        $client = Client::find($id);
-        $user_permissions = Helper::get_permissions();
-        $categories = Clients_category::orderBy('id')->get();
-
-        return view('clients.clients', [
+        return view('clients.clients_edit', [
             'user' => Auth::user(),
             'client' => $client,
-            'clients' => $clients,
-            'q' => $q,
             'user_permissions' => $user_permissions,
-            'categories' => $categories
+            'categories' => Clients_category::all(),
         ]);
     }
 
@@ -293,26 +309,30 @@ class ClientController extends Controller
 
         $data = $request->only([
             'name',
-            'category',
+            'id_category',
             'contact',
-            'address',
+            'full_address',
         ]);
 
-        $validator = Validator::make(
+        Validator::make(
             $data,
             [
-                'name' => 'required|max:100',
-                'category' => 'required',
+                'name' => [
+                    'required',
+                    'max:100',
+                    Rule::unique('clients', 'name')->ignore($id), // ignora o próprio registro
+                ],
+                'id_category' => 'required',
                 'contact' => 'max:50|nullable',
-                'address' => 'nullable',
+                'full_address' => 'nullable',
             ]
         )->validate();
 
         $prod = Client::find($id);
         $prod->name = $data['name'];
-        $prod->id_categoria = $data['category'];
+        $prod->id_categoria = $data['id_category'];
         $prod->contact = $data['contact'];
-        $prod->full_address = $data['address'];
+        $prod->full_address = $data['full_address'];
         $prod->save();
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Clientes');
@@ -341,13 +361,13 @@ class ClientController extends Controller
             $message = [
                 'cannot_exclude' => 'Cliente não pode ser excluído, pois possui pedidos vinculados!',
             ];
-            return redirect()->route('clients.index', ['q' => $_GET['q']])->withErrors($message);
+            return redirect()->route('clients.index')->withErrors($message);
         } else {
             $client = Client::find($id);
             Client::find($id)->delete();
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $client->name, 'Clientes');
 
-            return redirect()->route('clients.index', ['q' => $_GET['q']]);
+            return redirect()->route('clients.index');
         }
     }
 }

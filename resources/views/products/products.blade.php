@@ -27,7 +27,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <form method="get" class="form-inline" action="{{ route('products.index') }}">
                 <div class="input-group">
-                    <input type="search" class="form-control" name="q" id="q" placeholder="Procurar Produto"
+                    <input type="search" class="form-control" name="q" id="q" placeholder="Busca por Produto"
                         value="{{ $q ?? '' }}">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-default">
