@@ -33,7 +33,7 @@ class ReportController extends Controller
     {
         $user_permissions = Helper::get_permissions();
 
-        return view('reports', [
+        return view('reports.reports', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user()
         ]);
@@ -109,7 +109,7 @@ class ReportController extends Controller
             }
         }
 
-        return view('reports_delivery', [
+        return view('reports.reports_delivery', [
             'orders' => $orders,
             'date' => $date,
             'product_total' => $product_total

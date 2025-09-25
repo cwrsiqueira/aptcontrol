@@ -109,7 +109,7 @@ class OrderController extends Controller
 
         $sellers = Seller::orderBy('name')->get(['id', 'name']);
 
-        return view('orders', [
+        return view('orders.orders', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'orders' => $orders,
@@ -147,7 +147,7 @@ class OrderController extends Controller
 
         $sellers = Seller::orderBy('name')->get(['id', 'name']);
 
-        return view('orders_create', [
+        return view('orders.orders_create', [
             'user' => Auth::user(),
             'client' => $client,
             'products' => $products,
@@ -265,7 +265,7 @@ class OrderController extends Controller
             }
         }
 
-        return view('orders_view', [
+        return view('orders.orders_view', [
             'order' => $order,
             'order_products' => $order_products,
             'user_permissions' => $user_permissions,
@@ -324,7 +324,7 @@ class OrderController extends Controller
             }
         }
 
-        return view('orders_conclude', [
+        return view('orders.orders_conclude', [
             'order' => $order,
             'order_products' => $order_products,
             'user_permissions' => $user_permissions,
@@ -364,7 +364,7 @@ class OrderController extends Controller
 
         $sellers = Seller::orderBy('name')->get(['id', 'name']);
 
-        return view('orders_edit', [
+        return view('orders.orders_edit', [
             'user' => Auth::user(),
             'user_permissions' => $user_permissions,
             'order' => $order,

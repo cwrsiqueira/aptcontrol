@@ -34,7 +34,7 @@ class PermissionController extends Controller
 
         $user_permissions = Helper::get_permissions();
 
-        return view('permissions', [
+        return view('permissions.permissions', [
             'user' => Auth::user(),
             'user_permissions' => $user_permissions,
             'users' => $users,
@@ -101,7 +101,7 @@ class PermissionController extends Controller
             }
         }
 
-        return view('permissions', [
+        return view('permissions.permissions', [
             'user' => Auth::user(),
             'user_edit' => $user_edit,
             'users' => $users,

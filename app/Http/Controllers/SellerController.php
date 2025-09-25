@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use App\User;
 use App\Seller;
+use App\Helpers\Helper;
 
 class SellerController extends Controller
 {
@@ -52,7 +53,7 @@ class SellerController extends Controller
             ->orderBy('name')
             ->paginate(10);
 
-        return view('sellers', [
+        return view('sellers.sellers', [
             'user'             => Auth::user(),
             'sellers'          => $sellers,
             'q'                => $q,
@@ -71,7 +72,7 @@ class SellerController extends Controller
         $seller = new Seller();
         $contactTypes = $this->contactTypes();
 
-        return view('sellers_create', [
+        return view('sellers.sellers_create', [
             'user'             => Auth::user(),
             'seller'           => $seller,
             'contactTypes'     => $contactTypes,
@@ -108,7 +109,7 @@ class SellerController extends Controller
 
         $seller = Seller::findOrFail($id);
 
-        return view('sellers_view', [
+        return view('sellers.sellers_view', [
             'user'             => Auth::user(),
             'seller'           => $seller,
             'user_permissions' => $user_permissions,
@@ -126,7 +127,7 @@ class SellerController extends Controller
         $seller = Seller::findOrFail($id);
         $contactTypes = $this->contactTypes();
 
-        return view('sellers_edit', [
+        return view('sellers.sellers_edit', [
             'user'             => Auth::user(),
             'seller'           => $seller,
             'contactTypes'     => $contactTypes,

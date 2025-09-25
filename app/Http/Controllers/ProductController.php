@@ -56,7 +56,7 @@ class ProductController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('products', [
+        return view('products.products', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'products' => $products,
@@ -134,7 +134,7 @@ class ProductController extends Controller
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
 
-        return view('cc_product', [
+        return view('cc.cc_product', [
             'data' => $data,
             'product' => $product,
             'quant_total' => $quant_total,
@@ -195,7 +195,7 @@ class ProductController extends Controller
             return redirect()->route('products.index')->withErrors($message);
         }
 
-        return view('products_create', [
+        return view('products.products_create', [
             'user' => Auth::user(),
             'user_permissions' => $user_permissions
         ]);
@@ -219,7 +219,6 @@ class ProductController extends Controller
             'name',
             'stock',
             'forecast',
-            'file',
         ]);
 
         if (!empty($data['stock'])) {
@@ -236,7 +235,6 @@ class ProductController extends Controller
                 'stock' => 'integer|nullable',
                 'forecast' => 'integer|required',
                 'file' => 'image|mimes:jpeg,jpg,png|nullable',
-                'auth' => 'required'
             ]
         )->validate();
 
@@ -272,7 +270,7 @@ class ProductController extends Controller
             return redirect()->route('home')->withErrors($message);
         }
 
-        return view('products_view', [
+        return view('products.products_view', [
             'user'             => Auth::user(),
             'product'           => $product,
             'user_permissions' => $user_permissions,
@@ -295,7 +293,7 @@ class ProductController extends Controller
             $action = 'Não Autorizado';
         }
 
-        return view('products_edit', [
+        return view('products.products_edit', [
             'user' => Auth::user(),
             'product' => $product,
             'user_permissions' => $user_permissions

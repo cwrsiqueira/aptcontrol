@@ -48,7 +48,7 @@ class ClientController extends Controller
         $user_permissions = Helper::get_permissions();
         $categories = Clients_category::orderBy('id')->get();
 
-        return view('clients', [
+        return view('clients.clients', [
             'user' => Auth::user(),
             'clients' => $clients,
             'q' => $q,
@@ -143,7 +143,7 @@ class ClientController extends Controller
             }
         }
 
-        return view('cc_client', [
+        return view('cc.cc_client', [
             'data' => $data,
             'client' => $client,
             'product_total' => $product_total,
@@ -264,7 +264,7 @@ class ClientController extends Controller
         $user_permissions = Helper::get_permissions();
         $categories = Clients_category::orderBy('id')->get();
 
-        return view('clients', [
+        return view('clients.clients', [
             'user' => Auth::user(),
             'client' => $client,
             'clients' => $clients,

@@ -52,9 +52,14 @@ class AuthServiceProvider extends ServiceProvider
             return $this->getPermissions($user, 'menu-relatorios');
         });
 
-        // PERMISSÕES MENU INTEGRACOES
+        // PERMISSÕES MENU VENDEDORES
         Gate::define('menu-vendedores', function ($user) {
             return $this->getPermissions($user, 'menu-vendedores');
+        });
+
+        // PERMISSÕES MENU INTEGRACOES
+        Gate::define('menu-integrations', function ($user) {
+            return $this->getPermissions($user, 'menu-integrations');
         });
 
         // PERMISSÕES ADMINISTRADOR

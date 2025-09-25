@@ -33,7 +33,7 @@ class CategoryController extends Controller
 
         $user_permissions = Helper::get_permissions();
 
-        return view('categories', [
+        return view('categories.categories', [
             'user' => Auth::user(),
             'categories' => $categories,
             'user_permissions' => $user_permissions
@@ -117,7 +117,7 @@ class CategoryController extends Controller
         $category = Clients_category::find($id);
         $user_permissions = Helper::get_permissions();
 
-        return view('categories', [
+        return view('categories.categories', [
             'user' => Auth::user(),
             'category' => $category,
             'categories' => $categories,
