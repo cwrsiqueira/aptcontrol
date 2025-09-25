@@ -35,10 +35,10 @@ class SellerController extends Controller
 
     public function index(Request $request)
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
 
         // Exemplo de guarda de acesso à listagem (ajuste os IDs conforme sua regra):
-        if (!in_array('30', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('menu-vendedores', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('home')->withErrors($message);
         }
@@ -62,8 +62,8 @@ class SellerController extends Controller
 
     public function create()
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('31', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('sellers.create', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('sellers.index')->withErrors($message);
         }
@@ -81,8 +81,8 @@ class SellerController extends Controller
 
     public function store(Request $request)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('31', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('sellers.create', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('sellers.index')->withErrors($message);
         }
@@ -100,8 +100,8 @@ class SellerController extends Controller
 
     public function show($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('30', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('sellers.view', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('home')->withErrors($message);
         }
@@ -117,8 +117,8 @@ class SellerController extends Controller
 
     public function edit($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('32', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('sellers.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('sellers.index')->withErrors($message);
         }
@@ -136,8 +136,8 @@ class SellerController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('32', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('sellers.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('sellers.index')->withErrors($message);
         }
@@ -156,8 +156,8 @@ class SellerController extends Controller
 
     public function destroy($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('33', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('sellers.delete', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('sellers.index')->withErrors($message);
         }

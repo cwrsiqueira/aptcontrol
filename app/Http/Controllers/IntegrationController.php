@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\User;
+use App\Helpers\Helper;
 
 class IntegrationController extends Controller
 {
@@ -19,16 +19,6 @@ class IntegrationController extends Controller
         $this->middleware('can:menu-integracoes');
     }
 
-    public function get_permissions() {
-        $id = Auth::user()->id;
-        $user_permissions_obj = User::find($id)->permissions;
-        $user_permissions = array();
-        foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->id_permission_item;
-        }
-        return $user_permissions;
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -36,7 +26,7 @@ class IntegrationController extends Controller
      */
     public function index()
     {
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
 
         return view('integrations', [
             'user_permissions' => $user_permissions,

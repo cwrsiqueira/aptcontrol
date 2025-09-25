@@ -46,9 +46,9 @@
         </ul>
     </nav>
 
-    {{-- Menu lateral --}}
     <div class="container-fluid">
         <div class="row">
+            {{-- Menu lateral --}}
             <nav class="col-md-2 d-none d-md-block bg-light sidebar">
                 <div class="sidebar-sticky">
                     <ul class="nav flex-column">
@@ -61,7 +61,7 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('1', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        <li class="nav-item" @if (in_array('menu-produtos', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['products', 'products/*'])) active @endif"
                                 href="{{ route('products.index') }}">
                                 <span data-feather="shopping-cart"></span>
@@ -69,7 +69,7 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('2', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        <li class="nav-item" @if (in_array('menu-clientes', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['clients', 'categories'])) active @endif"
                                 href="{{ route('clients.index') }}">
                                 <span data-feather="users"></span>
@@ -77,7 +77,7 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('3', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        <li class="nav-item" @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['orders', 'orders/*'])) active @endif"
                                 href="{{ route('orders.index') }}">
                                 <span data-feather="file"></span>
@@ -85,7 +85,7 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('30', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        <li class="nav-item" @if (in_array('menu-vendedores', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['sellers', 'sellers/*'])) active @endif"
                                 href="{{ route('sellers.index') }}">
                                 <span data-feather="dollar-sign"></span>
@@ -93,21 +93,13 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('4', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        <li class="nav-item" @if (in_array('relatorios', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is('reports')) active @endif"
                                 href="{{ route('reports.index') }}">
                                 <span data-feather="bar-chart-2"></span>
                                 Relatórios
                             </a>
                         </li>
-
-                        {{-- <li class="nav-item" @if (in_array('5', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
-                            <a class="nav-link @if (Request::is('integrations')) active @endif"
-                                href="{{ route('integrations.index') }}">
-                                <span data-feather="link"></span>
-                                Integrações
-                            </a>
-                        </li> --}}
 
                         <li class="nav-item" @if (Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is('permissions')) active @endif"
@@ -132,16 +124,10 @@
 
             {{-- Content --}}
             <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
-
                 @yield('content')
-
             </main>
         </div>
     </div>
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>
     <script>

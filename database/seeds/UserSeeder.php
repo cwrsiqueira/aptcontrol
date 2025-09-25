@@ -11,7 +11,7 @@ class UserSeeder extends Seeder
     {
         // Admin padrão
         User::firstOrCreate(
-            ['email' => 'admin@ceramica.test'],
+            ['email' => 'admin@email.com'],
             [
                 'name' => 'Administrador',
                 'password' => Hash::make('secret123'), // altere depois!

@@ -111,7 +111,7 @@
                                                 <label class="mb-0 {{ $isMenu ? 'font-weight-bold' : '' }}">
                                                     <input type="checkbox" class="mr-2" name="permission_item[]"
                                                         id="perm_{{ $item->id }}" value="{{ $item->id }}"
-                                                        @if (in_array($item->id, $user_permissions)) checked @endif>
+                                                        @if (in_array($item->slug, $user_permissions)) checked @endif>
                                                     {{ $isMenu ? $item->id . ' - ' . 'Menu ' . $conf['label'] : $item->id . ' - ' . $item->name }}
                                                 </label>
                                             </li>

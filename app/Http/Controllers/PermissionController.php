@@ -19,17 +19,6 @@ class PermissionController extends Controller
         $this->middleware('can:admin');
     }
 
-    public function get_permissions()
-    {
-        $id = Auth::user()->id;
-        $user_permissions_obj = User::find($id)->permissions;
-        $user_permissions = array();
-        foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->id_permission_item;
-        }
-        return $user_permissions;
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -43,7 +32,7 @@ class PermissionController extends Controller
             ->orderBy('users.name')
             ->paginate(10);
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
 
         return view('permissions', [
             'user' => Auth::user(),

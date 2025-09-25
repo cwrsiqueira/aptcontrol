@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Client;
 use App\Clients_category;
-use App\User;
 use App\Helpers\Helper;
 
 class CategoryController extends Controller
@@ -23,17 +22,6 @@ class CategoryController extends Controller
         $this->middleware('can:menu-clientes');
     }
 
-    public function get_permissions()
-    {
-        $id = Auth::user()->id;
-        $user_permissions_obj = User::find($id)->permissions;
-        $user_permissions = array();
-        foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->id_permission_item;
-        }
-        return $user_permissions;
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -43,7 +31,7 @@ class CategoryController extends Controller
     {
         $categories = Clients_category::orderBy('id')->paginate(10);
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
 
         return view('categories', [
             'user' => Auth::user(),
@@ -70,8 +58,8 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('21', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('categories.create', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -117,8 +105,8 @@ class CategoryController extends Controller
      */
     public function edit($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('22', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('categories.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -127,7 +115,7 @@ class CategoryController extends Controller
 
         $categories = Clients_category::orderBy('id')->paginate(10);
         $category = Clients_category::find($id);
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
 
         return view('categories', [
             'user' => Auth::user(),
@@ -146,8 +134,8 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('22', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('categories.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -182,8 +170,8 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('23', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('categories.delete', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];

@@ -10,7 +10,6 @@ use App\Client;
 use App\Product;
 use App\Order;
 use App\Order_product;
-use App\User;
 use App\Clients_category;
 use App\Helpers\Helper;
 
@@ -25,17 +24,6 @@ class ClientController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('can:menu-clientes');
-    }
-
-    public function get_permissions()
-    {
-        $id = Auth::user()->id;
-        $user_permissions_obj = User::find($id)->permissions;
-        $user_permissions = array();
-        foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->id_permission_item;
-        }
-        return $user_permissions;
     }
 
     /**
@@ -57,7 +45,7 @@ class ClientController extends Controller
             }
         }
 
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         $categories = Clients_category::orderBy('id')->get();
 
         return view('clients', [
@@ -71,8 +59,8 @@ class ClientController extends Controller
 
     public function cc_client($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('15', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.cc', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -166,8 +154,7 @@ class ClientController extends Controller
     public function toggleFavorite($clientId)
     {
         $user_permissions = Helper::get_permissions();
-        // Mesma permissão da tela C/C Produto (você usa '10' lá)
-        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
             return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
         }
 
@@ -197,8 +184,8 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('12', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.create', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -253,8 +240,8 @@ class ClientController extends Controller
      */
     public function edit($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('13', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -274,7 +261,7 @@ class ClientController extends Controller
         }
 
         $client = Client::find($id);
-        $user_permissions = $this->get_permissions();
+        $user_permissions = Helper::get_permissions();
         $categories = Clients_category::orderBy('id')->get();
 
         return view('clients', [
@@ -296,8 +283,8 @@ class ClientController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('13', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -341,8 +328,8 @@ class ClientController extends Controller
      */
     public function destroy($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('24', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.delete', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];

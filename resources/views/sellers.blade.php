@@ -46,7 +46,7 @@
                 @endif
             </form>
 
-            @if (in_array('31', $user_permissions) || Auth::user()->is_admin)
+            @if (in_array('sellers.create', $user_permissions) || Auth::user()->is_admin)
                 <a class="btn btn-primary" href="{{ route('sellers.create') }}">Cadastrar Vendedor</a>
             @else
                 <button class="btn btn-primary" disabled title="Solicitar Acesso">Cadastrar Vendedor</button>
@@ -94,7 +94,7 @@
                                 </td>
                                 <td>{{ $seller->contact_value }}</td>
                                 <td>
-                                    @if (in_array('32', $user_permissions) || Auth::user()->is_admin)
+                                    @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary"
                                             href="{{ route('sellers.edit', $seller->id) }}">Editar</a>
                                     @else
@@ -102,7 +102,7 @@
                                             title="Solicitar Acesso">Editar</button>
                                     @endif
 
-                                    @if (in_array('33', $user_permissions) || Auth::user()->is_admin)
+                                    @if (in_array('sellers.delete', $user_permissions) || Auth::user()->is_admin)
                                         <form action="{{ route('sellers.destroy', $seller->id) }}" method="post"
                                             style="display:inline-block"
                                             onsubmit="return confirm('Tem certeza que deseja excluir?');">

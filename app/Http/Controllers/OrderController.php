@@ -129,7 +129,7 @@ class OrderController extends Controller
     public function create()
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('14', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('orders.create', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -187,7 +187,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('14', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('orders.create', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -230,7 +230,7 @@ class OrderController extends Controller
     public function show($id)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('17', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('orders.view', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -287,7 +287,7 @@ class OrderController extends Controller
         }
 
         $user_permissions = Helper::get_permissions();
-        if (!in_array('19', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('orders.conclude', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -342,7 +342,7 @@ class OrderController extends Controller
     public function edit($id)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('18', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -384,7 +384,7 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('18', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -444,7 +444,7 @@ class OrderController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         // Mantendo mesma permissão '10' da tela C/C Produto
-        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
             return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
         }
 
@@ -459,7 +459,7 @@ class OrderController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         // mesma permissão que você já usa na tela C/C Produto
-        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
             return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
         }
 

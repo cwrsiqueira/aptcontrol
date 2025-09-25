@@ -8,7 +8,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h2>Vendedor</h2>
             <div>
-                @if (in_array('32', $user_permissions) || Auth::user()->is_admin)
+                @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('sellers.edit', $seller->id) }}">Editar</a>
                 @endif
                 <a class="btn btn-sm btn-light" href="{{ route('sellers.index') }}">Voltar</a>

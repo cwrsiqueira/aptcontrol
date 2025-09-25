@@ -12,9 +12,9 @@ use App\Order;
 use App\Client;
 use App\Order_product;
 use App\Stockmovement;
-use App\User;
 use App\Clients_category;
 use App\Helpers\Helper;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -29,32 +29,32 @@ class ProductController extends Controller
         $this->middleware('can:menu-produtos');
     }
 
-    public function get_permissions()
-    {
-        $id = Auth::user()->id;
-        $user_permissions_obj = User::find($id)->permissions;
-        $user_permissions = array();
-        foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->id_permission_item;
-        }
-        return $user_permissions;
-    }
-
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::paginate(5);
-        $q = '';
-        if (!empty($_GET['q'])) {
-            $q = $_GET['q'];
-            $products = Product::where('name', 'LIKE', '%' . $q . '%')->paginate(5);
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('menu-produtos', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
         }
 
-        $user_permissions = $this->get_permissions();
+        $q = trim((string) $request->input('q'));
+
+        $products = Product::query()
+            ->when($q, function ($qb) use ($q) {
+                $needle = mb_strtolower(Str::ascii($q));
+                $qb->where(function ($sub) use ($needle) {
+                    $sub->whereRaw('LOWER(unaccent(name)) LIKE ?', ["%{$needle}%"]);
+                });
+            })
+            ->orderBy('name')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('products', [
             'user_permissions' => $user_permissions,
@@ -67,8 +67,8 @@ class ProductController extends Controller
     public function cc_product($id)
     {
 
-        $user_permissions = $this->get_permissions();
-        if (!in_array('10', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
@@ -189,7 +189,16 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.create', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('products.index')->withErrors($message);
+        }
+
+        return view('products_create', [
+            'user' => Auth::user(),
+            'user_permissions' => $user_permissions
+        ]);
     }
 
     /**
@@ -200,17 +209,18 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.create', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('products.index')->withErrors($message);
+        }
+
         $data = $request->only([
             'name',
             'stock',
             'forecast',
             'file',
         ]);
-
-        $user_permissions = $this->get_permissions();
-        if (in_array('7', $user_permissions) || Auth::user()->is_admin) {
-            $data['auth'] = 'Autorizado';
-        }
 
         if (!empty($data['stock'])) {
             $data['stock'] = str_replace('.', '', $data['stock']);
@@ -219,7 +229,7 @@ class ProductController extends Controller
             $data['forecast'] = str_replace('.', '', $data['forecast']);
         }
 
-        $validator = Validator::make(
+        Validator::make(
             $data,
             [
                 'name' => 'required|unique:products|max:100',
@@ -254,9 +264,19 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Product $product)
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.view', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
+
+        return view('products_view', [
+            'user'             => Auth::user(),
+            'product'           => $product,
+            'user_permissions' => $user_permissions,
+        ]);
     }
 
     /**
@@ -265,30 +285,19 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Product $product)
     {
-        $products = Product::paginate(5);
-        $product = Product::find($id);
-        if (!empty($_GET['action'])) {
-            $action = $_GET['action'];
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.update', $user_permissions) && !Auth::user()->is_admin) {
+            $action = 'Não Autorizado';
+        }
+        if (!in_array('products.stock', $user_permissions) && !Auth::user()->is_admin) {
+            $action = 'Não Autorizado';
         }
 
-        $user_permissions = $this->get_permissions();
-        if ($action == 'edit') {
-            if (!in_array('8', $user_permissions) && !Auth::user()->is_admin) {
-                $action = 'Não Autorizado';
-            }
-        } elseif ($action == 'add_estock') {
-            if (!in_array('9', $user_permissions) && !Auth::user()->is_admin) {
-                $action = 'Não Autorizado';
-            }
-        }
-
-        return view('products', [
+        return view('products_edit', [
             'user' => Auth::user(),
             'product' => $product,
-            'products' => $products,
-            'action' => $action,
             'user_permissions' => $user_permissions
         ]);
     }
@@ -379,8 +388,8 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        $user_permissions = $this->get_permissions();
-        if (!in_array('11', $user_permissions) && !Auth::user()->is_admin) {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.delete', $user_permissions) && !Auth::user()->is_admin) {
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
