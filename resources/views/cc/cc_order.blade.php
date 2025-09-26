@@ -13,9 +13,80 @@
             </div>
         </div>
 
+        <div class="row">
+            {{-- CLIENTE --}}
+            <div class="col-lg-4">
+                <div class="card card-lift mb-3">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <strong>Pedido</strong>
+                        <span class="badge badge-primary badge-client-name">{{ $order->order_number }}</span>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted">Selecione filtros ao lado e veja as entregas abaixo.</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- FILTROS --}}
+            <div class="col-lg-5">
+                <form action="{{ route('cc_order', ['id' => $order->id]) }}" method="get">
+                    <div class="card card-lift mb-3">
+                        <div class="card-header">
+                            <strong>Filtros</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach ($product_total as $key => $value)
+                                    <div class="col-md-6 mb-2">
+                                        <label class="mb-0 d-flex align-items-center">
+                                            <input class="mr-2" type="checkbox" name="por_produto[]"
+                                                value="{{ $value['id'] }}"
+                                                @if (!empty($_GET['por_produto']) && in_array($value['id'], $_GET['por_produto'])) checked @endif>
+                                            <span class="text-truncate" title="{{ $key }}">Total de
+                                                {{ $key }}</span>
+                                            <span
+                                                class="ml-2 badge badge-light">{{ number_format($value['qt'], 0, '', '.') }}</span>
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <hr>
+
+                            <div class="custom-control custom-checkbox mb-3">
+                                <input type="checkbox" class="custom-control-input" id="chk_entregas" name="entregas"
+                                    value="1" @if (!empty($_GET['entregas'])) checked @endif>
+                                <label class="custom-control-label" for="chk_entregas">Mostrar entregas realizadas</label>
+                            </div>
+
+                            <div class="d-flex align-items-center">
+                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
+                                <a href="{{ route('cc_order', ['id' => $order->id]) }}" id="clean_search"
+                                    class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {{-- DICAS / AÇÕES SECUNDÁRIAS (opcional) --}}
+            <div class="col-lg-3">
+                <div class="card card-lift mb-3">
+                    <div class="card-header">
+                        <strong>Dicas</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-muted small">
+                            Use os filtros por produto e a opção de entregas realizadas para refinar a visualização.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- TABELA --}}
-        <div class="card card-lift">
-            <div class="table-responsive tableFixHead">
+        <div class="card card-lift mb-5">
+            <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
                     <thead class="thead-light sticky-header">
                         <tr>
@@ -29,7 +100,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($order_products as $item)
+                        @foreach ($data as $item)
                             @php
                                 $rowClass =
                                     $item->saldo < 0
@@ -125,6 +196,11 @@
         /* header */
         .page-header h2 {
             font-weight: 600;
+        }
+
+        .badge-client-name {
+            font-size: .85rem;
+            padding: .25rem .5rem;
         }
     </style>
 @endsection

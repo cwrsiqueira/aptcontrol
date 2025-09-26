@@ -44,6 +44,7 @@
                                     <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Registro de Entrega') selected @endif>
                                         Registro de Entrega
                                     </option>
+                                    <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Permissão') selected @endif>Permissão</option>
                                 </select>
                             </div>
                         </div>

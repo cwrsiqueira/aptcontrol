@@ -19,7 +19,7 @@
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <strong>Cliente</strong>
-                        <span class="badge badge-primary">{{ $client->name }}</span>
+                        <span class="badge badge-primary badge-client-name">{{ $client->name }}</span>
                     </div>
                     <div class="card-body">
                         <small class="text-muted">Selecione filtros ao lado e veja as entregas abaixo.</small>
@@ -85,8 +85,8 @@
         </div>
 
         {{-- TABELA --}}
-        <div class="card card-lift">
-            <div class="table-responsive tableFixHead">
+        <div class="card card-lift mb-5">
+            <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
                     <thead class="thead-light sticky-header">
                         <tr>
@@ -196,6 +196,11 @@
         /* header */
         .page-header h2 {
             font-weight: 600;
+        }
+
+        .badge-client-name {
+            font-size: .85rem;
+            padding: .25rem .5rem;
         }
     </style>
 @endsection

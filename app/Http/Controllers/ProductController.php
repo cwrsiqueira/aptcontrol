@@ -64,84 +64,85 @@ class ProductController extends Controller
         ]);
     }
 
-    public function cc_product($id)
+    public function cc_product(Request $request, $id)
     {
-
         $user_permissions = Helper::get_permissions();
         if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('products.index')->withErrors($message);
+            return redirect()
+                ->route('products.index')
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
-        $categories = Clients_category::orderBy('id')->get();
-        $cats = array(999 => 0);
-        foreach ($categories as $key => $value) {
-            $cats[$key] = $value['id'];
-        }
-        if (!empty($_GET['por_categoria'])) {
-            $cats = $_GET['por_categoria'];
-        }
+        // Filtro por categoria (checkboxes)
+        $cats = (array) $request->input('por_categoria', []);
+        // (opcional) normalizar para int: $cats = array_map('intval', $cats);
 
-        $product = Product::find($id);
-        $data = Order_product::select('*', 'order_products.id', 'quant as saldo')
-            ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->join('clients', 'clients.id', 'client_id')
-            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
-            ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
-            ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
-            ->addSelect(['client_id_categoria' => Client::select('id_categoria')->whereColumn('clients.id', 'client_id')])
-            ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'client_id_categoria')])
-            ->addSelect(['seller_name' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id')])
-            ->addSelect(['client_favorite' => Client::select('is_favorite')->whereColumn('clients.id', 'client_id')])
-            ->addSelect(['category_name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'clients.id_categoria')])
-            ->where('product_id', $id)
+        $product = Product::findOrFail($id);
+
+        // Base: pedidos em aberto do produto
+        $data = Order_product::query()
+            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',         '=', 'orders.client_id')
+            ->leftJoin('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->leftJoin('sellers',            'sellers.id',            '=', 'orders.seller_id')
+            ->where('order_products.product_id', $id)
             ->where('orders.complete_order', 0)
-            ->whereIn('clients.id_categoria', $cats)
-            ->orderBy('delivery_date')
+            ->when(!empty($cats), fn($q) => $q->whereIn('clients.id_categoria', $cats))
+            ->orderBy('order_products.delivery_date')
+            ->select([
+                'order_products.*',                   // inclui id, product_id, quant, delivery_date, favorite_delivery, withdraw...
+                'orders.order_date',
+                'orders.order_number as order_id',
+                'orders.seller_id',
+                'clients.id as client_id',
+                'clients.name as client_name',
+                'clients.id_categoria as client_id_categoria',
+                'clients.is_favorite as client_favorite',
+                'clients_categories.name as category_name',
+                'sellers.name as seller_name',
+            ])
             ->get();
 
-        $saldo = [];
-        foreach ($data as $key => $value) {
-            if (!isset($saldo[$value->order_id])) {
-                $saldo[$value->order_id] = $value->quant;
-                $data[$key]['saldo'] = $saldo[$value->order_id];
-            } else {
-                $saldo[$value->order_id] += $value->quant;
-                if ($saldo[$value->order_id] > $value->quant) {
-                    $data[$key]['saldo'] = $value->quant;
-                } else {
-                    $data[$key]['saldo'] = $saldo[$value->order_id];
-                }
-            }
+        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
+        $acc = [];
+        foreach ($data as $k => $row) {
+            $pedido = $row->order_id;
+            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
+            $data[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
         }
 
-        $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
+        // Filtra após calcular saldo (preserva comportamento do original)
+        $data = $data
+            ->where('saldo', '>', 0)
+            ->where('delivery_date', '>', '1970-01-01');
 
-        $quant_por_categoria = Order_product::join('orders', 'orders.order_number', 'order_products.order_id')
-            ->join('clients', 'clients.id', 'orders.client_id')
-            ->join('clients_categories', 'clients_categories.id', 'clients.id_categoria')
-            ->addSelect(DB::raw('sum(order_products.quant) as saldo'))
-            ->addSelect(['name' => Clients_category::select('name')->whereColumn('clients_categories.id', 'clients.id_categoria')])
-            ->addSelect(['id' => Clients_category::select('id')->whereColumn('clients_categories.id', 'clients.id_categoria')])
-            ->where('product_id', $id)
+        // Totais por categoria (para montar os checkboxes com badges)
+        $quant_por_categoria = Order_product::query()
+            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',          '=', 'orders.client_id')
+            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->where('order_products.product_id', $id)
             ->where('orders.complete_order', 0)
-            ->groupBy('clients.id_categoria')
+            ->groupBy('clients_categories.id', 'clients_categories.name')
+            ->select([
+                DB::raw('SUM(order_products.quant) as saldo'),
+                'clients_categories.id',
+                'clients_categories.name',
+            ])
             ->get();
 
+        // Mantém seu cálculo existente
         $day_delivery_calc = $this->day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
 
         return view('cc.cc_product', [
-            'data' => $data,
-            'product' => $product,
-            'quant_total' => $quant_total,
-            'delivery_in' => $delivery_in,
-            'user_permissions' => $user_permissions,
-            'categories' => $categories,
-            'quant_por_categoria' => $quant_por_categoria
+            'data'                => $data,
+            'product'             => $product,
+            'quant_total'         => $quant_total,
+            'delivery_in'         => $delivery_in,
+            'user_permissions'    => $user_permissions,
+            'quant_por_categoria' => $quant_por_categoria,
         ]);
     }
 

@@ -66,97 +66,86 @@ class ClientController extends Controller
         ]);
     }
 
-    public function cc_client($id)
+    public function cc_client(Request $request, $id)
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('clients.cc', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('clients.index')->withErrors($message);
+            return redirect()
+                ->route('clients.index')
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
-        $por_produto = Product::get('id');
-        // $date_ini = '2020-01-01';
-        // $date_fin = '2020-12-31';
-        // if (!empty($_GET['por_produto']) || !empty($_GET['date_ini'])) {
-        //     $por_produto = $_GET['por_produto'] ?? $por_produto;
-        //     $date_ini = $_GET['date_ini'];
-        //     $date_fin = $_GET['date_fin'];
-        // }
-        if (!empty($_GET['por_produto'])) {
-            $por_produto = $_GET['por_produto'] ?? $por_produto;
+        // Filtro por produto (ids). Padrão: todos.
+        $por_produto = $request->input('por_produto');
+        if (empty($por_produto)) {
+            $por_produto = Product::pluck('id')->all();
         }
-        $client = Client::find($id);
-        $orders = Order::select('order_number')->where('client_id', $id)->get();
-        $data = Order_product::whereIn('order_id', $orders)
-            ->addSelect(['order_date' => Order::select('order_date')->whereColumn('order_number', 'order_id')])
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-            ->addSelect(['orders_order_id' => Order::select('id')->whereColumn('order_number', 'order_id')])
-            ->join('orders', 'order_number', 'order_id')
-            ->whereIn('product_id', $por_produto)
-            // ->whereBetween('delivery_date', [$date_ini, $date_fin])
-            ->where('complete_order', 0)
-            ->orderBy('delivery_date')
+
+        $client = Client::findOrFail($id);
+
+        // Linhas dos pedidos em aberto deste cliente, filtradas pelos produtos selecionados
+        $data = Order_product::query()
+            ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
+            ->join('products', 'products.id',         '=', 'order_products.product_id')
+            ->where('orders.client_id', $id)
+            ->where('orders.complete_order', 0)
+            ->whereIn('order_products.product_id', $por_produto)
+            ->orderBy('order_products.delivery_date')
+            ->select([
+                'order_products.*',
+                'orders.order_number as order_id',
+                'orders.order_date as order_date',
+                'orders.id as orders_order_id',
+                'products.name as product_name',
+            ])
             ->get();
 
-        $data_sum = array();
-        foreach ($data as $item) {
-            $data_sum[] = $item->order_id;
+        // Saldo acumulado por pedido (mesma lógica do código original)
+        $saldoPorPedido = [];
+        foreach ($data as $k => $row) {
+            $pedido = $row->order_id;
+            $saldoPorPedido[$pedido] = ($saldoPorPedido[$pedido] ?? 0) + $row->quant;
+            $data[$k]->saldo = $saldoPorPedido[$pedido];
         }
 
-        $saldo = [];
-        foreach ($data as $key => $value) {
-            if (!isset($saldo[$value->order_id])) {
-                $saldo[$value->order_id] = $value->quant;
-                $data[$key]['saldo'] = $saldo[$value->order_id];
-            } else {
-                $saldo[$value->order_id] += $value->quant;
-                $data[$key]['saldo'] = $saldo[$value->order_id];
-                // if ($saldo[$value->product_id] > $value->quant) {
-                //     $data[$key]['saldo'] = $value->quant;
-                // } else {
-                //     $data[$key]['saldo'] = $saldo[$value->product_id];
-                // }
-            }
+        // Se NÃO marcar "entregas realizadas", filtra para mostrar só previstas (saldo > 0 e data válida)
+        if (!$request->filled('entregas')) {
+            $data = $data
+                ->where('saldo', '>', 0)
+                ->where('delivery_date', '>', '1970-01-01');
         }
 
-        if (empty($_GET['entregas'])) {
-            $data = $data->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
-        }
+        // Pedidos efetivamente presentes após os filtros (para compor os totais por produto)
+        $orderNumbersUsados = $data->pluck('order_id')->unique()->values();
 
-        foreach ($orders as $key => $value) {
-            $total_product[$value->order_number] = DB::table('order_products')
-                ->select(['product_id' => Product::select('id')->whereColumn('id', 'product_id')])
-                ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-                ->addSelect(DB::raw('sum(quant) as quant_total'))
-                ->where('order_id', $value->order_number)
-                ->join('orders', 'order_number', 'order_id')
-                ->where('complete_order', 0)
-                ->whereIn('order_id', $data_sum)
-                ->groupBY('product_id')
-                ->get();
-        }
+        // Totais por produto nos pedidos presentes em $data (mantém comportamento do original)
+        $totais = Order_product::query()
+            ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
+            ->join('products', 'products.id',         '=', 'order_products.product_id')
+            ->whereIn('order_products.order_id', $orderNumbersUsados)
+            ->where('orders.complete_order', 0)
+            ->groupBy('products.id', 'products.name')
+            ->select([
+                'products.id   as product_id',
+                'products.name as product_name',
+                DB::raw('SUM(order_products.quant) as quant_total'),
+            ])
+            ->get();
 
-        $product_total = array();
-        if (!empty($total_product)) {
-            foreach ($total_product as $products) {
-                foreach ($products as $item) {
-                    if (!isset($product_total[$item->product_name])) {
-                        $product_total[$item->product_name]['id'] = $item->product_id;
-                        $product_total[$item->product_name]['qt'] = $item->quant_total;
-                    } else {
-                        $product_total[$item->product_name]['qt'] += $item->quant_total;
-                    }
-                }
-            }
+        // Estrutura esperada pela view: ['Nome do produto' => ['id' => ..., 'qt' => ...]]
+        $product_total = [];
+        foreach ($totais as $row) {
+            $product_total[$row->product_name] = [
+                'id' => $row->product_id,
+                'qt' => $row->quant_total,
+            ];
         }
 
         return view('cc.cc_client', [
-            'data' => $data,
-            'client' => $client,
-            'product_total' => $product_total,
-            'user_permissions' => $user_permissions
+            'data'             => $data,
+            'client'           => $client,
+            'product_total'    => $product_total,
+            'user_permissions' => $user_permissions,
         ]);
     }
 

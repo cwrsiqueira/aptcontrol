@@ -19,7 +19,7 @@
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <span class="font-weight-bold">Produto</span>
-                        <span class="badge badge-primary">{{ $product->name }}</span>
+                        <span class="badge badge-primary badge-client-name">{{ $product->name }}</span>
                     </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-2">
@@ -89,8 +89,8 @@
         </div>
 
         {{-- TABELA --}}
-        <div class="card card-lift">
-            <div class="table-responsive tableFixHead">
+        <div class="card card-lift mb-5">
+            <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
                     <thead class="thead-light sticky-header">
                         <tr>
@@ -141,6 +141,7 @@
             </div>
             {{-- <div class="card-footer">{{ $data->links() }}</div> --}}
         </div>
+        <hr>
     </main>
 @endsection
 
@@ -202,6 +203,11 @@
         .page-header h2 {
             font-weight: 600;
         }
+
+        .badge-client-name {
+            font-size: .85rem;
+            padding: .25rem .5rem;
+        }
     </style>
 @endsection
 
@@ -225,15 +231,20 @@
         // Toggle favorito do CLIENTE (com confirmação)
         $(document).on('click', 'a.fav-client', function(e) {
             e.preventDefault();
-            var $el = $(this);
-            var url = $el.data('url');
-            var marcando = !$el.hasClass('is-fav-client');
-            var msg = marcando ? 'Favoritar este cliente?' : 'Remover favorito deste cliente?';
+            const $el = $(this);
+            const elId = $el.data('client-id');
+            const url = $el.data('url');
+
+            const marcando = !$el.hasClass('is-fav-client');
+            const msg = marcando ? 'Favoritar este cliente?' : 'Remover favorito deste cliente?';
             if (!confirm(msg)) return;
 
             $.post(url, {}, function(resp) {
                 if (resp && resp.ok) {
+                    // aplica no clicado
                     $el.toggleClass('is-fav-client', !!resp.is_favorite);
+                    // aplica em TODOS com o mesmo data-client-id
+                    $(`[data-client-id="${elId}"]`).toggleClass('is-fav-client', !!resp.is_favorite);
                 }
             }).fail(function(xhr) {
                 console.error('Falha ao favoritar cliente', xhr.responseText);

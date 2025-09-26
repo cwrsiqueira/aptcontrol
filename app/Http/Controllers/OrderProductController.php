@@ -99,6 +99,6 @@ class OrderProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Pedidos');
 
-        return redirect()->route('order_products.index', ['order_product' => $order_product]);
+        return redirect()->route('order_products.index', ['order' => $order]);
     }
 }

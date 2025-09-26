@@ -134,7 +134,7 @@ class OrderController extends Controller
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
-            return redirect()->route('clients.index')->withErrors($message);
+            return redirect()->route('orders.index')->withErrors($message);
         }
         $seq_order_number = $this->get_seq_order_number();
 
@@ -163,7 +163,7 @@ class OrderController extends Controller
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
-            return redirect()->route('clients.index')->withErrors($message);
+            return redirect()->route('orders.index')->withErrors($message);
         }
 
         $data = $request->only([
@@ -265,7 +265,7 @@ class OrderController extends Controller
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
-            return redirect()->route('clients.index')->withErrors($message);
+            return redirect()->route('orders.index')->withErrors($message);
         }
 
         $clients = Client::orderBy('name')->get(['id', 'name']);
@@ -294,7 +294,7 @@ class OrderController extends Controller
             $message = [
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
-            return redirect()->route('clients.index')->withErrors($message);
+            return redirect()->route('orders.index')->withErrors($message);
         }
 
         $data = $request->only([
@@ -366,15 +366,86 @@ class OrderController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('orders.cc', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+            return redirect()
+                ->route('orders.index')
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
-        $order_products = Order_product::where('order_id', $id)->get();
+        $order = Order::findOrFail($id);
+        $client = Client::findOrFail($order->client_id);
 
-        return view('cc.cc_order', compact('order_products'));
+        // Filtro por produto (ids) – padrão: todos
+        $por_produto = $request->input('por_produto');
+        if (empty($por_produto)) {
+            $por_produto = Product::pluck('id')->all();
+        }
+
+        // Itens dos pedidos em aberto, filtrados pelos produtos selecionados
+        $data = Order_product::query()
+            ->join('orders',   'orders.order_number',  '=', 'order_products.order_id')
+            ->join('products', 'products.id',          '=', 'order_products.product_id')
+            ->whereIn('order_products.product_id', $por_produto)
+            ->where('order_products.order_id',  $order->order_number)
+            ->where('orders.complete_order', 0)
+            ->orderBy('order_products.delivery_date')
+            ->select([
+                'order_products.*',
+                'orders.order_number as order_id',
+                'orders.order_date as order_date',
+                'orders.id as orders_order_id',
+                'products.name as product_name',
+            ])
+            ->get();
+
+        // Saldo acumulado por pedido (mesma lógica do código original)
+        $saldoPorPedido = [];
+        foreach ($data as $k => $row) {
+            $pedido = $row->order_id;
+            $saldoPorPedido[$pedido] = ($saldoPorPedido[$pedido] ?? 0) + $row->quant;
+            $data[$k]->saldo = $saldoPorPedido[$pedido];
+        }
+
+        // Filtro de entregas (mantém a mesma regra baseada na presença de "entregas")
+        if (!$request->filled('entregas')) {
+            $data = $data
+                ->where('saldo', '>', 0)
+                ->where('delivery_date', '>', '1970-01-01');
+        }
+
+        // Pedidos efetivamente presentes após os filtros
+        $orderNumbersUsados = $data->pluck('order_id')->unique()->values();
+
+        // Totais por produto considerando os pedidos presentes em $data
+        // (mantém o comportamento original: não re-filtra pelos produtos selecionados aqui)
+        $totais = Order_product::query()
+            ->join('orders',   'orders.order_number',  '=', 'order_products.order_id')
+            ->join('products', 'products.id',          '=', 'order_products.product_id')
+            ->whereIn('order_products.order_id', $orderNumbersUsados)
+            ->where('orders.complete_order', 0)
+            ->groupBy('products.id', 'products.name')
+            ->select([
+                'products.id   as product_id',
+                'products.name as product_name',
+                DB::raw('SUM(order_products.quant) as quant_total'),
+            ])
+            ->get();
+
+        // Estrutura igual à usada pela view: ['Nome do produto' => ['id' => ..., 'qt' => ...]]
+        $product_total = [];
+        foreach ($totais as $row) {
+            $product_total[$row->product_name] = [
+                'id' => $row->product_id,
+                'qt' => $row->quant_total,
+            ];
+        }
+
+        return view('cc.cc_order', compact(
+            'data',
+            'client',
+            'product_total',
+            'user_permissions',
+            'order'
+        ));
     }
 
     private function get_seq_order_number()
