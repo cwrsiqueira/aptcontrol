@@ -28,6 +28,11 @@ class Order extends Model
         'favorite_date' => 'boolean',
     ];
 
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
     public function seller()
     {
         return $this->belongsTo(Seller::class, 'seller_id');

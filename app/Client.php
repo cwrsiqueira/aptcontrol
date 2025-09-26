@@ -10,6 +10,8 @@ class Client extends Model
         'is_favorite' => 'boolean',
     ];
 
+    protected $fillable = ['name', 'id_categoria'];
+
     public function category()
     {
         return $this->belongsTo(Clients_category::class, 'id_categoria', 'id');

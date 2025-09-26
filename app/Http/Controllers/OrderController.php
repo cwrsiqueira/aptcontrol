@@ -12,6 +12,7 @@ use App\Product;
 use App\Order_product;
 use App\Helpers\Helper;
 use App\Seller;
+use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
@@ -135,47 +136,18 @@ class OrderController extends Controller
             ];
             return redirect()->route('clients.index')->withErrors($message);
         }
-
-        $client = array();
-        if (!empty($_GET['client'])) {
-            $client = Client::find($_GET['client']);
-        }
-
-        $products = Product::all();
-        $user_permissions = Helper::get_permissions();
         $seq_order_number = $this->get_seq_order_number();
 
+        $clients = Client::orderBy('name')->get(['id', 'name']);
         $sellers = Seller::orderBy('name')->get(['id', 'name']);
 
         return view('orders.orders_create', [
             'user' => Auth::user(),
-            'client' => $client,
-            'products' => $products,
             'user_permissions' => $user_permissions,
             'seq_order_number' => $seq_order_number,
-            'sellers' => $sellers, // <--
+            'clients' => $clients,
+            'sellers' => $sellers,
         ]);
-    }
-
-    private function get_seq_order_number()
-    {
-        $items = array();
-        $seq = 0;
-        $sn_orders = Order::where('order_number', 'LIKE', '%sn%')->get('order_number');
-
-        foreach ($sn_orders as $item) {
-            $item = explode('-', $item->order_number);
-            if (!empty($item[1])) {
-                $items[] = $item[1];
-            }
-        }
-        if (!empty($items)) {
-            $seq = max($items);
-        }
-
-        $seq_order_number = 'sn-' . ($seq + 1);
-
-        return $seq_order_number;
     }
 
     /**
@@ -197,9 +169,8 @@ class OrderController extends Controller
         $data = $request->only([
             "order_date",
             "client_name",
-            "client_id",
             "order_number",
-            "seller_id",
+            "seller_name",
         ]);
 
         Validator::make(
@@ -207,19 +178,26 @@ class OrderController extends Controller
             [
                 "order_date" => ['required'],
                 "client_name" => ['required'],
-                "client_id" => ['required'],
                 "order_number" => ['required', 'unique:orders'],
-                'seller_id' => 'nullable|integer|exists:sellers,id',
+                'seller_name' => ['required'],
+            ],
+            [],
+            [
+                'client_name' => 'Cliente',
+                'seller_name' => 'Vendedor'
             ]
         )->validate();
 
+        $client = Client::firstOrCreate(['name' => trim($data['client_name'])], ['id_categoria' => 1]);
+        $seller = Seller::firstOrCreate(['name' => trim($data['seller_name'])], ['contact_type' => 'outro']);
+
         $order = new Order();
-        $order->client_id = $data['client_id'];
+        $order->client_id = $client->id;
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
         $order->payment = 'Aberto';
-        $order->withdraw = 'Entregar';
-        $order->seller_id = $request->input('seller_id');
+        $order->withdraw = 'entregar';
+        $order->seller_id = $seller->id;
         $order->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');
@@ -272,6 +250,152 @@ class OrderController extends Controller
             'product' => $product,
             'saldo_produtos' => $saldo_produtos
         ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Order $order)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
+        $clients = Client::orderBy('name')->get(['id', 'name']);
+        $sellers = Seller::orderBy('name')->get(['id', 'name']);
+
+        return view('orders.orders_edit', [
+            'user' => Auth::user(),
+            'user_permissions' => $user_permissions,
+            'order' => $order,
+            'clients' => $clients,
+            'sellers' => $sellers,
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
+        $data = $request->only([
+            "order_date",
+            "client_name",
+            "order_number",
+            "seller_name",
+            "withdraw",
+        ]);
+
+        Validator::make(
+            $data,
+            [
+                "order_date" => ['required'],
+                "client_name" => ['required'],
+                "order_number" => ['required', Rule::unique('orders', 'order_number')->ignore($id)],
+                'seller_name' => ['required'],
+                'withdraw' => ['required'],
+            ],
+            [],
+            [
+                'client_name' => 'Cliente',
+                'seller_name' => 'Vendedor'
+            ]
+        )->validate();
+
+        $client = Client::firstOrCreate(['name' => trim($data['client_name'])], ['id_categoria' => 1]);
+        $seller = Seller::firstOrCreate(['name' => trim($data['seller_name'])], ['contact_type' => 'outro']);
+
+        $order = Order::find($id);
+        $order->client_id = $client->id;
+        $order->order_date = $data['order_date'];
+        $order->order_number = $data['order_number'];
+        $order->withdraw = $data['withdraw'];
+        $order->seller_id = $seller->id;
+        $order->save();
+
+        Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->order_number, 'Pedidos');
+
+        return redirect()->route('orders.index', ['q' => $order->order_number]);
+    }
+
+    public function destroy(Order $order)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('orders.delete', $user_permissions) && !Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
+        $orders = Order_product::where('order_id', $order->id)->get();
+
+        if (count($orders) > 0) {
+            $message = [
+                'cannot_exclude' => 'Pedido possui produtos vinculados e não pode ser excluído!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        } else {
+            $order = Order::find($order->id);
+            $order->delete();
+            Helper::saveLog(Auth::user()->id, 'Deleção', $order->id, $order->order_number, 'Pedidos');
+            return redirect()->route('orders.index');
+        }
+    }
+
+    public function cc_order(Request $request, $id)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('orders.cc', $user_permissions) && !Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
+        $order_products = Order_product::where('order_id', $id)->get();
+
+        return view('cc.cc_order', compact('order_products'));
+    }
+
+    private function get_seq_order_number()
+    {
+        $items = array();
+        $seq = 0;
+        $sn_orders = Order::where('order_number', 'LIKE', '%sn%')->get('order_number');
+
+        foreach ($sn_orders as $item) {
+            $item = explode('-', $item->order_number);
+            if (!empty($item[1])) {
+                $items[] = $item[1];
+            }
+        }
+        if (!empty($items)) {
+            $seq = max($items);
+        }
+
+        $seq_order_number = 'sn-' . ($seq + 1);
+
+        return $seq_order_number;
     }
 
     /**
@@ -331,113 +455,6 @@ class OrderController extends Controller
             'product' => $product,
             'saldo_produtos' => $saldo_produtos
         ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
-        }
-
-        $order = Order::addSelect(['name_client' => Client::select('name')
-            ->whereColumn('id', 'orders.client_id')])
-            ->find($id);
-
-        $order_products = Order_product::where('order_id', $order->order_number)
-            ->addSelect(['product_name' => Product::select('name')
-                ->whereColumn('id', 'order_products.product_id')])
-            ->orderBy('delivery_date')
-            ->get();
-
-        $user_permissions = Helper::get_permissions();
-        $products = Product::all();
-
-        $sellers = Seller::orderBy('name')->get(['id', 'name']);
-
-        return view('orders.orders_edit', [
-            'user' => Auth::user(),
-            'user_permissions' => $user_permissions,
-            'order' => $order,
-            'order_products' => $order_products,
-            'products' => $products,
-            'sellers' => $sellers, // <--
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
-        }
-
-        $data = $request->only([
-            "order_date",
-            "order_number",
-            'order_old_number',
-            "withdraw",
-            "seller_id",
-        ]);
-
-        if ($data['order_number'] != $data['order_old_number']) {
-            $validator = Validator::make($data, ['order_number' => 'unique:orders'])->validate();
-        }
-
-        $validator = Validator::make(
-            $data,
-            [
-                "order_date" => ['required'],
-                "order_number" => ['required'],
-                "order_old_number" => ['required'],
-                "withdraw" => ['required'],
-                'seller_id' => 'nullable|integer|exists:sellers,id',
-            ]
-        )->validate();
-
-        $order_products_qt = Order_product::where('order_id', $data['order_old_number'])->sum('id');
-        if ($order_products_qt <= 0) {
-            $message = [
-                'no-access' => 'O pedido precisa ter algum produto!',
-            ];
-            return redirect()->route('orders.edit', ['order' => $id])->withErrors($message);
-        }
-
-        $change_order_products = Order_product::where('order_id', $data['order_old_number'])->get();
-        foreach ($change_order_products as $item) {
-            $item->order_id = $data['order_number'];
-            $item->save();
-        }
-
-        $order = Order::find($id);
-        $order->order_date = $data['order_date'];
-        $order->order_number = $data['order_number'];
-        $order->withdraw = $data['withdraw'];
-        $order->seller_id = $request->input('seller_id');
-        $order->save();
-
-        Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->order_number, 'Pedidos');
-
-        return redirect()->route('orders.index', ['q' => $order->order_number]);
     }
 
     public function toggleDateFavorite($orderId)
@@ -615,10 +632,5 @@ class OrderController extends Controller
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
         return redirect()->route('orders.edit', ['order' => $order->id]);
-    }
-
-    public function destroy(Order $order)
-    {
-        dd($order);
     }
 }

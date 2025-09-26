@@ -10,7 +10,7 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} - @yield('title')</title>
+    <title>@yield('title') - {{ config('app.name', 'Laravel') }}</title>
 
     <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/dashboard/">
 

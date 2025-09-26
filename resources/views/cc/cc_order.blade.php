@@ -1,86 +1,15 @@
 @extends('layouts.estilos')
 
-@section('title', 'Entregas do Cliente')
+@section('title', 'Entregas do Pedido')
 
 @section('content')
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         {{-- Cabeçalho / ações --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
-            <h2 class="mb-0">Entregas do Cliente</h2>
+            <h2 class="mb-0">Entregas do Pedido</h2>
             <div class="btn-group">
-                <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{ route('clients.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{ route('orders.index') }}">Voltar</a>
                 <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
-            </div>
-        </div>
-
-        <div class="row">
-            {{-- CLIENTE --}}
-            <div class="col-lg-4">
-                <div class="card card-lift mb-3">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <strong>Cliente</strong>
-                        <span class="badge badge-primary">{{ $client->name }}</span>
-                    </div>
-                    <div class="card-body">
-                        <small class="text-muted">Selecione filtros ao lado e veja as entregas abaixo.</small>
-                    </div>
-                </div>
-            </div>
-
-            {{-- FILTROS --}}
-            <div class="col-lg-5">
-                <form action="{{ route('cc_client', ['id' => $client->id]) }}" method="get">
-                    <div class="card card-lift mb-3">
-                        <div class="card-header">
-                            <strong>Filtros</strong>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @foreach ($product_total as $key => $value)
-                                    <div class="col-md-6 mb-2">
-                                        <label class="mb-0 d-flex align-items-center">
-                                            <input class="mr-2" type="checkbox" name="por_produto[]"
-                                                value="{{ $value['id'] }}"
-                                                @if (!empty($_GET['por_produto']) && in_array($value['id'], $_GET['por_produto'])) checked @endif>
-                                            <span class="text-truncate" title="{{ $key }}">Total de
-                                                {{ $key }}</span>
-                                            <span
-                                                class="ml-2 badge badge-light">{{ number_format($value['qt'], 0, '', '.') }}</span>
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-
-                            <hr>
-
-                            <div class="custom-control custom-checkbox mb-3">
-                                <input type="checkbox" class="custom-control-input" id="chk_entregas" name="entregas"
-                                    value="1" @if (!empty($_GET['entregas'])) checked @endif>
-                                <label class="custom-control-label" for="chk_entregas">Mostrar entregas realizadas</label>
-                            </div>
-
-                            <div class="d-flex align-items-center">
-                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                                <a href="{{ route('cc_client', ['id' => $client->id]) }}" id="clean_search"
-                                    class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            {{-- DICAS / AÇÕES SECUNDÁRIAS (opcional) --}}
-            <div class="col-lg-3">
-                <div class="card card-lift mb-3">
-                    <div class="card-header">
-                        <strong>Dicas</strong>
-                    </div>
-                    <div class="card-body">
-                        <div class="text-muted small">
-                            Use os filtros por produto e a opção de entregas realizadas para refinar a visualização.
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -100,7 +29,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($data as $item)
+                        @foreach ($order_products as $item)
                             @php
                                 $rowClass =
                                     $item->saldo < 0

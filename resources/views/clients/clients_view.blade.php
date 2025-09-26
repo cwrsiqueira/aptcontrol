@@ -1,6 +1,6 @@
 @extends('layouts.template')
 
-@section('title', 'Clientes')
+@section('title', 'Detalhes do Cliente')
 
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">

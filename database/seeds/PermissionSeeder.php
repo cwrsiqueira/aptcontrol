@@ -35,7 +35,7 @@ class PermissionSeeder extends Seeder
 
             // CATEGORIAS DE CLIENTES 
             ['slug' => 'categories.create', 'name' => 'Cadastrar Categoria',          'group_name' => 'Categorias', 'created_at' => $now, 'updated_at' => $now],
-            ['slug' => 'categories.view',  'name' => 'Visualizar Categoria',         'group_name' => 'Categorias', 'created_at' => $now, 'updated_at' => $now],
+            ['slug' => 'categories.view',   'name' => 'Visualizar Categoria',         'group_name' => 'Categorias', 'created_at' => $now, 'updated_at' => $now],
             ['slug' => 'categories.update', 'name' => 'Editar Categoria',             'group_name' => 'Categorias', 'created_at' => $now, 'updated_at' => $now],
             ['slug' => 'categories.delete', 'name' => 'Excluir Categoria',            'group_name' => 'Categorias', 'created_at' => $now, 'updated_at' => $now],
 
@@ -45,6 +45,7 @@ class PermissionSeeder extends Seeder
             ['slug' => 'orders.view',      'name' => 'Visualizar Pedido',            'group_name' => 'Pedidos',   'created_at' => $now, 'updated_at' => $now],
             ['slug' => 'orders.update',    'name' => 'Editar Pedido',                'group_name' => 'Pedidos',   'created_at' => $now, 'updated_at' => $now],
             ['slug' => 'orders.conclude',  'name' => 'Concluir Pedido',              'group_name' => 'Pedidos',   'created_at' => $now, 'updated_at' => $now],
+            ['slug' => 'orders.cc',        'name' => 'Conta Corrente (Pedido)',      'group_name' => 'Pedidos',   'created_at' => $now, 'updated_at' => $now],
 
             // VENDEDORES 
             ['slug' => 'sellers.create', 'name' => 'Cadastrar Vendedor',  'group_name' => 'Vendedores', 'created_at' => $now, 'updated_at' => $now],

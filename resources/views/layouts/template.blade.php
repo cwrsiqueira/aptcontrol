@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <title>{{ config('app.name', 'Laravel') }} - @yield('title')</title>
+    <title>@yield('title') - {{ config('app.name', 'Laravel') }}</title>
 
     <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/dashboard/">
 

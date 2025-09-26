@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/products/cc_products/{id}',      'ProductController@cc_product')->name('cc_product');
     Route::get('/clients/cc_clients/{id}',        'ClientController@cc_client')->name('cc_client');
+    Route::get('/orders/cc_orders/{id}',        'OrderController@cc_order')->name('cc_order');
     Route::get('/products/day_delivery_recalc/{id}', 'ProductController@day_delivery_recalc')->name('day_delivery_recalc');
 
     //
