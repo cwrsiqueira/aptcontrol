@@ -85,6 +85,14 @@
                                             title="Solicitar Acesso">Entregas</button>
                                     @endif
 
+                                    @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
+                                        <a class="btn btn-sm btn-outline-info"
+                                            href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>
+                                    @else
+                                        <button class="btn btn-sm btn-outline-info" disabled
+                                            title="Solicitar Acesso">Produtos</button>
+                                    @endif
+
                                     @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary"
                                             href="{{ route('orders.edit', $item) }}">Editar</a>

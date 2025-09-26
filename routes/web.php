@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\OrderProductController;
+use Hamcrest\Number\OrderingComparison;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,6 +24,7 @@ Route::middleware('auth')->group(function () {
 
     // Recursos principais
     Route::resource('/orders',        'OrderController');
+    Route::resource('/order_products', 'OrderProductController');
     Route::resource('/products',      'ProductController');
     Route::resource('/clients',       'ClientController');
     Route::resource('/reports',       'ReportController');
@@ -63,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/add_order_products',   'AjaxController@add_order_products')->name('add_order_products');
     Route::get('/order_change_status',  'AjaxController@order_change_status')->name('order_change_status');
     Route::get('/del_dup_order',        'AjaxController@del_dup_order')->name('del_dup_order');
+    Route::get('/get_data_product',     'AjaxController@get_data_product')->name('get_data_product');
 
     // Toggle favorito de cliente
     Route::post('/clients/{client}/toggle-favorite', 'ClientController@toggleFavorite')

@@ -62,10 +62,10 @@
                     <tbody>
                         @forelse ($products as $item)
                             <tr>
-                                <td><?php echo $item['id']; ?></td>
+                                <td>{{ $item->id }}</td>
                                 <td><a href="{{ route('products.show', $item) }}"><?php echo $item['name']; ?></a></td>
-                                <td><?php echo number_format($item['current_stock'], 0, '', '.'); ?></td>
-                                <td><?php echo number_format($item['daily_production_forecast'], 0, '', '.'); ?></td>
+                                <td>{{ number_format($item->current_stock, 0, '', '.') }}</td>
+                                <td>{{ number_format($item->daily_production_forecast, 0, '', '.') }}</td>
                                 <td>
                                     @if (in_array('products.cc', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-warning"

@@ -46,6 +46,13 @@ class AjaxController extends Controller
                 ->where('orders.complete_order', 0)
                 ->sum('quant');
             $quant_total = $quant_total + $quant;
+
+            if ($product->daily_production_forecast == 0) {
+                $delivery_in = date('Y-m-d');
+                echo json_encode($delivery_in);
+                return false;
+            }
+
             if (!empty($quant_total)) {
                 $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
                 if ($days_necessary <= 0) {
@@ -314,5 +321,11 @@ class AjaxController extends Controller
         } else {
             echo 'Erro na alteração!';
         }
+    }
+
+    public function get_data_product()
+    {
+        $product = Product::where('name', $_GET['product'])->first();
+        echo json_encode($product);
     }
 }

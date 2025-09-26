@@ -246,7 +246,7 @@ class ProductController extends Controller
 
         $prod = new Product();
         $prod->name = $data['name'];
-        $prod->current_stock = $data['stock'];
+        $prod->current_stock = $data['stock'] ?? 0;
         $prod->daily_production_forecast = $data['forecast'];
         $prod->img_url = $data['file'];
         $prod->save();

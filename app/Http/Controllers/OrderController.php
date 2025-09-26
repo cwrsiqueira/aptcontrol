@@ -202,7 +202,7 @@ class OrderController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order->id, $order->order_number, 'Pedidos');
 
-        return redirect()->route('orders.edit', ['order' => $order->id]);
+        return redirect()->route('order_products.index', ['order' => $order->id]);
     }
 
     public function show($id)

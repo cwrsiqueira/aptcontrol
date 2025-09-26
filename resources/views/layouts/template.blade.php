@@ -78,7 +78,7 @@
                         </li>
 
                         <li class="nav-item" @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
-                            <a class="nav-link @if (Request::is(['orders', 'orders/*'])) active @endif"
+                            <a class="nav-link @if (Request::is(['orders', 'orders/*', 'order_products', 'order_products/*'])) active @endif"
                                 href="{{ route('orders.index') }}">
                                 <span data-feather="file"></span>
                                 Pedidos
