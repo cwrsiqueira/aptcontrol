@@ -29,6 +29,13 @@
             </div>
         @endif
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                <i class="icon fas fa-check"></i> {{ session('success') }}
+            </div>
+        @endif
+
         <div class="d-flex justify-content-end align-items-center mb-3">
             @if (in_array('categories.create', $user_permissions) || Auth::user()->is_admin)
                 <a class="btn btn-primary" href="{{ route('categories.create') }}">Cadastrar Categoria</a>

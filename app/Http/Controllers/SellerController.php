@@ -172,7 +172,7 @@ class SellerController extends Controller
 
         if ($hasOrdersLinked) {
             $message = [
-                'cannot_exclude' => 'Vendedor não pode ser excluído, pois possui vendas vinculadas!',
+                'cannot_exclude' => 'Vendedor possui pedidos vinculados e não pode ser excluído!',
             ];
             return redirect()->route('sellers.index')->withErrors($message);
         }

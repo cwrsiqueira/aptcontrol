@@ -23,6 +23,13 @@
             </div>
         @endif
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                <i class="icon fas fa-check"></i> {{ session('success') }}
+            </div>
+        @endif
+
         {{-- Cadastra clientes, Busca e Tabela Lista de Pedidos Cadastrados --}}
         <div class="row mb-3">
             <div class="col-sm-5">

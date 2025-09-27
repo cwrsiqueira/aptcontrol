@@ -23,6 +23,13 @@
             </div>
         @endif
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                <i class="icon fas fa-check"></i> {{ session('success') }}
+            </div>
+        @endif
+
         {{-- Cadastra produtos, Busca e Tabela Lista de Produtos Cadastrados --}}
         <div class="d-flex justify-content-between align-items-center mb-3">
             <form method="get" class="form-inline" action="{{ route('products.index') }}">

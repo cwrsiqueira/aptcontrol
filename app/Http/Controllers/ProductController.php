@@ -256,7 +256,7 @@ class ProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Produtos');
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Salvo com sucesso!');
     }
 
     /**
@@ -376,7 +376,7 @@ class ProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Produtos');
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Atualizado com sucesso!');
     }
 
     /**
@@ -412,7 +412,7 @@ class ProductController extends Controller
             $product = Product::find($id);
             $del = Product::find($id)->delete();
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $product->name, 'Produtos');
-            return redirect()->route('products.index');
+            return redirect()->route('products.index')->with('success', 'Excluído com sucesso!');
         }
     }
 }

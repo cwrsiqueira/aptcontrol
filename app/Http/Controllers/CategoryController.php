@@ -92,7 +92,7 @@ class CategoryController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Categorias');
 
-        return redirect()->route("categories.index");
+        return redirect()->route("categories.index")->with('success', 'Salvo com sucesso!');
     }
 
     /**
@@ -173,7 +173,7 @@ class CategoryController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Categorias');
 
-        return redirect()->route('categories.index');
+        return redirect()->route('categories.index')->with('success', 'Atualizado com sucesso!');
     }
 
     /**
@@ -203,7 +203,7 @@ class CategoryController extends Controller
             $category = Clients_category::find($id);
             Clients_category::find($id)->delete();
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $category->name, 'Categorias');
-            return redirect()->route('categories.index');
+            return redirect()->route('categories.index')->with('success', 'Excluído com sucesso!');
         }
     }
 }

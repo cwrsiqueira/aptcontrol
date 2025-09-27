@@ -97,7 +97,7 @@ class OrderProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Pedidos');
 
-        return redirect()->route('order_products.index', ['order' => $order]);
+        return redirect()->route('order_products.index', ['order' => $order])->with('success', 'Salvo com sucesso!');
     }
 
     public function edit(Request $request, Order_product $order_product)
@@ -174,7 +174,7 @@ class OrderProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Pedidos');
 
-        return redirect()->route('order_products.index', ['order' => $data['order_id']]);
+        return redirect()->route('order_products.index', ['order' => $data['order_id']])->with('success', 'Atualizado com sucesso!');
     }
 
     public function destroy(Order_product $order_product)
@@ -191,6 +191,6 @@ class OrderProductController extends Controller
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Deleção', $order_product->id, $order_product->order_number, 'Pedidos');
 
-        return redirect()->route('order_products.index', ['order' => $order->id]);
+        return redirect()->route('order_products.index', ['order' => $order->id])->with('success', 'Excluído com sucesso!');
     }
 }

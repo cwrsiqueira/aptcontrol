@@ -226,7 +226,7 @@ class ClientController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Clientes');
 
-        return redirect()->route("clients.index", ['q' => $prod->name]);
+        return redirect()->route("clients.index", ['q' => $prod->name])->with('success', 'Salvo com sucesso!');
     }
 
     /**
@@ -327,7 +327,7 @@ class ClientController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Clientes');
 
-        return redirect()->route('clients.index');
+        return redirect()->route('clients.index')->with('success', 'Atualizado com sucesso!');
     }
 
     /**
@@ -357,7 +357,7 @@ class ClientController extends Controller
             Client::find($id)->delete();
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $client->name, 'Clientes');
 
-            return redirect()->route('clients.index');
+            return redirect()->route('clients.index')->with('success', 'Excluído com sucesso!');
         }
     }
 }
