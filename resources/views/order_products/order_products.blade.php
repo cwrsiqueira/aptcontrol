@@ -5,86 +5,114 @@
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
 
-        {{-- Título + ações --}}
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="mb-0">Produtos do Pedido</h2>
-            <div>
-                <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">Voltar</a>
-            </div>
+        {{-- Título + Voltar (compacto) --}}
+        <div class="d-flex justify-content-between align-items-center page-header mb-2">
+            <h2 class="page-title mb-0">Produtos do Pedido</h2>
+            <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">Voltar</a>
         </div>
 
-        {{-- Cabeçalho do pedido (bonito e compacto) --}}
-        <div class="card card-lift mt-3">
-            <div class="card-body py-3">
-                <div class="d-flex flex-wrap align-items-center justify-content-between">
-                    <div class="mb-2">
-                        <div class="text-muted small">Número do Pedido</div>
-                        <div class="display-5 font-weight-bold">#{{ $order->order_number }}</div>
-                    </div>
+        {{-- ITENS (PRIORIDADE NO TOPO) --}}
+        <div class="card card-lift items-card">
+            <div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center">
+                <div class="d-flex flex-wrap align-items-center">
+                    <strong class="mr-2">#{{ $order->order_number }}</strong>
 
-                    <div class="d-flex flex-wrap align-items-center">
-                        <span class="badge badge-primary mr-2 mb-2">
-                            {{ date('d/m/Y', strtotime($order->order_date)) }}
-                        </span>
-                        <span class="badge badge-info mr-2 mb-2">
-                            {{ ucfirst(strtolower($order->withdraw)) }}
-                            ({{ strtolower($order->withdraw) === 'entregar' ? 'CIF' : 'FOB' }})
-                        </span>
-                    </div>
+                    {{-- Data (maior/legível, mas ainda compacto) --}}
+                    <span class="meta-chip mr-2">
+                        {{ date('d/m/Y', strtotime($order->order_date)) }}
+                    </span>
+
+                    {{-- Retirada / CIF-FOB (legível) --}}
+                    @php $isCif = strtolower($order->withdraw) === 'entregar'; @endphp
+                    <span class="meta-chip {{ $isCif ? 'meta-cif' : 'meta-fob' }} mr-2">
+                        {{ ucfirst(strtolower($order->withdraw)) }} ({{ $isCif ? 'CIF' : 'FOB' }})
+                    </span>
                 </div>
 
-                <hr class="my-3">
-
-                <dl class="row mb-0">
-                    <dt class="col-sm-3 text-muted">Cliente</dt>
-                    <dd class="col-sm-9">{{ optional($order->client)->name }}</dd>
-
-                    <dt class="col-sm-3 text-muted">Vendedor</dt>
-                    <dd class="col-sm-9">{{ optional($order->seller)->name }}</dd>
-                </dl>
+                <div class="text-right">
+                    @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                        <a class="btn btn-sm btn-primary" href="{{ route('order_products.create', ['order' => $order]) }}">
+                            Adicionar produto
+                        </a>
+                    @else
+                        <button class="btn btn-sm btn-primary" disabled title="Solicitar Acesso">
+                            Adicionar produto
+                        </button>
+                    @endif
+                </div>
             </div>
-        </div>
 
-        <div class="col-sm d-flex justify-content-end mt-3">
-            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                <a class="btn btn-primary" href="{{ route('order_products.create', ['order' => $order]) }}">Adicionar
-                    produto</a>
-            @else
-                <button class="btn btn-primary" disabled title="Solicitar Acesso">Adicionar produto</button>
-            @endif
-        </div>
-
-        <div class="card card-lift mt-3">
-            <div class="card-header">
-                <h5 class="mb-0">Itens</h5>
+            {{-- INFO DO PEDIDO (compacto, abaixo da lista) --}}
+            <div class="card card-lift">
+                <div class="card-body py-2">
+                    <div class="row small">
+                        <div class="col-md-6 mb-1">
+                            <span class="muted-label">Cliente</span>
+                            <div class="text-body">{{ optional($order->client)->name }}</div>
+                        </div>
+                        <div class="col-md-6 mb-1">
+                            <span class="muted-label">Vendedor</span>
+                            <div class="text-body">{{ optional($order->seller)->name }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="table-responsive tableFixHead">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="thead-light sticky-header">
-                        <tr>
-                            <th style="width:60px;">#</th>
-                            <th>Produto</th>
-                            <th class="text-right">Quantidade</th>
-                            <th class="text-right">Entrega</th>
-                            <th class="text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($order_products as $item)
+
+            <div class="card card-lift mb-5">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="thead-light sticky-header">
                             <tr>
-                                <td>{{ $item->id }}</td>
-                                <td>{{ $item->product->name }}</td>
-                                <td class="text-right">{{ number_format($qtd, 0, '', '.') }}</td>
-                                <td>{{ $entrega ? date('d/m/Y', strtotime($entrega)) : '—' }}</td>
+                                <th style="width:60px;">#</th>
+                                <th>Produto</th>
+                                <th class="text-right">Quantidade</th>
+                                <th class="text-right">Entrega</th>
+                                <th class="text-right">Ações</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">Nenhum item encontrado para este pedido.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($order_products as $item)
+                                <tr>
+                                    <td>{{ $item->id }}</td>
+                                    <td>{{ $item->product->name }}</td>
+                                    <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
+                                    <td class="text-right">
+                                        {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                    </td>
+                                    <td class="text-right">
+
+                                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                            <a class="btn btn-sm btn-outline-primary"
+                                                href="{{ route('order_products.edit', $item) }}">Editar</a>
+                                        @else
+                                            <button class="btn btn-sm btn-outline-primary" disabled
+                                                title="Solicitar Acesso">Editar</button>
+                                        @endif
+
+                                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                            <form action="{{ route('order_products.destroy', $item) }}" method="post"
+                                                style="display:inline-block"
+                                                onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            </form>
+                                        @else
+                                            <button class="btn btn-sm btn-outline-danger" disabled
+                                                title="Solicitar Acesso">Excluir</button>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Nenhum item encontrado para este
+                                        pedido.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
@@ -92,11 +120,53 @@
 
 @section('css')
     <style>
+        /* elevação sutil nos cards */
         .card-lift {
             border: 1px solid #e9ecef;
             box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
         }
 
+        /* header geral mais enxuto */
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .page-header {
+            margin-bottom: .25rem;
+        }
+
+        /* cabeçalho dos itens: chips de metadados */
+        .meta-chip {
+            display: inline-block;
+            padding: .2rem .5rem;
+            font-size: .95rem;
+            font-weight: 600;
+            border-radius: .375rem;
+            background: #f1f3f5;
+            color: #495057;
+            line-height: 1.1;
+        }
+
+        .meta-cif {
+            background: #e6f4ea;
+            color: #0f5132;
+        }
+
+        /* verde suave */
+        .meta-fob {
+            background: #e7f1ff;
+            color: #0b4a8b;
+        }
+
+        /* azul suave */
+
+        /* botão menor já vem de btn-sm; reforço de proporção */
+        .items-card .btn.btn-sm {
+            padding: .25rem .5rem;
+        }
+
+        /* tabela prioritária: cabeçalho grudado e altura boa para caber acima da dobra */
         .tableFixHead {
             max-height: 60vh;
             overflow-y: auto;
@@ -108,13 +178,20 @@
             z-index: 2;
         }
 
-        .display-5 {
-            font-size: 2rem;
-            line-height: 1.1;
+        /* linhas */
+        tbody tr:hover {
+            background-color: #f6f9fc;
+            cursor: pointer;
         }
 
-        .font-weight-semibold {
-            font-weight: 600;
+        /* bloco informativo compacto */
+        .muted-label {
+            display: block;
+            font-size: .75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+            margin-bottom: .15rem;
         }
     </style>
 @endsection

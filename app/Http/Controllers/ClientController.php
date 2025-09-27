@@ -82,13 +82,14 @@ class ClientController extends Controller
         }
 
         $client = Client::findOrFail($id);
+        $complete_order = $request->input('entregas', 0);
 
         // Linhas dos pedidos em aberto deste cliente, filtradas pelos produtos selecionados
         $data = Order_product::query()
             ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
             ->join('products', 'products.id',         '=', 'order_products.product_id')
             ->where('orders.client_id', $id)
-            ->where('orders.complete_order', 0)
+            ->where('orders.complete_order', $complete_order)
             ->whereIn('order_products.product_id', $por_produto)
             ->orderBy('order_products.delivery_date')
             ->select([

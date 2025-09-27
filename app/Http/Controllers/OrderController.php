@@ -371,56 +371,49 @@ class OrderController extends Controller
                 ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
-        $order = Order::findOrFail($id);
+        $order  = Order::findOrFail($id);
         $client = Client::findOrFail($order->client_id);
 
-        // Filtro por produto (ids) – padrão: todos
-        $por_produto = $request->input('por_produto');
-        if (empty($por_produto)) {
-            $por_produto = Product::pluck('id')->all();
-        }
+        // Filtro por produto (ids). Se vazio, não aplica whereIn (equivalente a "todos").
+        $por_produto = (array) $request->input('por_produto', []);
+        $complete_order = $request->input('entregas', 0);
 
-        // Itens dos pedidos em aberto, filtrados pelos produtos selecionados
+        // Linhas do pedido em aberto, opcionalmente filtradas pelos produtos selecionados
         $data = Order_product::query()
             ->join('orders',   'orders.order_number',  '=', 'order_products.order_id')
             ->join('products', 'products.id',          '=', 'order_products.product_id')
-            ->whereIn('order_products.product_id', $por_produto)
-            ->where('order_products.order_id',  $order->order_number)
-            ->where('orders.complete_order', 0)
+            ->where('order_products.order_id', $order->order_number)
+            ->where('orders.complete_order', $complete_order)
+            ->when(!empty($por_produto), fn($q) => $q->whereIn('order_products.product_id', $por_produto))
             ->orderBy('order_products.delivery_date')
             ->select([
                 'order_products.*',
                 'orders.order_number as order_id',
-                'orders.order_date as order_date',
-                'orders.id as orders_order_id',
-                'products.name as product_name',
+                'orders.order_date   as order_date',
+                'orders.id           as orders_order_id',
+                'products.name       as product_name',
             ])
             ->get();
 
-        // Saldo acumulado por pedido (mesma lógica do código original)
-        $saldoPorPedido = [];
+        // Saldo acumulado por pedido (mesma lógica do original)
+        $acc = 0;
         foreach ($data as $k => $row) {
-            $pedido = $row->order_id;
-            $saldoPorPedido[$pedido] = ($saldoPorPedido[$pedido] ?? 0) + $row->quant;
-            $data[$k]->saldo = $saldoPorPedido[$pedido];
+            $acc += $row->quant;
+            $data[$k]->saldo = $acc;
         }
 
-        // Filtro de entregas (mantém a mesma regra baseada na presença de "entregas")
+        // Se NÃO marcar "entregas realizadas", mostra somente previstas
         if (!$request->filled('entregas')) {
             $data = $data
                 ->where('saldo', '>', 0)
                 ->where('delivery_date', '>', '1970-01-01');
         }
 
-        // Pedidos efetivamente presentes após os filtros
-        $orderNumbersUsados = $data->pluck('order_id')->unique()->values();
-
-        // Totais por produto considerando os pedidos presentes em $data
-        // (mantém o comportamento original: não re-filtra pelos produtos selecionados aqui)
+        // Totais por produto para montar os checkboxes (sempre do pedido inteiro, independente do filtro por produto)
         $totais = Order_product::query()
             ->join('orders',   'orders.order_number',  '=', 'order_products.order_id')
             ->join('products', 'products.id',          '=', 'order_products.product_id')
-            ->whereIn('order_products.order_id', $orderNumbersUsados)
+            ->where('order_products.order_id', $order->order_number)
             ->where('orders.complete_order', 0)
             ->groupBy('products.id', 'products.name')
             ->select([
@@ -430,7 +423,7 @@ class OrderController extends Controller
             ])
             ->get();
 
-        // Estrutura igual à usada pela view: ['Nome do produto' => ['id' => ..., 'qt' => ...]]
+        // Estrutura esperada pela view: ['Nome do produto' => ['id' => ..., 'qt' => ...]]
         $product_total = [];
         foreach ($totais as $row) {
             $product_total[$row->product_name] = [

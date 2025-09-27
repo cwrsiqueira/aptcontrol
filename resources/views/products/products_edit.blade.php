@@ -42,7 +42,7 @@
                         <label for="forecast">Previsão diária de produção:</label>
                         <input class="form-control @error('forecast') is-invalid @enderror quant-format" type="text"
                             name="forecast" placeholder="Previsão média diária" id="forecast"
-                            value="{{ old('forecast') ?? $product->daily_production_forecast }}">
+                            value="{{ old('forecast') ?? $product->daily_production_forecast }}" min="1">
                     </div>
 
                     <button class="btn btn-primary">Salvar alterações</button>

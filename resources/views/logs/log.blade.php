@@ -55,7 +55,7 @@
 
         {{-- Tabela --}}
         <div class="card card-lift">
-            <div class="table-responsive tableFixHead">
+            <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0 text-center">
                     <thead class="thead-light sticky-header">
                         <tr>

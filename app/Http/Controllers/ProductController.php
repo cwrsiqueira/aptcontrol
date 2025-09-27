@@ -162,8 +162,10 @@ class ProductController extends Controller
             ->where('orders.complete_order', 0)
             ->sum('quant');
 
+        $daily_production = $product->daily_production_forecast != 0 ?: 1;
+
         if (!empty($quant_total)) {
-            $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+            $days_necessary = ((intval($quant_total)) - $product->current_stock) / $daily_production;
 
             if ($days_necessary <= 0) {
                 $days_necessary = 0;
@@ -339,40 +341,38 @@ class ProductController extends Controller
             $mov_stock->save();
         }
 
-        if (!empty($request->input('forecast'))) {
-            $data = $request->only([
-                'name',
-                'stock',
-                'forecast',
-                'file',
-            ]);
+        $data = $request->only([
+            'name',
+            'stock',
+            'forecast',
+            'file',
+        ]);
 
-            $data['stock'] = str_replace('.', '', $data['stock']);
-            $data['forecast'] = str_replace('.', '', $data['forecast']);
+        $data['stock'] = str_replace('.', '', $data['stock']);
+        $data['forecast'] = str_replace('.', '', $data['forecast']);
 
-            $validator = Validator::make(
-                $data,
-                [
-                    'name' => 'required|max:100',
-                    'stock' => 'integer|nullable',
-                    'forecast' => 'integer|required',
-                    'file' => 'image|mimes:jpeg,jpg,png|nullable',
-                ]
-            )->validate();
+        $validator = Validator::make(
+            $data,
+            [
+                'name' => 'required|max:100',
+                'stock' => 'integer|nullable',
+                'forecast' => 'integer|required',
+                'file' => 'image|mimes:jpeg,jpg,png|nullable',
+            ]
+        )->validate();
 
-            if (!empty($data['file'])) {
-                $data['file'] = 'preenchido';
-            } else {
-                $data['file'] = 'não informado';
-            }
-
-            $prod = Product::find($id);
-            $prod->name = $data['name'];
-            $prod->current_stock = $data['stock'];
-            $prod->daily_production_forecast = $data['forecast'];
-            $prod->img_url = $data['file'];
-            $prod->save();
+        if (!empty($data['file'])) {
+            $data['file'] = 'preenchido';
+        } else {
+            $data['file'] = 'não informado';
         }
+
+        $prod = Product::find($id);
+        $prod->name = $data['name'];
+        $prod->current_stock = $data['stock'];
+        $prod->daily_production_forecast = $data['forecast'] ?? 1;
+        $prod->img_url = $data['file'];
+        $prod->save();
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $prod->id, $prod->name, 'Produtos');
 
