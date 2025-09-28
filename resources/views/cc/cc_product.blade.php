@@ -62,11 +62,11 @@
                             </div>
                             <hr>
 
-                            <div class="custom-control custom-checkbox mb-3">
+                            {{-- <div class="custom-control custom-checkbox mb-3">
                                 <input type="checkbox" class="custom-control-input" id="chk_entregas" name="entregas"
                                     value="1" @if (!empty($_GET['entregas'])) checked @endif>
                                 <label class="custom-control-label" for="chk_entregas">Mostrar entregas realizadas</label>
-                            </div>
+                            </div> --}}
 
                             <div class="d-flex align-items-center">
                                 <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">

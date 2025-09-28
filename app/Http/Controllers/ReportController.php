@@ -176,6 +176,82 @@ class ReportController extends Controller
         ]);
     }
 
+    public function report_delivery_byPeriod(Request $request)
+    {
+        // 1) Entrada (com defaults simples)
+        $date_ini      = $request->query('data_ini', date('Y-m-01 00:00:00'));   // pode vir null
+        $date_fin      = $request->query('data_fin', date('Y-m-t 23:59:59'));   // pode vir null
+        $withdraw  = $request->query('withdraw', '%');   // mantém o LIKE '%'
+        $productIds = $request->query('por_produto');    // array de IDs (opcional)
+
+        $withdraw = $withdraw == 'Todas' ? '%' : $withdraw;
+
+        // Se não vier filtro de produto, usa todos (ids)
+        if (empty($productIds)) {
+            $productIds = Product::pluck('id')->all();
+        }
+
+        // 2) Query principal (enxuta e performática)
+        $items = Order_product::query()
+            ->with([
+                'product:id,name',
+                // orders.order_number é a owner key
+                'order:id,order_number,client_id,seller_id,complete_order,withdraw,order_date',
+                // traga id_categoria para permitir order.client->category
+                'order.client:id,id_categoria,name,full_address,contact',
+                'order.client.category:id,name',
+                'order.seller:id,name',
+            ])
+            // RELAÇÃO: orders.order_number ↔ order_products.order_id
+            ->join('orders as o', 'o.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',          '=', 'o.client_id')
+            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->when($withdraw !== '%', fn($q) => $q->where('o.withdraw', 'LIKE', $withdraw))
+            ->whereDate('order_products.delivery_date', '>=', $date_ini . ' 00:00:00')
+            ->whereDate('order_products.delivery_date', '<=', $date_fin . ' 23:59:59')
+            ->whereIn('order_products.product_id', $productIds)
+            ->orderBy('order_products.delivery_date')
+            ->select('order_products.*') // evita colunas duplicadas do join
+            ->get();
+
+        // 3) Cálculo do saldo por (product_id, order_id), mantendo sua regra
+        //    - acumula quant por chave e define saldo = min(acumulado, quant da linha)
+        $acumulado = [];
+        $orders = $items->map(function ($row) use (&$acumulado) {
+            $key = $row->product_id . '|' . $row->order_id; // order_id aqui é order_number
+            $acumulado[$key] = ($acumulado[$key] ?? 0) + (float) $row->quant;
+
+            $row->saldo = $acumulado[$key] > (float) $row->quant
+                ? (float) $row->quant
+                : (float) $acumulado[$key];
+
+            return $row;
+        })
+            ->where('saldo', '<', 0)
+            ->where('delivery_date', '>', '1970-01-01')
+            ->values();
+
+        // 4) Totais por produto (nome → id + soma de saldo)
+        $product_total = $orders
+            ->groupBy(fn($r) => optional($r->product)->name ?? '—')
+            ->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'id' => $first->product_id,
+                    'qt' => $group->sum('saldo'),
+                ];
+            })
+            ->toArray();
+
+        // 5) View
+        return view('reports.reports_delivery_by_period', [
+            'orders'        => $orders,
+            'date_ini'          => $date_ini,
+            'date_fin'          => $date_fin,
+            'product_total' => $product_total,
+        ]);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
