@@ -13,6 +13,7 @@ use App\Order_product;
 use App\Helpers\Helper;
 use App\Seller;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -32,93 +33,38 @@ class OrderController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        if (isset($_GET['comp']) && $_GET['comp'] == 1) {
-            $comps = array(1, 2);
-            $comp = 1;
-        } else {
-            $comps = array(0);
-            $comp = 0;
-        }
-
-        $sellerId = 0;
-        if (!empty($_GET['seller_id']) && is_numeric($_GET['seller_id'])) {
-            $sellerId = (int) $_GET['seller_id'];
-        }
-
-        $orders = Order::addSelect([
-            'name_client' => Client::select('name')->whereColumn('clients.id', 'orders.client_id'),
-            'name_seller' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id'),
-        ])
-            ->whereIn('complete_order', $comps)
-            ->when($sellerId > 0, function ($q) use ($sellerId) {
-                $q->where('seller_id', $sellerId);
-            })
-            ->orderBy('order_date', 'asc')
-            ->paginate(10);
-
-        if (!empty($_GET['q'])) {
-
-            $q = \DateTime::createFromFormat('d/m/Y', $_GET['q']);
-            if ($q && $q->format('d/m/Y') === $_GET['q']) {
-                $q = $_GET['q'];
-                $q = explode('/', $q);
-                $q = array_reverse($q);
-                $q = implode('-', $q);
-                // A consulta É por data
-                $orders = Order::whereIn('complete_order', $comps)
-                    ->where('order_date', $q)
-                    ->addSelect(['name_client' => Client::select('name')
-                        ->whereColumn('clients.id', 'orders.client_id')])
-                    ->orderBy('id', 'desc')
-                    ->paginate(10);
-
-                $q = date('d/m/Y', strtotime($q));
-            } else {
-                $q = $_GET['q'];
-                // A consulta NÃO é por data
-
-                $orders = Order::where('order_number', 'LIKE', '%' . $q . '%')
-                    ->whereIn('complete_order', $comps)
-                    ->when($sellerId > 0, function ($q2) use ($sellerId) {
-                        $q2->where('seller_id', $sellerId);
-                    })
-                    ->addSelect([
-                        'name_client' => Client::select('name')->whereColumn('clients.id', 'orders.client_id'),
-                        'name_seller' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id'),
-                    ])
-                    ->orderBy('id', 'desc')
-                    ->paginate(10);
-            }
-        } else {
-            $q = '';
-        }
-
         $user_permissions = Helper::get_permissions();
 
-        $get_orders_repeated = Order::select('order_number')
-            ->addSelect(DB::raw('count(*) as contador'))
-            ->groupBy('order_number')
-            ->havingRaw('count(*) > ?', [1])
-            ->get();
-
-        $orders_repeated = array();
-        foreach ($get_orders_repeated as $item) {
-            $orders_repeated[$item->order_number] = Order::where('order_number', $item->order_number)->get();
+        if (!in_array('menu-pedidos', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
         }
 
-        $sellers = Seller::orderBy('name')->get(['id', 'name']);
+        $q = trim((string) $request->input('q'));
+
+        $orders = Order::query()
+            ->select('orders.*', 'clients.name', 'sellers.name')
+            ->join('clients', 'clients.id', 'orders.client_id')
+            ->join('sellers', 'sellers.id', 'orders.seller_id')
+            ->when($q, function ($qb) use ($q) {
+                $needle = mb_strtolower(Str::ascii($q));
+                $qb->where(function ($sub) use ($needle) {
+                    $sub->whereRaw('LOWER(unaccent(clients.name)) LIKE ?', ["%{$needle}%"])
+                        ->orWhereRaw('LOWER(unaccent(sellers.name)) LIKE ?', ["%{$needle}%"])
+                        ->orWhere('order_number', 'LIKE', "%{$needle}%");
+                });
+            })
+            ->orderBy('order_date')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('orders.orders', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'orders' => $orders,
-            'q' => $q,
-            'comp' => $comp,
-            'orders_repeated' => $orders_repeated,
-            'sellers' => $sellers,
-            'sellerId' => $sellerId,
+            'q' => $q
         ]);
     }
 

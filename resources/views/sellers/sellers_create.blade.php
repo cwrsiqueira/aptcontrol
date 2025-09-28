@@ -26,13 +26,20 @@
 
                     <div class="form-group">
                         <label for="name">Nome</label>
-                        <input type="text" class="form-control" id="name" name="name" maxlength="150" required
-                            value="{{ old('name') }}">
+                        <input type="text"
+                            class="form-control @error('name')
+                            is-invalid
+                        @enderror"
+                            id="name" name="name" maxlength="150" required value="{{ old('name') }}">
                     </div>
 
                     <div class="form-group">
                         <label for="contact_type">Tipo de Contato</label>
-                        <select class="form-control" id="contact_type" name="contact_type" required>
+                        <select
+                            class="form-control @error('name')
+                            is-invalid
+                        @enderror"
+                            id="contact_type" name="contact_type" required>
                             <option value="">Selecione...</option>
                             <option value="whatsapp" {{ old('contact_type') == 'whatsapp' ? 'selected' : '' }}>WhatsApp
                             </option>

@@ -10,6 +10,7 @@ use App\Seller;
 use App\Helpers\Helper;
 use App\Order_product;
 use App\Product;
+use Illuminate\Support\Str;
 
 class SellerController extends Controller
 {
@@ -37,7 +38,8 @@ class SellerController extends Controller
         $q = trim((string) $request->get('q', ''));
 
         $sellers = Seller::when($q !== '', function ($query) use ($q) {
-            $query->where('name', 'like', "%{$q}%")
+            $needle = mb_strtolower(Str::ascii($q));
+            $query->whereRaw('LOWER(unaccent(name)) LIKE ?', ["%{$needle}%"])
                 ->orWhere('contact_value', 'like', "%{$q}%");
         })
             ->orderBy('name')
@@ -82,6 +84,10 @@ class SellerController extends Controller
             'name'          => 'required|string|max:150',
             'contact_type'  => 'required|string|in:whatsapp,telefone,email,instagram,outro',
             'contact_value' => 'nullable|string|max:191',
+        ], [], [
+            'name'          => 'Nome',
+            'contact_type'  => 'Tipo de contato',
+            'contact_value' => 'Contato',
         ]);
 
         Seller::create($request->only('name', 'contact_type', 'contact_value'));

@@ -119,14 +119,18 @@ class ReportController extends Controller
         // 2) Query principal (enxuta e performática)
         $items = Order_product::query()
             ->with([
-                // Eager load para evitar N+1
                 'product:id,name',
-                'order:id,order_number,client_id,seller_id,complete_order,withdraw,order_date',
-                'order.client:id,name,full_address,contact',
+                // orders.order_number é a owner key
+                'order:order_number,client_id,seller_id,complete_order,withdraw,order_date',
+                // traga id_categoria para permitir order.client->category
+                'order.client:id,id_categoria,name,full_address,contact',
+                'order.client.category:id,name',
                 'order.seller:id,name',
             ])
             // RELAÇÃO: orders.order_number ↔ order_products.order_id
             ->join('orders as o', 'o.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',          '=', 'o.client_id')
+            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
             ->where('o.complete_order', 0)
             ->when($withdraw !== '%', fn($q) => $q->where('o.withdraw', 'LIKE', $withdraw))
             ->whereDate('order_products.delivery_date', '<=', $date)

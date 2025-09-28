@@ -6,13 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use App\Seller;
 use App\Product;
-use App\Order;
-use App\Client;
 use App\Order_product;
 use App\Stockmovement;
-use App\Clients_category;
 use App\Helpers\Helper;
 use Illuminate\Support\Str;
 

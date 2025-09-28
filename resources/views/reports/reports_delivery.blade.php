@@ -114,37 +114,37 @@
         {{-- TABELA --}}
         <div class="card card-lift mb-5">
             <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
+                <table class="table table table-striped mb-0">
                     <thead class="thead-light sticky-header">
                         <tr>
+                            <th>Data pedido</th>
                             <th>Pedido</th>
-                            <th>Entrega</th>
                             <th>Cliente</th>
-                            <th>Vendedor</th>
+                            <th>Contato</th>
+                            <th>Categoria</th>
                             <th>Produto</th>
                             <th class="text-right">Quantidade</th>
-                            <th>Contato</th>
-                            @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
-                                <th>Forma de Entrega</th>
-                            @else
-                                <th>Forma de Entrega</th>
-                            @endif
+                            <th>Data entrega</th>
+                            <th>Vendedor</th>
+                            <th>Tipo de entrega</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($orders as $item)
                             @php $isLate = ($item->delivery_date < date('Y-m-d')); @endphp
                             <tr class="{{ $isLate ? 'row-late' : '' }}">
+                                <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td>
                                 <td>
                                     <a
                                         href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
                                 </td>
-                                <td style="min-width:100px">{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
                                 <td>{{ $item->order->client->name }}</td>
-                                <td>{{ $item->order->seller->name }}</td>
+                                <td>{{ $item->order->client->contact }}</td>
+                                <td>{{ $item->order->client->category->name }}</td>
                                 <td>{{ $item->product->name }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
-                                <td>{{ $item->order->client->contact }}</td>
+                                <td style="min-width:100px">{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
+                                <td>{{ $item->order->seller->name }}</td>
                                 @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
                                     <td>{{ ucfirst($item->order->withdraw) }} (FOB)</td>
                                 @else
