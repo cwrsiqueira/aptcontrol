@@ -94,6 +94,14 @@
                                 </td>
                                 <td>{{ $seller->contact_value }}</td>
                                 <td>
+                                    @if (in_array('sellers.cc', $user_permissions) || Auth::user()->is_admin)
+                                        <a class="btn btn-sm btn-outline-warning"
+                                            href="{{ route('cc_seller', $seller->id) }}">Entregas</a>
+                                    @else
+                                        <button class="btn btn-sm btn-outline-warning" disabled
+                                            title="Solicitar Acesso">Entregas</button>
+                                    @endif
+
                                     @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary"
                                             href="{{ route('sellers.edit', $seller->id) }}">Editar</a>

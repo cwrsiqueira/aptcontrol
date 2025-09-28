@@ -1,12 +1,12 @@
 @extends('layouts.estilos')
 
-@section('title', 'Entregas do Pedido')
+@section('title', 'Entregas por Pedido')
 
 @section('content')
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         {{-- Cabeçalho / ações --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
-            <h2 class="mb-0">Entregas do Pedido</h2>
+            <h2 class="mb-0">Entregas por Pedido</h2>
             <div class="btn-group">
                 <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{ route('orders.index') }}">
                     < Pedidos</a>
@@ -133,9 +133,9 @@
                                         style="width: fit-content;">Data
                                         fixada</span>
                                 <td>
-                                    @php $isCif = ($item->withdraw === 'Entregar'); @endphp
+                                    @php $isCif = ($item->order->withdraw === 'entregar'); @endphp
                                     <span class="badge {{ $isCif ? 'badge-success' : 'badge-info' }}">
-                                        {{ $item->withdraw }} ({{ $isCif ? 'CIF' : 'FOB' }})
+                                        {{ $item->order->withdraw }} ({{ $isCif ? 'CIF' : 'FOB' }})
                                     </span>
                                 </td>
                             </tr>

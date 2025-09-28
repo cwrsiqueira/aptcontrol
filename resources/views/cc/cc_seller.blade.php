@@ -1,33 +1,28 @@
 @extends('layouts.estilos')
 
-@section('title', 'Entregas por Cliente')
+@section('title', 'Entregas por Vendedor')
 
 @section('content')
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         {{-- Cabeçalho / ações --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
-            <h2 class="mb-0">Entregas por Cliente</h2>
+            <h2 class="mb-0">Entregas por Vendedor</h2>
             <div class="btn-group">
-                <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('clients.index') }}">
-                    < Clientes</a>
+                <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('sellers.index') }}">
+                    < Vendedores</a>
                         <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
             </div>
         </div>
 
         <div class="row">
-            {{-- RESUMO DO CLIENTE --}}
+            {{-- RESUMO DO Vendedor --}}
             <div class="col-lg-4">
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <span class="badge badge-primary badge-client-name">Cliente: {{ $client->name }}</span>
-                        <span class="font-weight-bold">{{ $client->category->name }}</span>
+                        <span class="font-weight-bold">Vendedor: </span>
+                        <span class="badge badge-primary badge-client-name">{{ $seller->name }}</span>
                     </div>
                     <div class="card-body">
-                        @if ($client->is_favorite)
-                            <div class="d-block mb-3">
-                                <div class="fav-client is-fav-client d-inline-block">Cliente aguardando antecipação</div>
-                            </div>
-                        @endif
                         <small class="text-muted nao-imprimir">Selecione filtros ao lado e veja as entregas abaixo.</small>
                     </div>
                 </div>
@@ -35,7 +30,7 @@
 
             {{-- FILTROS --}}
             <div class="col-lg-5">
-                <form method="get" action="{{ route('cc_client', ['id' => $client->id]) }}">
+                <form method="get" action="{{ route('cc_seller', $seller->id) }}">
                     <div class="card card-lift mb-3">
                         <div class="card-header">
                             <strong>Filtros por produtos</strong>
@@ -66,7 +61,7 @@
 
                             <div class="d-flex align-items-center">
                                 <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                                <a href="{{ route('cc_client', ['id' => $client->id]) }}" id="clean_search"
+                                <a href="{{ route('cc_seller', $seller->id) }}" id="clean_search"
                                     class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
                             </div>
                         </div>
@@ -97,10 +92,11 @@
                         <tr>
                             <th>Data</th>
                             <th>Pedido</th>
+                            <th>Cliente</th>
+                            <th>Categoria</th>
                             <th>Produto</th>
                             <th class="text-right">Quant</th>
                             <th class="text-right">Saldo</th>
-                            <th>Vendedor</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
                         </tr>
@@ -121,10 +117,11 @@
                                     <a
                                         href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order->order_number }}</a>
                                 </td>
+                                <td>{{ $item->order->client->name ?? ' - ' }}</td>
+                                <td>{{ $item->order->client->category->name ?? ' - ' }}</td>
                                 <td>{{ $item->product->name }}</td>
                                 <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
-                                <td>{{ $item->order->seller->name ?? ' - ' }}</td>
                                 <td class="d-flex flex-column">{{ date('d/m/Y', strtotime($item->delivery_date)) }}
                                     <span class="badge badge-danger @if (!$item->favorite_delivery) d-none @endif"
                                         style="width: fit-content;">Data
@@ -170,7 +167,7 @@
             font-weight: 400;
         }
 
-        /* destaque CLIENTE (amarelo) */
+        /* destaque Vendedor (amarelo) */
         .is-fav-client {
             background: #ffde59;
             color: #111;

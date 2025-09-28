@@ -1,12 +1,12 @@
 @extends('layouts.estilos')
 
-@section('title', 'Entregas por Produto')
+@section('title', 'Entregas')
 
 @section('content')
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         {{-- Cabeçalho / ações --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
-            <h2 class="mb-0">Entregas por Produto</h2>
+            <h2 class="mb-0">Entregas</h2>
             <div class="btn-group">
                 <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">
                     < Produtos</a>
@@ -15,12 +15,12 @@
         </div>
 
         <div class="row">
-            {{-- RESUMO DO PRODUTO --}}
+            {{-- RESUMO --}}
             <div class="col-lg-4">
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <span class="font-weight-bold">Produto</span>
-                        <span class="badge badge-primary badge-client-name">{{ $product->name }}</span>
+                        <span class="badge badge-primary badge-client-name">Geral</span>
                     </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-2">
@@ -31,7 +31,7 @@
                         <div class="d-flex align-items-center">
                             <i class="far fa-calendar-alt mr-2"></i>
                             <strong class="mr-2">Entregas a partir de:</strong>
-                            <span>{{ date('d/m/Y', strtotime($delivery_in)) }}</span>
+                            <span>Geral</span>
                         </div>
                     </div>
                 </div>
@@ -39,7 +39,7 @@
 
             {{-- FILTROS --}}
             <div class="col-lg-5">
-                <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
+                <form method="get" action="{{ route('reports.index') }}">
                     <div class="card card-lift mb-3">
                         <div class="card-header">
                             <strong>Filtros por categoria do cliente</strong>
@@ -70,7 +70,7 @@
 
                             <div class="d-flex align-items-center">
                                 <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                                <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search"
+                                <a href="{{ route('reports.index') }}" id="clean_search"
                                     class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
                             </div>
                         </div>
@@ -106,14 +106,14 @@
                             <th>Pedido</th>
                             <th>Cliente</th>
                             <th>Categoria</th>
-                            <th class="text-right">Quantidade</th>
-                            <th>Vendedor</th>
+                            <th class="text-right">Saldo</th>
                             <th>Data Entrega</th>
+                            <th>Vendedor</th>
                             <th>Tipo Entrega</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($data as $item)
+                        @foreach ($orderProducts as $item)
                             <tr class="linha" data-id="{{ $item->id }}">
                                 <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
                                 <td>
@@ -129,8 +129,7 @@
                                     </a>
                                 </td>
                                 <td>{{ $item->category_name }}</td>
-                                <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
-                                <td>{{ $item->seller_name ?? ' - ' }}</td>
+                                <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td>
                                     <a href="#"
                                         class="fav-date {{ (int) $item->favorite_delivery === 1 ? 'is-fav-date' : '' }}"
@@ -139,10 +138,11 @@
                                         {{ date('d/m/Y', strtotime($item->delivery_date)) }}
                                     </a>
                                 </td>
+                                <td>{{ $item->seller_name ?? ' - ' }}</td>
                                 <td>
-                                    @php $isCif = ($item->order->withdraw === 'entregar'); @endphp
-                                    <span class="badge {{ $isCif ? 'badge-success' : 'badge-info' }}">
-                                        {{ $item->order->withdraw }} ({{ $isCif ? 'CIF' : 'FOB' }})
+                                    @php $isCif = ($item->order->withdraw == 'entregar'); @endphp
+                                    <span class="badge {{ $isCif ? 'badge-success' : 'badge-info' }} py-1 px-2">
+                                        {{ ucfirst($item->order->withdraw) }} ({{ $isCif ? 'CIF' : 'FOB' }})
                                     </span>
                                 </td>
                             </tr>

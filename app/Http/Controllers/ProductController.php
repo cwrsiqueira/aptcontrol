@@ -123,7 +123,7 @@ class ProductController extends Controller
             ->join('clients', 'clients.id',          '=', 'orders.client_id')
             ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
             ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', 0)
+            ->where('orders.complete_order', $complete_order)
             ->groupBy('clients_categories.id', 'clients_categories.name')
             ->select([
                 DB::raw('SUM(order_products.quant) as saldo'),

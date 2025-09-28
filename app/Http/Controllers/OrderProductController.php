@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helpers\Helper;
 use App\Order;
 use App\Seller;
-use App\Client;
 use App\Order_product;
 use App\Product;
 use Illuminate\Http\Request;

@@ -124,7 +124,7 @@ class ClientController extends Controller
             ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
             ->join('products', 'products.id',         '=', 'order_products.product_id')
             ->whereIn('order_products.order_id', $orderNumbersUsados)
-            ->where('orders.complete_order', 0)
+            ->where('orders.complete_order', $complete_order)
             ->groupBy('products.id', 'products.name')
             ->select([
                 'products.id   as product_id',

@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Seller;
-use App\Client;
 use App\Product;
-use App\Order;
 use App\Order_product;
 use App\Helpers\Helper;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -29,13 +27,69 @@ class ReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $user_permissions = Helper::get_permissions();
+        if (!in_array('reports.view', $user_permissions) && !Auth::user()->is_admin) {
+            return redirect()
+                ->route('products.index')
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
+        $complete_order = $request->input('entregas', 0);
+
+        $orderProducts = Order_product::query()
+            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id', '=', 'orders.client_id')
+            ->leftJoin('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->leftJoin('sellers', 'sellers.id', '=', 'orders.seller_id')
+            ->where('orders.complete_order', $complete_order)
+            ->orderBy('order_products.delivery_date')
+            ->select([
+                'order_products.*',
+                'orders.order_date',
+                'orders.order_number as order_id',
+                'orders.seller_id',
+                'clients.id as client_id',
+                'clients.name as client_name',
+                'clients.id_categoria as client_id_categoria',
+                'clients.is_favorite as client_favorite',
+                'clients_categories.name as category_name',
+                'sellers.name as seller_name',
+            ])
+            ->get();
+
+        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
+        $acc = [];
+        foreach ($orderProducts as $k => $row) {
+            $pedido = $row->order_id;
+            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
+            $orderProducts[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
+        }
+
+        // Filtra após calcular saldo (preserva comportamento do original)
+        $orderProducts = $orderProducts
+            ->where('saldo', '>', 0)
+            ->where('delivery_date', '>', '1970-01-01');
+
+        // Totais por categoria (para montar os checkboxes com badges)
+        $quant_por_categoria = Order_product::query()
+            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',          '=', 'orders.client_id')
+            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->where('orders.complete_order', $complete_order)
+            ->groupBy('clients_categories.id', 'clients_categories.name')
+            ->select([
+                DB::raw('SUM(order_products.quant) as saldo'),
+                'clients_categories.id',
+                'clients_categories.name',
+            ])
+            ->get();
 
         return view('reports.reports', [
-            'user_permissions' => $user_permissions,
-            'user' => Auth::user()
+            'orderProducts'       => $orderProducts,
+            'user_permissions'    => $user_permissions,
+            'quant_por_categoria' => $quant_por_categoria,
         ]);
     }
 
