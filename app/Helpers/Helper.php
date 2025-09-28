@@ -88,4 +88,44 @@ class Helper
             }
         }
     }
+
+    static public function day_delivery_calc($id)
+    {
+        $product = Product::find($id);
+        $quant_total = Order_product::select('*')
+            ->join('orders', 'order_number', 'order_id')
+            ->where('order_products.product_id', $id)
+            ->where('orders.complete_order', 0)
+            ->sum('quant');
+
+        // $daily_production = $product->daily_production_forecast != 0 ?: 1;
+
+        if ($product->daily_production_forecast == 0) {
+            $delivery_in = date('Y-m-d', strtotime('+1 day'));
+            return array(
+                'quant_total' => $quant_total,
+                'delivery_in' => $delivery_in,
+            );
+        }
+
+        if (!empty($quant_total)) {
+            $days_necessary = ((intval($quant_total)) - $product->current_stock) / $product->daily_production_forecast;
+            if ($days_necessary <= 0) {
+                $days_necessary = 1;
+            }
+
+            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
+        } else {
+            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +1 days'));
+        }
+
+        if (date('w', strtotime($delivery_in)) == 0) {
+            $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
+        }
+
+        return array(
+            'quant_total' => $quant_total,
+            'delivery_in' => $delivery_in
+        );
+    }
 }

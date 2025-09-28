@@ -48,7 +48,7 @@ class AjaxController extends Controller
             $quant_total = $quant_total + $quant;
 
             if ($product->daily_production_forecast == 0) {
-                $delivery_in = date('Y-m-d');
+                $delivery_in = date('Y-m-d', strtotime('+1 day'));
                 echo json_encode($delivery_in);
                 return false;
             }
@@ -65,7 +65,7 @@ class AjaxController extends Controller
                     $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
                 }
             } else {
-                $delivery_in = date('Y-m-d');
+                $delivery_in = date('Y-m-d', strtotime('+1 day'));
             }
             echo json_encode($delivery_in);
         }

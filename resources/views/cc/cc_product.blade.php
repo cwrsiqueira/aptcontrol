@@ -8,8 +8,9 @@
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
             <h2 class="mb-0">Entregas do Produto</h2>
             <div class="btn-group">
-                <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">Voltar</a>
-                <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
+                <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">
+                    < Produtos</a>
+                        <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
             </div>
         </div>
 
@@ -41,7 +42,7 @@
                 <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
                     <div class="card card-lift mb-3">
                         <div class="card-header">
-                            <strong>Filtros</strong>
+                            <strong>Filtros por categoria do cliente</strong>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -60,6 +61,13 @@
                                 @endforeach
                             </div>
                             <hr>
+
+                            <div class="custom-control custom-checkbox mb-3">
+                                <input type="checkbox" class="custom-control-input" id="chk_entregas" name="entregas"
+                                    value="1" @if (!empty($_GET['entregas'])) checked @endif>
+                                <label class="custom-control-label" for="chk_entregas">Mostrar entregas realizadas</label>
+                            </div>
+
                             <div class="d-flex align-items-center">
                                 <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
                                 <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search"
@@ -71,7 +79,7 @@
             </div>
 
             {{-- LEGENDAS --}}
-            <div class="col-lg-3">
+            <div class="col-lg-3 nao-imprimir">
                 <div class="card card-lift mb-3">
                     <div class="card-header">
                         <strong>Legendas</strong>
@@ -118,7 +126,10 @@
                                 </td>
                                 <td>{{ $item->seller_name ?? ' - ' }}</td>
                                 <td>{{ $item->category_name }}</td>
-                                <td>#{{ $item->order_id }}</td>
+                                <td>
+                                    <a
+                                        href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
+                                </td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td>
                                     <a href="#"
@@ -141,7 +152,9 @@
             </div>
             {{-- <div class="card-footer">{{ $data->links() }}</div> --}}
         </div>
+
         <hr>
+
     </main>
 @endsection
 
@@ -191,7 +204,7 @@
 
         /* destaque DATA (roxo) */
         .is-fav-date {
-            background: #6f42c1;
+            background: #dc3545;
             /* roxo bootstrap-ish */
             color: #fff !important;
             font-weight: 700 !important;
@@ -223,7 +236,7 @@
         // Imprimir
         $('#btn_imprimir').click(function() {
             $(this).hide();
-            $('#btn_voltar, #btn_sair, #btn_recalc, #search, #clean_search').hide();
+            $('#btn_voltar, #btn_sair, #btn_recalc, #search, #clean_search, .nao-imprimir').hide();
             window.print();
             history.go(0);
         });

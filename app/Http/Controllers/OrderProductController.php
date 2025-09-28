@@ -32,7 +32,9 @@ class OrderProductController extends Controller
 
         $user_permissions = Helper::get_permissions();
         $order = Order::findOrFail($id);
-        $order_products = Order_product::where('order_id', $order->order_number)->get();
+        $order_products = Order_product::where('order_id', $order->order_number)
+            ->orderBy('delivery_date')
+            ->get();
 
         return view('order_products.order_products', compact('user_permissions', 'order', 'order_products'));
     }
@@ -68,8 +70,11 @@ class OrderProductController extends Controller
             "product_name",
             "quant",
             "delivery_date",
+            "favorite_delivery",
             "order",
         ]);
+
+        $data['favorite_delivery'] = isset($data['favorite_delivery']) ? 1 : 0;
 
         Validator::make(
             $data,
@@ -77,6 +82,7 @@ class OrderProductController extends Controller
                 "product_name" => ['required'],
                 "quant" => ['required'],
                 "delivery_date" => ['required'],
+                "favorite_delivery" => ['required'],
             ],
             [],
             [
@@ -85,7 +91,7 @@ class OrderProductController extends Controller
             ]
         )->validate();
 
-        $product = Product::firstOrCreate(['name' => trim($data['product_name'])]);
+        $product = Product::firstOrCreate(['name' => trim($data['product_name'])], ['daily_production_forecast' => 0]);
         $order = Order::find($request->input('order'));
 
         $order_product = new Order_product();
@@ -93,6 +99,7 @@ class OrderProductController extends Controller
         $order_product->product_id = $product->id;
         $order_product->quant = str_replace('.', '', $data['quant']);
         $order_product->delivery_date = $data['delivery_date'];
+        $order_product->favorite_delivery = $data['favorite_delivery'];
         $order_product->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Pedidos');

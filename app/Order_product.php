@@ -10,4 +10,9 @@ class Order_product extends Model
     {
         return $this->belongsTo(\App\Product::class, 'product_id');
     }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id', 'order_number');
+    }
 }

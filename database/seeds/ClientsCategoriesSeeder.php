@@ -7,7 +7,7 @@ class ClientsCategoriesSeeder extends Seeder
 {
     public function run()
     {
-        $cats = ['Padrão', 'Atacado', 'Varejo'];
+        $cats = ['Padrão', 'Construtor', 'Revendedor', 'Consumidor final'];
 
         foreach ($cats as $name) {
             DB::table('clients_categories')->updateOrInsert(

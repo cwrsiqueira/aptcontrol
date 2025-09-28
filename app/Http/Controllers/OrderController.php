@@ -205,7 +205,7 @@ class OrderController extends Controller
         return redirect()->route('order_products.index', ['order' => $order->id])->with('success', 'Salvo com sucesso!');
     }
 
-    public function show($id)
+    public function show(Order $order)
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('orders.view', $user_permissions) && !Auth::user()->is_admin) {
@@ -215,41 +215,15 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
-        $order = Order::addSelect(['name_client' => Client::select('name')
-            ->whereColumn('id', 'orders.client_id')])
-            ->find($id);
-
-        $saldo_produtos = Order_product::where('order_id', $order->order_number)
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-            ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
-            ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
-            ->groupBy('product_id')
-            ->orderBy('product_id')
-            ->orderBy('delivery_date')
-            ->get();
-
         $order_products = Order_product::where('order_id', $order->order_number)
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-            // ->orderBy('product_id')
             ->orderBy('delivery_date')
             ->get();
 
-        $user_permissions = Helper::get_permissions();
-        $product = array();
-        $products = json_decode($saldo_produtos);
-        foreach ($products as $item) {
-            if ($item->saldo != 0) {
-                $product[$item->product_id] = $item->product_name;
-            }
-        }
-
-        return view('orders.orders_view', [
-            'order' => $order,
-            'order_products' => $order_products,
-            'user_permissions' => $user_permissions,
-            'product' => $product,
-            'saldo_produtos' => $saldo_produtos
-        ]);
+        return view('orders.orders_view', compact(
+            'order',
+            'order_products',
+            'user_permissions',
+        ));
     }
 
     /**

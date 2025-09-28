@@ -11,7 +11,8 @@
                 @if (in_array('clients.view', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('clients.edit', $client) }}">Editar</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('clients.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-light" href="{{ route('clients.index') }}">
+                    < Clientes</a>
             </div>
         </div>
 

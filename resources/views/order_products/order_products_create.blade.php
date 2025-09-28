@@ -48,7 +48,12 @@
                         <label for="delivery_date">Data de entrega</label>
                         <input type="date" name="delivery_date" id="delivery_date"
                             class="form-control @error('delivery_date') is-invalid @enderror" placeholder="Data de entrega"
-                            value="{{ old('delivery_date') }}">
+                            value="{{ old('delivery_date') ?? date('Y-m-d', strtotime('+1 day')) }}">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="checkbox" name="favorite_delivery" id="favorite_delivery">
+                        <label for="favorite_delivery">Fixar data</label>
                     </div>
 
                     <button class="btn btn-primary">Salvar</button>

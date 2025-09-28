@@ -8,8 +8,9 @@
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
             <h2 class="mb-0">Entregas do Pedido</h2>
             <div class="btn-group">
-                <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{ route('orders.index') }}">Voltar</a>
-                <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
+                <a class="btn btn-sm btn-secondary" id="btn_sair" href="{{ route('orders.index') }}">
+                    < Pedidos</a>
+                        <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
             </div>
         </div>
 
@@ -19,10 +20,22 @@
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <strong>Pedido</strong>
-                        <span class="badge badge-primary badge-client-name">{{ $order->order_number }}</span>
+                        <span class="badge badge-primary badge-client-name">
+                            <a class="text-light"
+                                href="{{ route('order_products.index', ['order' => $order->id]) }}">#{{ $order->order_number }}</a>
+                        </span>
+                    </div>
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <span class="badge badge-info badge-client-name">Cliente: {{ $client->name }}</span>
+                        <span class="font-weight-bold">{{ $client->category->name }}</span>
                     </div>
                     <div class="card-body">
-                        <small class="text-muted">Selecione filtros ao lado e veja as entregas abaixo.</small>
+                        @if ($client->is_favorite)
+                            <div class="d-block mb-3">
+                                <div class="fav-client is-fav-client d-inline-block">Cliente aguardando antecipação</div>
+                            </div>
+                        @endif
+                        <small class="text-muted nao-imprimir">Selecione filtros ao lado e veja as entregas abaixo.</small>
                     </div>
                 </div>
             </div>
@@ -32,7 +45,7 @@
                 <form action="{{ route('cc_order', ['id' => $order->id]) }}" method="get">
                     <div class="card card-lift mb-3">
                         <div class="card-header">
-                            <strong>Filtros</strong>
+                            <strong>Filtros por produto</strong>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -70,7 +83,7 @@
             </div>
 
             {{-- DICAS / AÇÕES SECUNDÁRIAS (opcional) --}}
-            <div class="col-lg-3">
+            <div class="col-lg-3 nao-imprimir">
                 <div class="card card-lift mb-3">
                     <div class="card-header">
                         <strong>Dicas</strong>
@@ -91,12 +104,12 @@
                     <thead class="thead-light sticky-header">
                         <tr>
                             <th>Data</th>
-                            <th>Pedido</th>
                             <th>Produto</th>
                             <th class="text-right">Quant</th>
                             <th class="text-right">Saldo</th>
-                            <th>Entrega</th>
-                            <th class="btn_acoes" colspan="2">Ações</th>
+                            <th>Vendedor</th>
+                            <th>Data Entrega</th>
+                            <th>Tipo Entrega</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,34 +124,19 @@
                             @endphp
                             <tr class="linha {{ $rowClass }}" data-id="{{ $item->id }}">
                                 <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
-                                <td>#{{ $item->order_id }}</td>
-                                <td>{{ $item->product_name }}</td>
+                                <td>{{ $item->product->name }}</td>
                                 <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
+                                <td>{{ $item->order->seller->name ?? ' - ' }}</td>
+                                <td class="d-flex flex-column">{{ date('d/m/Y', strtotime($item->delivery_date)) }}
+                                    <span class="badge badge-danger @if (!$item->favorite_delivery) d-none @endif"
+                                        style="width: fit-content;">Data
+                                        fixada</span>
                                 <td>
-                                    @if ($item->quant < 0)
-                                        {{ date('d/m/Y', strtotime($item->created_at)) }}
-                                    @else
-                                        {{ date('d/m/Y', strtotime($item->delivery_date)) }}
-                                    @endif
-                                </td>
-                                <td class="btn_acoes">
-                                    @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-secondary"
-                                            href="{{ route('orders.edit', ['order' => $item->orders_order_id]) }}">Editar</a>
-                                    @else
-                                        <button class="btn btn-sm btn-secondary" disabled
-                                            title="Solicitar Acesso">Editar</button>
-                                    @endif
-                                </td>
-                                <td class="btn_acoes">
-                                    @if (in_array('orders.conclude', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-secondary"
-                                            href="{{ route('orders_conclude', ['order' => $item->orders_order_id]) }}">Concluir</a>
-                                    @else
-                                        <button class="btn btn-sm btn-secondary" disabled
-                                            title="Solicitar Acesso">Concluir</button>
-                                    @endif
+                                    @php $isCif = ($item->withdraw === 'Entregar'); @endphp
+                                    <span class="badge {{ $isCif ? 'badge-success' : 'badge-info' }}">
+                                        {{ $item->withdraw }} ({{ $isCif ? 'CIF' : 'FOB' }})
+                                    </span>
                                 </td>
                             </tr>
                         @endforeach
@@ -147,6 +145,9 @@
             </div>
             {{-- <div class="card-footer">{{ $data->links() }}</div> --}}
         </div>
+
+        <hr>
+
     </main>
 @endsection
 
@@ -158,39 +159,20 @@
             box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
         }
 
-        /* tabela com cabeçalho grudado */
-        .tableFixHead {
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        .tableFixHead .sticky-header th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        /* coloração das linhas de acordo com regra existente */
-        .row-positive {
-            color: green;
-            font-weight: 700;
-        }
-
-        .row-late {
-            color: #d9534f;
-            font-weight: 700;
-        }
-
-        /* vermelho */
-        .row-neutral {
-            color: #777;
-            font-weight: 700;
-        }
-
         /* hover suave */
         tbody tr:hover {
             background-color: #f6f9fc;
             cursor: pointer;
+        }
+
+        /* destaque CLIENTE (amarelo) */
+        .is-fav-client {
+            background: #ffde59;
+            color: #111;
+            font-weight: 700 !important;
+            font-size: 1.06em;
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
         /* header */
@@ -227,6 +209,7 @@
                 $('#search').hide();
                 $('#clean_search').hide();
                 $('.btn_acoes').hide();
+                $('.nao-imprimir').hide();
                 window.print();
                 history.go(0);
             });

@@ -78,6 +78,7 @@ class ProductController extends Controller
         // (opcional) normalizar para int: $cats = array_map('intval', $cats);
 
         $product = Product::findOrFail($id);
+        $complete_order = $request->input('entregas', 0);
 
         // Base: pedidos em aberto do produto
         $data = Order_product::query()
@@ -86,7 +87,7 @@ class ProductController extends Controller
             ->leftJoin('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
             ->leftJoin('sellers',            'sellers.id',            '=', 'orders.seller_id')
             ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', 0)
+            ->where('orders.complete_order', $complete_order)
             ->when(!empty($cats), fn($q) => $q->whereIn('clients.id_categoria', $cats))
             ->orderBy('order_products.delivery_date')
             ->select([
@@ -132,7 +133,7 @@ class ProductController extends Controller
             ->get();
 
         // Mantém seu cálculo existente
-        $day_delivery_calc = $this->day_delivery_calc($id);
+        $day_delivery_calc = Helper::day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
 
@@ -151,38 +152,6 @@ class ProductController extends Controller
         Helper::day_delivery_recalc($id_product);
         Helper::saveLog(Auth::user()->id, 'Alteração', $id_product, 'Recalc Data Entrega', 'Produtos');
         return redirect()->route('cc_product', ['id' => $id_product]);
-    }
-
-    private function day_delivery_calc($id)
-    {
-        $product = Product::find($id);
-        $quant_total = Order_product::select('*')
-            ->join('orders', 'order_number', 'order_id')
-            ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', 0)
-            ->sum('quant');
-
-        $daily_production = $product->daily_production_forecast != 0 ?: 1;
-
-        if (!empty($quant_total)) {
-            $days_necessary = ((intval($quant_total)) - $product->current_stock) / $daily_production;
-
-            if ($days_necessary <= 0) {
-                $days_necessary = 0;
-            }
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
-        } else {
-            $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +1 days'));
-        }
-
-        if (date('w', strtotime($delivery_in)) == 0) {
-            $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
-        }
-
-        return array(
-            'quant_total' => $quant_total,
-            'delivery_in' => $delivery_in
-        );
     }
 
     /**

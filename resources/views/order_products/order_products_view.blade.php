@@ -11,7 +11,8 @@
                 @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.edit', $order) }}">Editar</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">
+                    < Pedidos</a>
             </div>
         </div>
 

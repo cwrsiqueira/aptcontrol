@@ -142,12 +142,18 @@ class ClientController extends Controller
             ];
         }
 
-        return view('cc.cc_client', [
-            'data'             => $data,
-            'client'           => $client,
-            'product_total'    => $product_total,
-            'user_permissions' => $user_permissions,
-        ]);
+        // foreach ($data as $item) {
+        //     dd($item->order->client->id);
+        // }
+
+        // dd($data);
+
+        return view('cc.cc_client', compact(
+            'data',
+            'client',
+            'product_total',
+            'user_permissions',
+        ));
     }
 
     public function toggleFavorite($clientId)

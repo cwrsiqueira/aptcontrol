@@ -9,9 +9,10 @@
             <h2>Pedido</h2>
             <div>
                 @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.edit', $order) }}">Editar</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.edit', $order) }}">Editar pedido</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">
+                    < Pedidos</a>
             </div>
         </div>
 
@@ -42,5 +43,31 @@
                 </dl>
             </div>
         </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Data da entrega</th>
+                    <th>
+                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                            <a class="btn btn-sm btn-outline-primary"
+                                href="{{ route('order_products.index', ['order' => $order->id]) }}">Editar
+                                produtos</a>
+                        @endif
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($order_products as $item)
+                    <tr>
+                        <td>{{ $item->product->name }}</td>
+                        <td class="text-end">{{ number_format($item->quant, 0, '', '.') }}</td>
+                        <td>{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </main>
 @endsection

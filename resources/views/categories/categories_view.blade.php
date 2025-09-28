@@ -11,7 +11,8 @@
                 @if (in_array('categories.view', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('categories.edit', $category) }}">Editar</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('categories.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-light" href="{{ route('categories.index') }}">
+                    < Categorias</a>
             </div>
         </div>
 

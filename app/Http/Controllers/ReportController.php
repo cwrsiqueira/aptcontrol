@@ -39,80 +39,82 @@ class ReportController extends Controller
         ]);
     }
 
-    public function report_delivery()
+    public function report_delivery(Request $request)
     {
-        $withdraw = '%';
-        if (!empty($_GET['withdraw'])) {
-            $withdraw = $_GET['withdraw'];
+        // 1) Entrada (com defaults simples)
+        $date      = $request->query('delivery_date');   // pode vir null
+        $withdraw  = $request->query('withdraw', '%');   // mantém o LIKE '%'
+        $productIds = $request->query('por_produto');    // array de IDs (opcional)
+
+        $withdraw = $withdraw == 'Todas' ? '%' : $withdraw;
+
+        // Se não vier filtro de produto, usa todos (ids)
+        if (empty($productIds)) {
+            $productIds = Product::pluck('id')->all();
         }
 
-        $produtos = Product::all();
-        $por_produto = array();
-        foreach ($produtos as $value) {
-            $por_produto[] = strval($value['id']);
-        }
-        if (!empty($_GET['por_produto'])) {
-            $por_produto = ($_GET['por_produto']) ?? $por_produto;
-        }
-
-        $orders = array();
-        if (!empty($_GET['delivery_date'])) {
-            $date = $_GET['delivery_date'];
-
-            $orders = Order_product::select('*')
-                ->join('orders', 'orders.order_number', 'order_products.order_id')
-                ->addSelect(['order_date' => Order::select('order_date')->whereColumn('orders.order_number', 'order_products.order_id')])
-                ->addSelect(['client_id' => Order::select('client_id')->whereColumn('orders.order_number', 'order_products.order_id')])
-                ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'product_id')])
-                ->addSelect(['client_name' => Client::select('name')->whereColumn('clients.id', 'client_id')])
-                ->addSelect(['client_address' => Client::select('full_address')->whereColumn('id', 'client_id')])
-                ->addSelect(['seller_name' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id')])
-                ->addSelect(['client_phone' => Client::select('contact')->whereColumn('id', 'client_id')])
-                ->where('orders.complete_order', 0)
-                ->where('orders.withdraw', 'LIKE', $withdraw)
-                ->where('delivery_date', '<=', $date)
-                ->whereIn('product_id', $por_produto)
-                // ->havingRaw('SUM(order_products.quant) <> ?', [0])
-                ->orderBy('delivery_date')
-                ->get();
-
-            $saldo = [];
-            foreach ($orders as $key => $value) {
-                if (!isset($saldo[$value->product_id][$value->order_id])) {
-                    $saldo[$value->product_id][$value->order_id] = $value->quant;
-                    $orders[$key]['saldo'] = $saldo[$value->product_id][$value->order_id];
-                } else {
-                    $saldo[$value->product_id][$value->order_id] += $value->quant;
-                    if ($saldo[$value->product_id][$value->order_id] > $value->quant) {
-                        $orders[$key]['saldo'] = $value->quant;
-                    } else {
-                        $orders[$key]['saldo'] = $saldo[$value->product_id][$value->order_id];
-                    }
-                }
-            }
+        // Se não vier data, devolve view “zerada” (coerente com seu código original)
+        if (empty($date)) {
+            return view('reports.reports_delivery', [
+                'orders'        => collect(),  // coleção vazia
+                'date'          => null,
+                'product_total' => [],
+            ]);
         }
 
-        $orders = $orders->where('saldo', '>', 0)->where('delivery_date', '>', '1970-01-01');
+        // 2) Query principal (enxuta e performática)
+        $items = Order_product::query()
+            ->with([
+                // Eager load para evitar N+1
+                'product:id,name',
+                'order:id,order_number,client_id,seller_id,complete_order,withdraw,order_date',
+                'order.client:id,name,full_address,contact',
+                'order.seller:id,name',
+            ])
+            // RELAÇÃO: orders.order_number ↔ order_products.order_id
+            ->join('orders as o', 'o.order_number', '=', 'order_products.order_id')
+            ->where('o.complete_order', 0)
+            ->when($withdraw !== '%', fn($q) => $q->where('o.withdraw', 'LIKE', $withdraw))
+            ->whereDate('order_products.delivery_date', '<=', $date)
+            ->whereIn('order_products.product_id', $productIds)
+            ->orderBy('order_products.delivery_date')
+            ->select('order_products.*') // evita colunas duplicadas do join
+            ->get();
 
-        $product_total = [];
-        foreach ($orders as $key => $value) {
-            if (!isset($product_total[$value->product_name])) {
-                $product_total[$value->product_name] = [
-                    'id' => $value->product_id,
-                    'qt' => $value->saldo
+        // 3) Cálculo do saldo por (product_id, order_id), mantendo sua regra
+        //    - acumula quant por chave e define saldo = min(acumulado, quant da linha)
+        $acumulado = [];
+        $orders = $items->map(function ($row) use (&$acumulado) {
+            $key = $row->product_id . '|' . $row->order_id; // order_id aqui é order_number
+            $acumulado[$key] = ($acumulado[$key] ?? 0) + (float) $row->quant;
+
+            $row->saldo = $acumulado[$key] > (float) $row->quant
+                ? (float) $row->quant
+                : (float) $acumulado[$key];
+
+            return $row;
+        })
+            ->where('saldo', '>', 0)
+            ->where('delivery_date', '>', '1970-01-01')
+            ->values();
+
+        // 4) Totais por produto (nome → id + soma de saldo)
+        $product_total = $orders
+            ->groupBy(fn($r) => optional($r->product)->name ?? '—')
+            ->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'id' => $first->product_id,
+                    'qt' => $group->sum('saldo'),
                 ];
-            } else {
-                $product_total[$value->product_name] = [
-                    'id' => $value->product_id,
-                    'qt' => $product_total[$value->product_name]['qt'] + $value->saldo
-                ];
-            }
-        }
+            })
+            ->toArray();
 
+        // 5) View
         return view('reports.reports_delivery', [
-            'orders' => $orders,
-            'date' => $date,
-            'product_total' => $product_total
+            'orders'        => $orders,
+            'date'          => $date,
+            'product_total' => $product_total,
         ]);
     }
 

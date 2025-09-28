@@ -7,6 +7,14 @@
 
         <h2>Editar Pedido</h2>
 
+        <div class="d-flex justify-content-end mb-3">
+            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                <a class="btn btn-sm btn-outline-primary"
+                    href="{{ route('order_products.index', ['order' => $order->id]) }}">Editar
+                    produtos</a>
+            @endif
+        </div>
+
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>

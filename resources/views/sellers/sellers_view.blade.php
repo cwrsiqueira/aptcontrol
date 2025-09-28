@@ -11,7 +11,8 @@
                 @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('sellers.edit', $seller->id) }}">Editar</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('sellers.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-light" href="{{ route('sellers.index') }}">
+                    < Vendedores</a>
             </div>
         </div>
 

@@ -1,6 +1,6 @@
 @extends('layouts.template')
 
-@section('title', 'Produtos do Pedido')
+@section('title', 'Detalhes do Pedido')
 
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
@@ -14,8 +14,9 @@
 
         {{-- Título + Voltar (compacto) --}}
         <div class="d-flex justify-content-between align-items-center page-header mb-2">
-            <h2 class="page-title mb-0">Produtos do Pedido</h2>
-            <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">Voltar</a>
+            <h2 class="page-title mb-0">Detalhes do Pedido</h2>
+            <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">
+                < Pedidos</a>
         </div>
 
         {{-- ITENS (PRIORIDADE NO TOPO) --}}
@@ -52,10 +53,19 @@
             {{-- INFO DO PEDIDO (compacto, abaixo da lista) --}}
             <div class="card card-lift">
                 <div class="card-body py-2">
-                    <div class="row small">
+                    <div class="row">
                         <div class="col-md-6 mb-1">
                             <span class="muted-label">Cliente</span>
-                            <div class="text-body">{{ optional($order->client)->name }}</div>
+                            <div class="text-body font-weight-bold">{{ optional($order->client)->name }}</div>
+                            <div class="d-flex jalign-items-center mb-3 small">
+                                <input type="checkbox" name="fav-client" id="fav-client"
+                                    data-url="{{ route('clients.toggle_favorite', $order->client->id) }}"
+                                    @if ($order->client->is_favorite) checked @endif>
+                                <label for="fav-client"
+                                    class="fav-client @if ($order->client->is_favorite) is-fav-client @endif d-inline-block my-0 mx-1">Cliente
+                                    aguardando antecipação
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-6 mb-1">
                             <span class="muted-label">Vendedor</span>
@@ -83,8 +93,12 @@
                                     <td>{{ $item->id }}</td>
                                     <td>{{ $item->product->name }}</td>
                                     <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
-                                    <td class="text-right">
+                                    <td class="text-right d-flex flex-column align-items-end">
                                         {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                        <span
+                                            class="badge badge-danger badge-client-name @if (!$item->favorite_delivery) d-none @endif"
+                                            style="width: fit-content;">Data
+                                            fixada</span>
                                     </td>
                                     <td class="text-right">
 
@@ -200,5 +214,72 @@
             letter-spacing: .02em;
             margin-bottom: .15rem;
         }
+
+        /* padrão: links de favorito como texto normal */
+        fav-client,
+        fav-date {
+            color: inherit;
+            text-decoration: none;
+            font-weight: 400;
+        }
+
+        /* destaque CLIENTE (amarelo) */
+        .is-fav-client {
+            background: #ffde59;
+            color: #111;
+            font-weight: 700 !important;
+            font-size: 1.06em;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
     </style>
+@endsection
+
+@section('js')
+    <script>
+        // CSRF para Ajax
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+
+        $(document).on('click', 'input#fav-client', function() {
+            const $el = $('.fav-client');
+            const url = $(this).data('url');
+
+            const marcando = !$el.hasClass('is-fav-client');
+            const msg = marcando ? 'Favoritar este cliente?' : 'Remover favorito deste cliente?';
+            if (!confirm(msg)) return;
+
+            $.post(url, {}, function(resp) {
+                if (resp && resp.ok) {
+                    // aplica no clicado
+                    $el.toggleClass('is-fav-client', !!resp.is_favorite);
+                }
+            }).fail(function(xhr) {
+                console.error('Falha ao favoritar cliente', xhr.responseText);
+                alert('Não foi possível alterar o favorito do cliente.');
+            });
+        });
+
+        // Toggle favorito da DATA DE ENTREGA (com confirmação)
+        $(document).on('click', 'a.fav-date', function(e) {
+            e.preventDefault();
+            var $el = $(this);
+            var url = $el.data('url'); // rota /order-products/{id}/toggle-delivery-favorite
+            var marcando = !$el.hasClass('is-fav-date');
+            var msg = marcando ? 'Destacar esta DATA DE ENTREGA?' : 'Remover destaque desta DATA DE ENTREGA?';
+            if (!confirm(msg)) return;
+
+            $.post(url, {}, function(resp) {
+                if (resp && resp.ok) {
+                    $el.toggleClass('is-fav-date', !!resp.favorite_delivery);
+                }
+            }).fail(function(xhr) {
+                console.error('Falha ao favoritar data de entrega', xhr.responseText);
+                alert('Não foi possível alterar o destaque da data de entrega.');
+            });
+        });
+    </script>
 @endsection

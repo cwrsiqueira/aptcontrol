@@ -69,8 +69,11 @@
                                             title="Solicitar Acesso">Editar</button>
                                     @endif
 
-                                    @if (in_array('categories.delete', $user_permissions) || Auth::user()->is_admin)
-                                        <form action="{{ route('categories.destroy', $item->id) }}" method="post"
+                                    @if ($item->name === 'Padrão')
+                                        <button class="btn btn-sm btn-outline-danger" disabled
+                                            title="A categoria Padrão não pode ser excluída!">Excluir</button>
+                                    @elseif(in_array('categories.delete', $user_permissions) || Auth::user()->is_admin)
+                                        <form action="{{ route('categories.destroy', $item) }}" method="post"
                                             style="display:inline-block"
                                             onsubmit="return confirm('Tem certeza que deseja excluir?');">
                                             @csrf

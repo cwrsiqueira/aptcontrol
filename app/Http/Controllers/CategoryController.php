@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Client;
 use App\Clients_category;
 use App\Helpers\Helper;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -82,7 +83,7 @@ class CategoryController extends Controller
         Validator::make(
             $data,
             [
-                'name' => 'required|unique:clients|max:100',
+                'name' => 'required|unique:clients_categories|max:100',
             ]
         )->validate();
 
@@ -163,7 +164,11 @@ class CategoryController extends Controller
         $validator = Validator::make(
             $data,
             [
-                'name' => 'required|max:100',
+                'name' => [
+                    'required',
+                    'max:100',
+                    Rule::unique('clients_categories', 'name')->ignore($id), // ignora o próprio registro
+                ],
             ]
         )->validate();
 
@@ -182,7 +187,7 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Clients_category $category)
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.delete', $user_permissions) && !Auth::user()->is_admin) {
@@ -192,11 +197,17 @@ class CategoryController extends Controller
             return redirect()->route('categories.index')->withErrors($message);
         }
 
-        $categories = Client::where('id_categoria', $id)->get();
+        $id = $category->id;
+        $clients = Client::where('id_categoria', $id)->get();
 
-        if (count($categories) > 0) {
+        if (count($clients) > 0) {
             $message = [
                 'cannot_exclude' => 'Categoria não pode ser excluída, pois possui clientes vinculados!',
+            ];
+            return redirect()->route('categories.index')->withErrors($message);
+        } elseif ($category->name == 'Padrão') {
+            $message = [
+                'cannot_exclude' => 'A categoria Padrão não pode ser excluída!',
             ];
             return redirect()->route('categories.index')->withErrors($message);
         } else {

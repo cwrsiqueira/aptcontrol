@@ -15,10 +15,10 @@
                 @endif
             </h2>
             <div class="btn-group">
-                <button class="btn btn-sm btn-secondary" onclick="window.location.href = 'reports'"
-                    id="btn_voltar">Voltar</button>
-                <button class="btn btn-sm btn-secondary"
-                    onclick="
+                <button class="btn btn-sm btn-secondary" onclick="window.location.href = 'reports'" id="btn_voltar">
+                    < Relatórios</button>
+                        <button class="btn btn-sm btn-secondary"
+                            onclick="
                     this.style.display='none';
                     document.getElementById('btn_voltar').style.display='none';
                     document.getElementById('search').style.display='none';
@@ -75,7 +75,7 @@
                         <div class="form-group">
                             <label for="withdraw" class="mb-1">Filtrar por Forma de Entrega:</label>
                             <select class="form-control col-sm-6" name="withdraw" id="withdraw">
-                                <option></option>
+                                <option>Todas</option>
                                 <option value="Entregar" @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Entregar') selected @endif>
                                     Entregar na Obra
                                 </option>
@@ -104,7 +104,6 @@
                             @endif
                         </div>
                     </div>
-                    </form>
                 </div>
             </div>
 
@@ -113,8 +112,8 @@
         </div>
 
         {{-- TABELA --}}
-        <div class="card card-lift">
-            <div class="table-responsive tableFixHead">
+        <div class="card card-lift mb-5">
+            <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
                     <thead class="thead-light sticky-header">
                         <tr>
@@ -123,13 +122,12 @@
                             <th>Cliente</th>
                             <th>Vendedor</th>
                             <th>Produto</th>
-                            <th class="text-right">Saldo</th>
+                            <th class="text-right">Quantidade</th>
                             <th>Contato</th>
                             @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
                                 <th>Forma de Entrega</th>
                             @else
                                 <th>Forma de Entrega</th>
-                                <th>Endereço</th>
                             @endif
                         </tr>
                     </thead>
@@ -137,18 +135,20 @@
                         @foreach ($orders as $item)
                             @php $isLate = ($item->delivery_date < date('Y-m-d')); @endphp
                             <tr class="{{ $isLate ? 'row-late' : '' }}">
-                                <td>#{{ $item->order_id }}</td>
+                                <td>
+                                    <a
+                                        href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
+                                </td>
                                 <td style="min-width:100px">{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
-                                <td>{{ $item->client_name }}</td>
-                                <td>{{ $item->seller_name }}</td>
-                                <td>{{ $item->product_name }}</td>
+                                <td>{{ $item->order->client->name }}</td>
+                                <td>{{ $item->order->seller->name }}</td>
+                                <td>{{ $item->product->name }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
-                                <td>{{ $item->client_phone }}</td>
+                                <td>{{ $item->order->client->contact }}</td>
                                 @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
-                                    <td>{{ $item->withdraw }}</td>
+                                    <td>{{ ucfirst($item->order->withdraw) }} (FOB)</td>
                                 @else
-                                    <td>{{ $item->withdraw }}</td>
-                                    <td>{{ $item->client_address }}</td>
+                                    <td>{{ ucfirst($item->order->withdraw) }} (CIF)</td>
                                 @endif
                             </tr>
                         @endforeach
@@ -157,6 +157,9 @@
             </div>
             {{-- <div class="card-footer">{{ $orders->links() }}</div> --}}
         </div>
+
+        <hr>
+
     </main>
 @endsection
 

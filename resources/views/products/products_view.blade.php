@@ -11,7 +11,8 @@
                 @if (in_array('products.view', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('products.edit', $product) }}">Editar</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('products.index') }}">Voltar</a>
+                <a class="btn btn-sm btn-light" href="{{ route('products.index') }}">
+                    < Produtos</a>
             </div>
         </div>
 
