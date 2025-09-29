@@ -45,7 +45,8 @@
                     <div class="form-group">
                         <label for="client_name">Cliente <small>(Digite um novo nome para cadastrar)</small>:</label>
                         <input type="search" class="form-control @error('client_name') is-invalid @enderror"
-                            id="client_name" name="client_name" list="lista-clientes" placeholder="Busca cliente...">
+                            id="client_name" name="client_name" list="lista-clientes" placeholder="Busca cliente..."
+                            value="{{ old('client_name') }}">
                         <datalist id="lista-clientes">
                             @foreach ($clients as $item)
                                 <option @if (old('client_name') == $item->name) selected @endif value="{{ $item->name }}">
@@ -74,7 +75,7 @@
                                         cadastrar)</small>:</label>
                                 <input type="search" class="form-control @error('seller_name') is-invalid @enderror"
                                     id="seller_name" name="seller_name" list="lista-vendedores"
-                                    placeholder="Busca vendedor...">
+                                    placeholder="Busca vendedor..." value="{{ old('seller_name') }}">
                                 <datalist id="lista-vendedores">
                                     @foreach ($sellers as $item)
                                         <option @if (old('seller_name') == $item->name) selected @endif

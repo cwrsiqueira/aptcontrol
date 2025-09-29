@@ -78,19 +78,19 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
-                            <a class="nav-link @if (Request::is(['orders', 'orders/*', 'order_products', 'order_products/*'])) active @endif"
-                                href="{{ route('orders.index') }}">
-                                <span data-feather="file"></span>
-                                Pedidos
-                            </a>
-                        </li>
-
                         <li class="nav-item" @if (in_array('menu-vendedores', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['sellers', 'sellers/*'])) active @endif"
                                 href="{{ route('sellers.index') }}">
                                 <span data-feather="dollar-sign"></span>
                                 Vendedores
+                            </a>
+                        </li>
+
+                        <li class="nav-item" @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                            <a class="nav-link @if (Request::is(['orders', 'orders/*', 'order_products', 'order_products/*'])) active @endif"
+                                href="{{ route('orders.index') }}">
+                                <span data-feather="file"></span>
+                                Pedidos
                             </a>
                         </li>
 
@@ -102,21 +102,29 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (Auth::user()->is_admin) @else style="display:none;" @endif>
-                            <a class="nav-link @if (Request::is('permissions')) active @endif"
-                                href="{{ route('permissions.index') }}">
-                                <span data-feather="lock"></span>
-                                Permissões
-                            </a>
-                        </li>
+                        @if (Auth::user()->is_admin)
+                            <hr>
 
-                        <li class="nav-item" @if (Auth::user()->is_admin) @else style="display:none;" @endif>
-                            <a class="nav-link @if (Request::is('logs')) active @endif"
-                                href="{{ route('logs.index') }}">
-                                <span data-feather="list"></span>
-                                Log do Sistema
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <h6 class="nav-link">Configurações</h6>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link @if (Request::is('permissions')) active @endif"
+                                    href="{{ route('permissions.index') }}">
+                                    <span data-feather="lock"></span>
+                                    Permissões
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link @if (Request::is('logs')) active @endif"
+                                    href="{{ route('logs.index') }}">
+                                    <span data-feather="list"></span>
+                                    Log do Sistema
+                                </a>
+                            </li>
+                        @endif
 
                     </ul>
 

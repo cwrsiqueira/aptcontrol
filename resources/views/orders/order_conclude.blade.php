@@ -67,7 +67,8 @@
                             value="{{ $order->seller_name ?? ' - ' }}"></th>
                     <th>
                         <label for="withdraw">Tipo de entrega:</label><br>
-                        {{ $order->withdraw }} ({{ $order->withdraw == 'Entregar' ? 'CIF' : 'FOB' }})
+                        {{ Str::ucfirst($order->withdraw) }}
+                        ({{ Str::lower($order->withdraw) == 'entregar' ? 'CIF' : 'FOB' }})
                     </th>
                 </tr>
                 <tr style="text-align: center;">

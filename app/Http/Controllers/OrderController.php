@@ -43,20 +43,24 @@ class OrderController extends Controller
         }
 
         $q = trim((string) $request->input('q'));
+        $complete_order = $request->query('complete_order', 0);
 
         $orders = Order::query()
-            ->select('orders.*', 'clients.name', 'sellers.name')
-            ->join('clients', 'clients.id', 'orders.client_id')
-            ->join('sellers', 'sellers.id', 'orders.seller_id')
+            ->select([
+                'orders.*',
+            ])
+            ->join('clients', 'clients.id', '=', 'orders.client_id')      // mantém inner se cliente é obrigatório
+            ->leftJoin('sellers', 'sellers.id', '=', 'orders.seller_id')  // <-- permite seller_id NULL
             ->when($q, function ($qb) use ($q) {
                 $needle = mb_strtolower(Str::ascii($q));
                 $qb->where(function ($sub) use ($needle) {
                     $sub->whereRaw('LOWER(unaccent(clients.name)) LIKE ?', ["%{$needle}%"])
                         ->orWhereRaw('LOWER(unaccent(sellers.name)) LIKE ?', ["%{$needle}%"])
-                        ->orWhere('order_number', 'LIKE', "%{$needle}%");
+                        ->orWhere('orders.order_number', 'LIKE', "%{$needle}%");
                 });
             })
-            ->orderBy('order_date')
+            ->where('complete_order', $complete_order)
+            ->orderBy('orders.order_date')
             ->paginate(10)
             ->withQueryString();
 

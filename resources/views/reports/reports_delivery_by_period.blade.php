@@ -66,11 +66,11 @@
                             <label for="withdraw" class="mb-1">Filtrar por Forma de Entrega:</label>
                             <select class="form-control col-sm-6" name="withdraw" id="withdraw">
                                 <option>Todas</option>
-                                <option value="Entregar" @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Entregar') selected @endif>
-                                    Entregar na Obra
+                                <option value="entregar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'entregar') selected @endif>
+                                    Entregar na Obra (CIF)
                                 </option>
-                                <option value="Retirar" @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar') selected @endif>
-                                    Retirar na Fábrica
+                                <option value="retirar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'retirar') selected @endif>
+                                    Retirar na Fábrica (FOB)
                                 </option>
                             </select>
                         </div>
@@ -134,8 +134,8 @@
                                 <td>{{ $item->product->name }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td style="min-width:100px">{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
-                                <td>{{ $item->order->seller->name }}</td>
-                                @if (!empty($_GET['withdraw']) && $_GET['withdraw'] == 'Retirar')
+                                <td>{{ $item->order->seller->name ?? '-' }}</td>
+                                @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'Retirar')
                                     <td>{{ ucfirst($item->order->withdraw) }} (FOB)</td>
                                 @else
                                     <td>{{ ucfirst($item->order->withdraw) }} (CIF)</td>

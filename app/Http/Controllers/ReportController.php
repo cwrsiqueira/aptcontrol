@@ -179,8 +179,8 @@ class ReportController extends Controller
     public function report_delivery_byPeriod(Request $request)
     {
         // 1) Entrada (com defaults simples)
-        $date_ini      = $request->query('data_ini', date('Y-m-01 00:00:00'));   // pode vir null
-        $date_fin      = $request->query('data_fin', date('Y-m-t 23:59:59'));   // pode vir null
+        $date_ini      = $request->query('date_ini', date('Y-m-01 00:00:00'));   // pode vir null
+        $date_fin      = $request->query('date_fin', date('Y-m-t 23:59:59'));   // pode vir null
         $withdraw  = $request->query('withdraw', '%');   // mantém o LIKE '%'
         $productIds = $request->query('por_produto');    // array de IDs (opcional)
 

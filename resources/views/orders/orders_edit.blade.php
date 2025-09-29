@@ -70,10 +70,10 @@
                             <div class="form-group">
                                 <label for="withdraw">Entrega:</label>
                                 <select name="withdraw" id="withdraw" class="form-control">
-                                    <option @if ((old('withdraw') ?? $order->withdraw) == 'retirar') selected @endif value="retirar">Retirar na
-                                        fábica
+                                    <option @if ((old('withdraw') ?? Str::lower($order->withdraw)) == 'retirar') selected @endif value="retirar">Retirar na
+                                        fábrica
                                         (FOB)</option>
-                                    <option @if ((old('withdraw') ?? $order->withdraw) == 'entregar') selected @endif value="entregar">Entregar na
+                                    <option @if ((old('withdraw') ?? Str::lower($order->withdraw)) == 'entregar') selected @endif value="entregar">Entregar na
                                         obra (CIF)
                                     </option>
                                 </select>
@@ -85,10 +85,10 @@
                                         cadastrar)</small>:</label>
                                 <input type="search" class="form-control @error('seller_name') is-invalid @enderror"
                                     id="seller_name" name="seller_name" list="lista-vendedores"
-                                    placeholder="Busca vendedor..." value="{{ $order->seller->name }}">
+                                    placeholder="Busca vendedor..." value="{{ $order->seller->name ?? '' }}">
                                 <datalist id="lista-vendedores">
                                     @foreach ($sellers as $item)
-                                        <option value="{{ $item->name }}"></option>
+                                        <option value="{{ $item->name ?? '' }}"></option>
                                     @endforeach
                                 </datalist>
                             </div>

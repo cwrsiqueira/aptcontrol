@@ -50,6 +50,12 @@
                     <a class="btn btn-sm btn-secondary ml-2" href="{{ route('orders.index') }}">Limpar Busca</a>
                 @endif
             </div>
+            <div class="col-sm">
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="complete_order" name="complete_order">
+                    <label class="form-check-label" for="complete_order">Baixados/cancelados</label>
+                </div>
+            </div>
             <div class="col-sm d-flex justify-content-end">
                 @if (in_array('orders.create', $user_permissions) || Auth::user()->is_admin)
                     <a class="btn btn-primary" href="{{ route('orders.create') }}">Cadastrar Pedido</a>
@@ -79,47 +85,51 @@
                                 <td>{{ $item->id }}</td>
                                 <td><a href="{{ route('orders.show', $item) }}">{{ $item->order_number }}</a></td>
                                 <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
-                                <td>{{ $item->client->name }}</td>
-                                <td>{{ ucfirst($item->withdraw) }} ({{ $item->withdraw === 'entregar' ? 'CIF' : 'FOB' }})
+                                <td class="cursor-help" title="{{ $item->client->name }}">
+                                    {{ Str::limit($item->client->name, 30, '...') }}</td>
+                                <td>{{ Str::ucfirst($item->withdraw) }}
+                                    {{ (Str::lower($item->withdraw) === 'entregar' ? '(CIF)' : Str::lower($item->withdraw) === 'retirar') ? '(FOB)' : ' - ' }}
                                 </td>
-                                <td>{{ $item->seller->name }}</td>
+                                <td>{{ Str::ucfirst($item->seller->name ?? '-') }}</td>
                                 <td>
-                                    @if (in_array('orders.cc', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-warning"
-                                            href="{{ route('cc_order', $item) }}">Entregas</a>
-                                    @else
-                                        <button class="btn btn-sm btn-outline-warning" disabled
-                                            title="Solicitar Acesso">Entregas</button>
-                                    @endif
+                                    <div class="d-flex flex-column flex-sm-row">
+                                        @if (in_array('orders.cc', $user_permissions) || Auth::user()->is_admin)
+                                            <a class="btn btn-sm btn-outline-warning mr-1 mb-1"
+                                                href="{{ route('cc_order', $item) }}">Entregas</a>
+                                        @else
+                                            <button class="btn btn-sm btn-outline-warning mr-1 mb-1" disabled
+                                                title="Solicitar Acesso">Entregas</button>
+                                        @endif
 
-                                    @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-info"
-                                            href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>
-                                    @else
-                                        <button class="btn btn-sm btn-outline-info" disabled
-                                            title="Solicitar Acesso">Produtos</button>
-                                    @endif
+                                        @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
+                                            <a class="btn btn-sm btn-outline-info mr-1 mb-1"
+                                                href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>
+                                        @else
+                                            <button class="btn btn-sm btn-outline-info mr-1 mb-1" disabled
+                                                title="Solicitar Acesso">Produtos</button>
+                                        @endif
 
-                                    @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-primary"
-                                            href="{{ route('orders.edit', $item) }}">Editar</a>
-                                    @else
-                                        <button class="btn btn-sm btn-outline-primary" disabled
-                                            title="Solicitar Acesso">Editar</button>
-                                    @endif
+                                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                            <a class="btn btn-sm btn-outline-primary mr-1 mb-1"
+                                                href="{{ route('orders.edit', $item) }}">Editar</a>
+                                        @else
+                                            <button class="btn btn-sm btn-outline-primary mr-1 mb-1" disabled
+                                                title="Solicitar Acesso">Editar</button>
+                                        @endif
 
-                                    @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
-                                        <form action="{{ route('orders.destroy', $item) }}" method="post"
-                                            style="display:inline-block"
-                                            onsubmit="return confirm('Tem certeza que deseja excluir?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Excluir</button>
-                                        </form>
-                                    @else
-                                        <button class="btn btn-sm btn-outline-danger" disabled
-                                            title="Solicitar Acesso">Excluir</button>
-                                    @endif
+                                        @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
+                                            <form action="{{ route('orders.destroy', $item) }}" method="post"
+                                                style="display:inline-block"
+                                                onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-outline-danger mr-1 mb-1">Excluir</button>
+                                            </form>
+                                        @else
+                                            <button class="btn btn-sm btn-outline-danger mr-1 mb-1" disabled
+                                                title="Solicitar Acesso">Excluir</button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -133,4 +143,12 @@
             </div>
         </div>
     </main>
+@endsection
+
+@section('css')
+    <style>
+        .cursor-help {
+            cursor: help;
+        }
+    </style>
 @endsection

@@ -26,8 +26,9 @@
                         </span>
                     </div>
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <span class="badge badge-info badge-client-name">Cliente: {{ $client->name }}</span>
-                        <span class="font-weight-bold">{{ $client->category->name }}</span>
+                        <span class="badge badge-info badge-client-name cursor-help" title="{{ $client->name }}">Cliente:
+                            {{ Str::limit($client->name, 25) }}</span>
+                        <span class="font-weight-bold">{{ Str::limit($client->category->name, 10) }}</span>
                     </div>
                     <div class="card-body">
                         @if ($client->is_favorite)
