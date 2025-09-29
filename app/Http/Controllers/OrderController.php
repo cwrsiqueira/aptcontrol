@@ -68,7 +68,8 @@ class OrderController extends Controller
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'orders' => $orders,
-            'q' => $q
+            'q' => $q,
+            'complete_order' => $complete_order,
         ]);
     }
 

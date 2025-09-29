@@ -71,8 +71,11 @@
         $('.qt').mask('000.000.000', {
             reverse: true
         });
+
+        // Calcular e preencher data de entrega
         var product = document.querySelector('#product_name');
         var quant = document.querySelector('#quant');
+
         product.addEventListener('blur', function() {
             if (product.value != '' && quant.value != '') {
                 get_data_product(product.value, quant.value);
@@ -118,5 +121,13 @@
                 },
             });
         }
+        //
+
+        // Desabilita campo data para preenchimento
+        document.querySelector('#favorite_delivery').addEventListener('change', function() {
+            this.checked ?
+                document.querySelector('#delivery_date').setAttribute('readonly', true) :
+                document.querySelector('#delivery_date').removeAttribute('readonly')
+        })
     </script>
 @endsection

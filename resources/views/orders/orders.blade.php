@@ -32,29 +32,32 @@
 
         {{-- Cadastra clientes, Busca e Tabela Lista de Pedidos Cadastrados --}}
         <div class="row mb-3">
-            <div class="col-sm-5">
-                <form method="get" class="form-inline" action="{{ route('orders.index') }}">
-                    <div class="input-group w-100">
-                        <input type="search" class="form-control" name="q" id="q"
-                            placeholder="Busca por número, cliente ou vendedor" value="{{ $q ?? '' }}">
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-default">
-                                <i class="fas fa-search"></i>
-                            </button>
+            <div class="col-sm-7">
+                <form method="get" class="row" id="form-search" action="{{ route('orders.index') }}">
+                    <div class="col-sm">
+                        <div class="input-group w-100">
+                            <input type="search" class="form-control" name="q" id="q"
+                                placeholder="Busca por número, cliente ou vendedor" value="{{ $q ?? '' }}">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-default">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 d-flex align-items-center">
+                        <div class="form-group form-check m-0">
+                            <input type="checkbox" @if ($complete_order === '1') checked @endif class="form-check-input"
+                                value="1" id="complete_order" name="complete_order">
+                            <label class="form-check-label" for="complete_order">Baixados/cancelados</label>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="col-sm">
-                @if (!empty($q))
+                @if (!empty($q) || !empty($complete_order))
                     <a class="btn btn-sm btn-secondary ml-2" href="{{ route('orders.index') }}">Limpar Busca</a>
                 @endif
-            </div>
-            <div class="col-sm">
-                <div class="form-group form-check">
-                    <input type="checkbox" class="form-check-input" id="complete_order" name="complete_order">
-                    <label class="form-check-label" for="complete_order">Baixados/cancelados</label>
-                </div>
             </div>
             <div class="col-sm-3 d-flex justify-content-end">
                 @if (in_array('orders.create', $user_permissions) || Auth::user()->is_admin)
@@ -155,4 +158,12 @@
             width: 80%;
         }
     </style>
+@endsection
+
+@section('js')
+    <script>
+        document.querySelector('#complete_order').addEventListener('change', function() {
+            document.querySelector('#form-search').submit()
+        })
+    </script>
 @endsection
