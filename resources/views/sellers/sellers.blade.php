@@ -30,27 +30,31 @@
             </div>
         @endif
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <form method="get" class="form-inline" action="{{ route('sellers.index') }}">
-                <div class="input-group">
-                    <input type="search" class="form-control" name="q" id="q" placeholder="Procurar Vendedor"
-                        value="{{ $q ?? '' }}">
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-default">
-                            <i class="fas fa-search"></i>
-                        </button>
+        <div class="row mb-3">
+            <div class="col-sm">
+                <form method="get" class="form-inline" action="{{ route('sellers.index') }}">
+                    <div class="input-group">
+                        <input type="search" class="form-control" name="q" id="q"
+                            placeholder="Procurar Vendedor" value="{{ $q ?? '' }}">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-default">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                @if (!empty($q))
-                    <a class="btn btn-sm btn-secondary ml-2" href="{{ route('sellers.index') }}">Limpar Busca</a>
-                @endif
-            </form>
+                    @if (!empty($q))
+                        <a class="btn btn-sm btn-secondary ml-2" href="{{ route('sellers.index') }}">Limpar Busca</a>
+                    @endif
+                </form>
+            </div>
 
-            @if (in_array('sellers.create', $user_permissions) || Auth::user()->is_admin)
-                <a class="btn btn-primary" href="{{ route('sellers.create') }}">Cadastrar Vendedor</a>
-            @else
-                <button class="btn btn-primary" disabled title="Solicitar Acesso">Cadastrar Vendedor</button>
-            @endif
+            <div class="col-sm-3 d-flex justify-content-end">
+                @if (in_array('sellers.create', $user_permissions) || Auth::user()->is_admin)
+                    <a class="btn btn-primary w-80" href="{{ route('sellers.create') }}">Cadastrar Vendedor</a>
+                @else
+                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Vendedor</button>
+                @endif
+            </div>
         </div>
 
         <div class="card">
@@ -140,4 +144,12 @@
                 @endif
             </div>
         </main>
+    @endsection
+
+    @section('css')
+        <style>
+            .w-80 {
+                width: 80%;
+            }
+        </style>
     @endsection

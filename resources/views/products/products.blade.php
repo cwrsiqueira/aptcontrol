@@ -31,27 +31,30 @@
         @endif
 
         {{-- Cadastra produtos, Busca e Tabela Lista de Produtos Cadastrados --}}
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <form method="get" class="form-inline" action="{{ route('products.index') }}">
-                <div class="input-group">
-                    <input type="search" class="form-control" name="q" id="q" placeholder="Busca por Produto"
-                        value="{{ $q ?? '' }}">
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-default">
-                            <i class="fas fa-search"></i>
-                        </button>
+        <div class="row mb-3">
+            <div class="col-sm">
+                <form method="get" class="form-inline" action="{{ route('products.index') }}">
+                    <div class="input-group">
+                        <input type="search" class="form-control" name="q" id="q"
+                            placeholder="Busca por Produto" value="{{ $q ?? '' }}">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-default">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                @if (!empty($q))
-                    <a class="btn btn-sm btn-secondary ml-2" href="{{ route('products.index') }}">Limpar Busca</a>
+                    @if (!empty($q))
+                        <a class="btn btn-sm btn-secondary ml-2" href="{{ route('products.index') }}">Limpar Busca</a>
+                    @endif
+                </form>
+            </div>
+            <div class="col-sm-3 d-flex justify-content-end">
+                @if (in_array('products.create', $user_permissions) || Auth::user()->is_admin)
+                    <a class="btn btn-primary w-80" href="{{ route('products.create') }}">Cadastrar Produto</a>
+                @else
+                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Produto</button>
                 @endif
-            </form>
-
-            @if (in_array('products.create', $user_permissions) || Auth::user()->is_admin)
-                <a class="btn btn-primary" href="{{ route('products.create') }}">Cadastrar Produto</a>
-            @else
-                <button class="btn btn-primary" disabled title="Solicitar Acesso">Cadastrar Produto</button>
-            @endif
+            </div>
         </div>
 
         <div class="card bg-light">
@@ -115,4 +118,12 @@
             </div>
         </div>
     </main>
+@endsection
+
+@section('css')
+    <style>
+        .w-80 {
+            width: 80%;
+        }
+    </style>
 @endsection

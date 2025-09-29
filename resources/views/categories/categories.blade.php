@@ -36,12 +36,16 @@
             </div>
         @endif
 
-        <div class="d-flex justify-content-end align-items-center mb-3">
-            @if (in_array('categories.create', $user_permissions) || Auth::user()->is_admin)
-                <a class="btn btn-primary" href="{{ route('categories.create') }}">Cadastrar Categoria</a>
-            @else
-                <button class="btn btn-primary" disabled title="Solicitar Acesso">Cadastrar Categoria</button>
-            @endif
+        <div class="row d-flex justify-content-end align-items-center">
+            <div class="col-sm-3">
+                <div class="mb-3 text-right">
+                    @if (in_array('categories.create', $user_permissions) || Auth::user()->is_admin)
+                        <a class="btn btn-primary w-80" href="{{ route('categories.create') }}">Cadastrar Categoria</a>
+                    @else
+                        <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Categoria</button>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <div class="card bg-light">
@@ -97,4 +101,12 @@
             </div>
         </div>
     </main>
+@endsection
+
+@section('css')
+    <style>
+        .w-80 {
+            width: 80%;
+        }
+    </style>
 @endsection

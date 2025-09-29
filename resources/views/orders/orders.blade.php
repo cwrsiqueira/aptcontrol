@@ -56,11 +56,11 @@
                     <label class="form-check-label" for="complete_order">Baixados/cancelados</label>
                 </div>
             </div>
-            <div class="col-sm d-flex justify-content-end">
+            <div class="col-sm-3 d-flex justify-content-end">
                 @if (in_array('orders.create', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-primary" href="{{ route('orders.create') }}">Cadastrar Pedido</a>
+                    <a class="btn btn-primary w-80" href="{{ route('orders.create') }}">Cadastrar Pedido</a>
                 @else
-                    <button class="btn btn-primary" disabled title="Solicitar Acesso">Cadastrar Pedido</button>
+                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Pedido</button>
                 @endif
             </div>
         </div>
@@ -149,6 +149,10 @@
     <style>
         .cursor-help {
             cursor: help;
+        }
+
+        .w-80 {
+            width: 80%;
         }
     </style>
 @endsection

@@ -360,10 +360,10 @@ class ProductController extends Controller
             return redirect()->route('products.index')->withErrors($message);
         }
 
-        $products = Order_product::where('product_id', $id)->get();
+        $order_products = Order_product::where('product_id', $id)->get();
         $stockmovements = Stockmovement::where('product_id', $id)->get();
 
-        if (count($products) > 0) {
+        if (count($order_products) > 0) {
             $message = [
                 'cannot_exclude' => 'Produto já possui pedidos vinculados e não pode mais ser excluído!',
             ];
