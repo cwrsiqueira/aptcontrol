@@ -8,13 +8,10 @@
         <h2>Pedidos</h2>
 
         {{-- Mostra errors --}}
-        @if ($errors->has('cannot_exclude') || $errors->has('no-access'))
+        @if ($errors->any())
             <div class="alert alert-danger alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
-                <h5>
-                    <i class="icon fas fa-ban"></i>
-                    Erro!!!
-                </h5>
+                <i class="icon fas fa-ban"></i> Erro!
                 <ul>
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>

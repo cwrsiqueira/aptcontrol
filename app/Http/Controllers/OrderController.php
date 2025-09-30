@@ -274,7 +274,7 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
-        $orders = Order_product::where('order_id', $order->id)->get();
+        $orders = Order_product::where('order_id', $order->order_number)->get();
 
         if (count($orders) > 0) {
             $message = [

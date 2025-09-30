@@ -276,12 +276,12 @@ class ProductController extends Controller
 
         if (count($order_products) > 0) {
             $message = [
-                'cannot_exclude' => 'Produto já possui pedidos vinculados e não pode mais ser excluído!',
+                'cannot_exclude' => 'Produto possui pedidos vinculados e não pode ser excluído!',
             ];
             return redirect()->route('products.index')->withErrors($message);
         } elseif (count($stockmovements) > 0) {
             $message = [
-                'cannot_exclude' => 'Produto já possui movimentação e não pode ser excluído!',
+                'cannot_exclude' => 'Produto possui movimentação e não pode ser excluído!',
             ];
             return redirect()->route('products.index')->withErrors($message);
         } else {

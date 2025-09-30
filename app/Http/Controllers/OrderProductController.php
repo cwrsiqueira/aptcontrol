@@ -56,7 +56,11 @@ class OrderProductController extends Controller
             ->groupBy('product_id')
             ->get();
 
-        return view('order_products.order_products', compact('user_permissions', 'order', 'order_products', 'saldo_produtos'));
+        $delivery_products = Order_product::where('order_id', $order->order_number)
+            ->where('quant', '<', 0)
+            ->count();
+
+        return view('order_products.order_products', compact('user_permissions', 'order', 'order_products', 'saldo_produtos', 'delivery_products'));
     }
 
     public function create(Request $request)
@@ -90,7 +94,6 @@ class OrderProductController extends Controller
             "product_name",
             "quant",
             "delivery_date",
-            "favorite_delivery",
             "order",
         ]);
 
@@ -102,7 +105,6 @@ class OrderProductController extends Controller
                 "product_name" => ['required'],
                 "quant" => ['required'],
                 "delivery_date" => ['required'],
-                "favorite_delivery" => ['required'],
             ],
             [],
             [
@@ -135,6 +137,15 @@ class OrderProductController extends Controller
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
             return redirect()->route('orders.index')->withErrors($message);
+        }
+
+        $delivery_product = Order_product::where('order_id', $order_product->order_id)
+            ->where('quant', '<', 0)
+            ->count();
+
+        if ($delivery_product > 0) {
+            $message = ['has-order' => 'Produto do pedido possui entrega registrada e não pode ser editado!'];
+            return redirect()->route('order_products.index', ['order' => $order_product->order->id])->withErrors($message);
         }
 
         $products = Product::all();
@@ -222,7 +233,8 @@ class OrderProductController extends Controller
                 ->count();
 
             if ($delivery_product > 0) {
-                return redirect()->route('order_products.index', ['order' => $order_product->order->id])->with('error', 'Produto pedido já possui entrega registrada e não pode ser excluído!');
+                $message = ['has-order' => 'Produto do pedido possui entrega registrada e não pode ser excluído!'];
+                return redirect()->route('order_products.index', ['order' => $order_product->order->id])->withErrors($message);
             }
         }
 

@@ -8,17 +8,14 @@
         <h2>Vendedores</h2>
 
         {{-- Alerts de erro/sucesso --}}
-        @if ($errors->has('cannot_exclude') || $errors->has('no-access'))
+        @if ($errors->any())
             <div class="alert alert-danger alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
-                <h5><i class="icon fas fa-ban"></i> Erro!!!</h5>
-                <ul class="mb-0">
-                    @if ($errors->has('cannot_exclude'))
-                        <li>{{ $errors->first('cannot_exclude') }}</li>
-                    @endif
-                    @if ($errors->has('no-access'))
-                        <li>{{ $errors->first('no-access') }}</li>
-                    @endif
+                <i class="icon fas fa-ban"></i> Erro!
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
                 </ul>
             </div>
         @endif
