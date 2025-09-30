@@ -27,11 +27,6 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // PERMISSÕES MENU CATEGORIAS DE CLIENTES
-        Gate::define('menu-categorias', function ($user) {
-            return $this->getPermissions($user, 'menu-categorias');
-        });
-
         // PERMISSÕES MENU PRODUTOS
         Gate::define('menu-produtos', function ($user) {
             return $this->getPermissions($user, 'menu-produtos');
@@ -42,19 +37,29 @@ class AuthServiceProvider extends ServiceProvider
             return $this->getPermissions($user, 'menu-clientes');
         });
 
-        // PERMISSÕES MENU PEDIDOS
-        Gate::define('menu-pedidos', function ($user) {
-            return $this->getPermissions($user, 'menu-pedidos');
-        });
-
-        // PERMISSÕES MENU RELATORIOS
-        Gate::define('menu-relatorios', function ($user) {
-            return $this->getPermissions($user, 'menu-relatorios');
+        // PERMISSÕES MENU CATEGORIAS DE CLIENTES
+        Gate::define('menu-categorias', function ($user) {
+            return $this->getPermissions($user, 'menu-categorias');
         });
 
         // PERMISSÕES MENU VENDEDORES
         Gate::define('menu-vendedores', function ($user) {
             return $this->getPermissions($user, 'menu-vendedores');
+        });
+
+        // PERMISSÕES MENU PEDIDOS
+        Gate::define('menu-pedidos', function ($user) {
+            return $this->getPermissions($user, 'menu-pedidos');
+        });
+
+        // PERMISSÕES MENU PEDIDOS
+        Gate::define('menu-produtos-pedidos', function ($user) {
+            return $this->getPermissions($user, 'menu-produtos-pedidos');
+        });
+
+        // PERMISSÕES MENU RELATORIOS
+        Gate::define('menu-relatorios', function ($user) {
+            return $this->getPermissions($user, 'menu-relatorios');
         });
 
         // PERMISSÕES ADMINISTRADOR

@@ -107,6 +107,7 @@
                             <tr>
                                 <th style="width:60px;">#</th>
                                 <th>Produto</th>
+                                <th class="text-right">Quantidade</th>
                                 <th class="text-right">Saldo</th>
                                 <th class="text-right">Entrega</th>
                                 <th class="text-right">Ações</th>
@@ -118,6 +119,7 @@
                                     <tr>
                                         <td>{{ $item->id }}</td>
                                         <td>{{ $item->product->name }}</td>
+                                        <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                         <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                         <td class="text-right d-flex flex-column align-items-end">
                                             {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
