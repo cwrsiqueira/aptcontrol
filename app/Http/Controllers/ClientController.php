@@ -66,104 +66,6 @@ class ClientController extends Controller
         ]);
     }
 
-    public function cc_client(Request $request, $id)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('clients.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()
-                ->route('clients.index')
-                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
-        }
-
-        // Filtro por produto (ids). Padrão: todos.
-        $por_produto = $request->input('por_produto');
-        if (empty($por_produto)) {
-            $por_produto = Product::pluck('id')->all();
-        }
-
-        $client = Client::findOrFail($id);
-        $complete_order = $request->input('entregas', 0);
-
-        // Linhas dos pedidos em aberto deste cliente, filtradas pelos produtos selecionados
-        $data = Order_product::query()
-            ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
-            ->join('products', 'products.id',         '=', 'order_products.product_id')
-            ->where('orders.client_id', $id)
-            ->where('orders.complete_order', $complete_order)
-            ->whereIn('order_products.product_id', $por_produto)
-            ->orderBy('order_products.delivery_date')
-            ->select([
-                'order_products.*',
-                'orders.order_number as order_id',
-                'orders.order_date as order_date',
-                'orders.id as orders_order_id',
-                'products.name as product_name',
-            ])
-            ->get();
-
-        // Saldo acumulado por pedido (mesma lógica do código original)
-        $acc = [];
-        foreach ($data as $k => $row) {
-            $product = $row->product_id;
-            $acc[$product] = ($acc[$product] ?? 0) + $row->quant;
-            $data[$k]->saldo = ($acc[$product] > $row->quant) ? $row->quant : $acc[$product];
-        }
-
-        // Se NÃO marcar "entregas realizadas", filtra para mostrar só previstas (saldo > 0 e data válida)
-        if (!$request->filled('entregas')) {
-            $data = $data
-                ->where('saldo', '>', 0)
-                ->where('delivery_date', '>', '1970-01-01');
-        }
-
-        // Pedidos efetivamente presentes após os filtros (para compor os totais por produto)
-        $orderNumbersUsados = $data->pluck('order_id')->unique()->values();
-
-        // Totais por produto nos pedidos presentes em $data (mantém comportamento do original)
-        $totais = Order_product::query()
-            ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
-            ->join('products', 'products.id',         '=', 'order_products.product_id')
-            ->whereIn('order_products.order_id', $orderNumbersUsados)
-            ->where('orders.complete_order', $complete_order)
-            ->groupBy('products.id', 'products.name')
-            ->select([
-                'products.id   as product_id',
-                'products.name as product_name',
-                DB::raw('SUM(order_products.quant) as quant_total'),
-            ])
-            ->get();
-
-        // Estrutura esperada pela view: ['Nome do produto' => ['id' => ..., 'qt' => ...]]
-        $product_total = [];
-        foreach ($totais as $row) {
-            $product_total[$row->product_name] = [
-                'id' => $row->product_id,
-                'qt' => $row->quant_total,
-            ];
-        }
-
-        return view('cc.cc_client', compact(
-            'data',
-            'client',
-            'product_total',
-            'user_permissions',
-        ));
-    }
-
-    public function toggleFavorite($clientId)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
-        }
-
-        $client = \App\Client::findOrFail($clientId);
-        $client->is_favorite = !$client->is_favorite;
-        $client->save();
-
-        return response()->json(['ok' => true, 'is_favorite' => (bool) $client->is_favorite]);
-    }
-
     /**
      * Show the form for creating a new resource.
      *
@@ -240,7 +142,7 @@ class ClientController extends Controller
         $user_permissions = Helper::get_permissions();
         if (!in_array('clients.view', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('home')->withErrors($message);
+            return redirect()->route('clients.index')->withErrors($message);
         }
 
         return view('clients.clients_view', [
@@ -359,5 +261,103 @@ class ClientController extends Controller
 
             return redirect()->route('clients.index')->with('success', 'Excluído com sucesso!');
         }
+    }
+
+    public function cc_client(Request $request, $id)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.cc', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
+        // Filtro por produto (ids). Padrão: todos.
+        $por_produto = $request->input('por_produto');
+        if (empty($por_produto)) {
+            $por_produto = Product::pluck('id')->all();
+        }
+
+        $client = Client::findOrFail($id);
+        $complete_order = $request->input('entregas', 0);
+
+        // Linhas dos pedidos em aberto deste cliente, filtradas pelos produtos selecionados
+        $data = Order_product::query()
+            ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
+            ->join('products', 'products.id',         '=', 'order_products.product_id')
+            ->where('orders.client_id', $id)
+            ->where('orders.complete_order', $complete_order)
+            ->whereIn('order_products.product_id', $por_produto)
+            ->orderBy('order_products.delivery_date')
+            ->select([
+                'order_products.*',
+                'orders.order_number as order_id',
+                'orders.order_date as order_date',
+                'orders.id as orders_order_id',
+                'products.name as product_name',
+            ])
+            ->get();
+
+        // Saldo acumulado por pedido (mesma lógica do código original)
+        $acc = [];
+        foreach ($data as $k => $row) {
+            $product = $row->product_id;
+            $acc[$product] = ($acc[$product] ?? 0) + $row->quant;
+            $data[$k]->saldo = ($acc[$product] > $row->quant) ? $row->quant : $acc[$product];
+        }
+
+        // Se NÃO marcar "entregas realizadas", filtra para mostrar só previstas (saldo > 0 e data válida)
+        if (!$request->filled('entregas')) {
+            $data = $data
+                ->where('saldo', '>', 0)
+                ->where('delivery_date', '>', '1970-01-01');
+        }
+
+        // Pedidos efetivamente presentes após os filtros (para compor os totais por produto)
+        $orderNumbersUsados = $data->pluck('order_id')->unique()->values();
+
+        // Totais por produto nos pedidos presentes em $data (mantém comportamento do original)
+        $totais = Order_product::query()
+            ->join('orders',   'orders.order_number', '=', 'order_products.order_id')
+            ->join('products', 'products.id',         '=', 'order_products.product_id')
+            ->whereIn('order_products.order_id', $orderNumbersUsados)
+            ->where('orders.complete_order', $complete_order)
+            ->groupBy('products.id', 'products.name')
+            ->select([
+                'products.id   as product_id',
+                'products.name as product_name',
+                DB::raw('SUM(order_products.quant) as quant_total'),
+            ])
+            ->get();
+
+        // Estrutura esperada pela view: ['Nome do produto' => ['id' => ..., 'qt' => ...]]
+        $product_total = [];
+        foreach ($totais as $row) {
+            $product_total[$row->product_name] = [
+                'id' => $row->product_id,
+                'qt' => $row->quant_total,
+            ];
+        }
+
+        return view('cc.cc_client', compact(
+            'data',
+            'client',
+            'product_total',
+            'user_permissions',
+        ));
+    }
+
+    public function toggleFavorite($clientId)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('clients.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('clients.index')->withErrors($message);
+        }
+
+        $client = \App\Client::findOrFail($clientId);
+        $client->is_favorite = !$client->is_favorite;
+        $client->save();
+
+        return response()->json(['ok' => true, 'is_favorite' => (bool) $client->is_favorite]);
     }
 }

@@ -33,7 +33,6 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $user_permissions = Helper::get_permissions();
-
         if (!in_array('menu-produtos', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('home')->withErrors($message);
@@ -58,96 +57,6 @@ class ProductController extends Controller
             'products' => $products,
             'q' => $q
         ]);
-    }
-
-    public function cc_product(Request $request, $id)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()
-                ->route('products.index')
-                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
-        }
-
-        // Filtro por categoria (checkboxes)
-        $cats = (array) $request->input('por_categoria', []);
-        // (opcional) normalizar para int: $cats = array_map('intval', $cats);
-
-        $product = Product::findOrFail($id);
-        $complete_order = $request->input('entregas', 0);
-
-        // Base: pedidos em aberto do produto
-        $data = Order_product::query()
-            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
-            ->join('clients', 'clients.id',         '=', 'orders.client_id')
-            ->leftJoin('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
-            ->leftJoin('sellers',            'sellers.id',            '=', 'orders.seller_id')
-            ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', $complete_order)
-            ->when(!empty($cats), fn($q) => $q->whereIn('clients.id_categoria', $cats))
-            ->orderBy('order_products.delivery_date')
-            ->select([
-                'order_products.*',                   // inclui id, product_id, quant, delivery_date, favorite_delivery, withdraw...
-                'orders.order_date',
-                'orders.order_number as order_id',
-                'orders.seller_id',
-                'clients.id as client_id',
-                'clients.name as client_name',
-                'clients.id_categoria as client_id_categoria',
-                'clients.is_favorite as client_favorite',
-                'clients_categories.name as category_name',
-                'sellers.name as seller_name',
-            ])
-            ->get();
-
-        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
-        $acc = [];
-        foreach ($data as $k => $row) {
-            $pedido = $row->order_id;
-            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
-            $data[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
-        }
-
-        // Filtra após calcular saldo (preserva comportamento do original)
-        $data = $data
-            ->where('saldo', '>', 0)
-            ->where('delivery_date', '>', '1970-01-01');
-
-        // Totais por categoria (para montar os checkboxes com badges)
-        $quant_por_categoria = Order_product::query()
-            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
-            ->join('clients', 'clients.id',          '=', 'orders.client_id')
-            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
-            ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', $complete_order)
-            ->groupBy('clients_categories.id', 'clients_categories.name')
-            ->select([
-                DB::raw('SUM(order_products.quant) as saldo'),
-                'clients_categories.id',
-                'clients_categories.name',
-            ])
-            ->get();
-
-        // Mantém seu cálculo existente
-        $day_delivery_calc = Helper::day_delivery_calc($id);
-        $quant_total = $day_delivery_calc['quant_total'];
-        $delivery_in = $day_delivery_calc['delivery_in'];
-
-        return view('cc.cc_product', [
-            'data'                => $data,
-            'product'             => $product,
-            'quant_total'         => $quant_total,
-            'delivery_in'         => $delivery_in,
-            'user_permissions'    => $user_permissions,
-            'quant_por_categoria' => $quant_por_categoria,
-        ]);
-    }
-
-    public function day_delivery_recalc($id_product)
-    {
-        Helper::day_delivery_recalc($id_product);
-        Helper::saveLog(Auth::user()->id, 'Alteração', $id_product, 'Recalc Data Entrega', 'Produtos');
-        return redirect()->route('cc_product', ['id' => $id_product]);
     }
 
     /**
@@ -235,7 +144,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
         if (!in_array('products.view', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('home')->withErrors($message);
+            return redirect()->route('products.index')->withErrors($message);
         }
 
         return view('products.products_view', [
@@ -255,10 +164,8 @@ class ProductController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('products.update', $user_permissions) && !Auth::user()->is_admin) {
-            $action = 'Não Autorizado';
-        }
-        if (!in_array('products.stock', $user_permissions) && !Auth::user()->is_admin) {
-            $action = 'Não Autorizado';
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('products.index')->withErrors($message);
         }
 
         return view('products.products_edit', [
@@ -277,6 +184,12 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('products.index')->withErrors($message);
+        }
+
         if (!empty($request->input('add_stock'))) {
             $data = $request->only([
                 'name',
@@ -354,9 +267,7 @@ class ProductController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('products.delete', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('products.index')->withErrors($message);
         }
 
@@ -379,5 +290,87 @@ class ProductController extends Controller
             Helper::saveLog(Auth::user()->id, 'Deleção', $id, $product->name, 'Produtos');
             return redirect()->route('products.index')->with('success', 'Excluído com sucesso!');
         }
+    }
+
+    public function cc_product(Request $request, $id)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('products.index')->withErrors($message);
+        }
+
+        // Filtro por categoria (checkboxes)
+        $cats = (array) $request->input('por_categoria', []);
+        // (opcional) normalizar para int: $cats = array_map('intval', $cats);
+
+        $product = Product::findOrFail($id);
+        $complete_order = $request->input('entregas', 0);
+
+        // Base: pedidos em aberto do produto
+        $data = Order_product::query()
+            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',         '=', 'orders.client_id')
+            ->leftJoin('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->leftJoin('sellers',            'sellers.id',            '=', 'orders.seller_id')
+            ->where('order_products.product_id', $id)
+            ->where('orders.complete_order', $complete_order)
+            ->when(!empty($cats), fn($q) => $q->whereIn('clients.id_categoria', $cats))
+            ->orderBy('order_products.delivery_date')
+            ->select([
+                'order_products.*',                   // inclui id, product_id, quant, delivery_date, favorite_delivery, withdraw...
+                'orders.order_date',
+                'orders.order_number as order_id',
+                'orders.seller_id',
+                'clients.id as client_id',
+                'clients.name as client_name',
+                'clients.id_categoria as client_id_categoria',
+                'clients.is_favorite as client_favorite',
+                'clients_categories.name as category_name',
+                'sellers.name as seller_name',
+            ])
+            ->get();
+
+        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
+        $acc = [];
+        foreach ($data as $k => $row) {
+            $pedido = $row->order_id;
+            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
+            $data[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
+        }
+
+        // Filtra após calcular saldo (preserva comportamento do original)
+        $data = $data
+            ->where('saldo', '>', 0)
+            ->where('delivery_date', '>', '1970-01-01');
+
+        // Totais por categoria (para montar os checkboxes com badges)
+        $quant_por_categoria = Order_product::query()
+            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
+            ->join('clients', 'clients.id',          '=', 'orders.client_id')
+            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
+            ->where('order_products.product_id', $id)
+            ->where('orders.complete_order', $complete_order)
+            ->groupBy('clients_categories.id', 'clients_categories.name')
+            ->select([
+                DB::raw('SUM(order_products.quant) as saldo'),
+                'clients_categories.id',
+                'clients_categories.name',
+            ])
+            ->get();
+
+        // Mantém seu cálculo existente
+        $day_delivery_calc = Helper::day_delivery_calc($id);
+        $quant_total = $day_delivery_calc['quant_total'];
+        $delivery_in = $day_delivery_calc['delivery_in'];
+
+        return view('cc.cc_product', [
+            'data'                => $data,
+            'product'             => $product,
+            'quant_total'         => $quant_total,
+            'delivery_in'         => $delivery_in,
+            'user_permissions'    => $user_permissions,
+            'quant_por_categoria' => $quant_por_categoria,
+        ]);
     }
 }

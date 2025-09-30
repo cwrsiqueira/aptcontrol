@@ -121,6 +121,7 @@ class OrderController extends Controller
             "order_date",
             "client_name",
             "order_number",
+            "withdraw",
             "seller_name",
         ]);
 
@@ -130,12 +131,13 @@ class OrderController extends Controller
                 "order_date" => ['required'],
                 "client_name" => ['required'],
                 "order_number" => ['required', 'unique:orders'],
+                'withdraw' => ['required'],
                 'seller_name' => ['required'],
             ],
             [],
             [
                 'client_name' => 'Cliente',
-                'seller_name' => 'Vendedor'
+                'seller_name' => 'Vendedor',
             ]
         )->validate();
 
@@ -147,7 +149,7 @@ class OrderController extends Controller
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
         $order->payment = 'Aberto';
-        $order->withdraw = 'entregar';
+        $order->withdraw = $data['withdraw'];
         $order->seller_id = $seller->id;
         $order->save();
 
@@ -291,9 +293,8 @@ class OrderController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('orders.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()
-                ->route('orders.index')
-                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('orders.index')->withErrors($message);
         }
 
         $order  = Order::findOrFail($id);
@@ -388,71 +389,13 @@ class OrderController extends Controller
         return $seq_order_number;
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function orders_conclude()
-    {
-        if (!empty($_GET['order'])) {
-            $id = $_GET['order'];
-        }
-
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.conclude', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
-        }
-
-        $order = Order::addSelect([
-            'name_client' => Client::select('name')->whereColumn('id', 'orders.client_id'),
-            'seller_name' => Seller::select('name')->whereColumn('sellers.id', 'orders.seller_id')
-        ])
-            ->find($id);
-
-        $saldo_produtos = Order_product::where('order_id', $order->order_number)
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-            ->addSelect(['product_id' => Product::select('id')->whereColumn('id', 'order_products.product_id')])
-            ->addSelect(DB::raw("sum(order_products.quant) as saldo"))
-            ->groupBy('product_id')
-            ->orderBy('product_id')
-            ->orderBy('delivery_date')
-            ->get();
-
-        $order_products = Order_product::where('order_id', $order->order_number)
-            ->addSelect(['product_name' => Product::select('name')->whereColumn('id', 'order_products.product_id')])
-            ->orderBy('product_id')
-            ->orderBy('delivery_date')
-            ->get();
-
-        $user_permissions = Helper::get_permissions();
-        $product = array();
-        $products = json_decode($saldo_produtos);
-        foreach ($products as $item) {
-            if ($item->saldo != 0) {
-                $product[$item->product_id] = $item->product_name;
-            }
-        }
-
-        return view('orders.orders_conclude', [
-            'order' => $order,
-            'order_products' => $order_products,
-            'user_permissions' => $user_permissions,
-            'product' => $product,
-            'saldo_produtos' => $saldo_produtos
-        ]);
-    }
-
     public function toggleDateFavorite($orderId)
     {
         $user_permissions = Helper::get_permissions();
         // Mantendo mesma permissão '10' da tela C/C Produto
-        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('orders.index')->withErrors($message);
         }
 
         $order = \App\Order::findOrFail($orderId);
@@ -466,8 +409,9 @@ class OrderController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         // mesma permissão que você já usa na tela C/C Produto
-        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return response()->json(['ok' => false, 'msg' => 'Sem permissão.'], 403);
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('orders.index')->withErrors($message);
         }
 
         $op = Order_product::findOrFail($orderProductId);
@@ -475,152 +419,5 @@ class OrderController extends Controller
         $op->save();
 
         return response()->json(['ok' => true, 'favorite_delivery' => (bool) $op->favorite_delivery, 'id' => $orderProductId]);
-    }
-
-    public function add_line(Request $request)
-    {
-        $data = $request->only([
-            'id_order',
-            "order_id",
-            "product_id",
-            "quant",
-            "delivery_date",
-            "fixar_data",
-        ]);
-
-        Validator::make(
-            $data,
-            [
-                "id_order" => ['required'],
-                "order_id" => ['required', 'string'],
-                "product_id" => ['required'],
-                "quant" => ['required'],
-                "delivery_date" => ['required', 'date'],
-            ]
-        )->validate();
-
-        $data['quant'] = str_replace('.', '', $data['quant']);
-
-        $add_line = new Order_product();
-        $add_line->order_id = $data['order_id'];
-        $add_line->product_id = $data['product_id'];
-        $add_line->quant = $data['quant'];
-        $add_line->unit_price = 0;
-        $add_line->total_price = 0;
-        $add_line->delivery_date = $data['delivery_date'];
-        $add_line->favorite_delivery = isset($data['fixar_data']) ? 1 : 0;
-        $add_line->save();
-
-        $total_order = Order::where('order_number', $add_line->order_id)->first();
-        $total_order->order_total = 0;
-        $total_order->save();
-
-        Helper::saveLog(Auth::user()->id, 'Alteração', $add_line->id, $add_line->order_id, 'Pedidos');
-
-        return redirect()->route('orders.edit', ['order' => $data['id_order']]);
-    }
-
-    /**
-     * Atualiza uma linha (item) de um pedido e recalcula o total da ordem.
-     *
-     * Este método:
-     * 1. Valida os dados enviados do formulário.
-     * 2. Converte os valores numéricos do formato brasileiro (1.234,56) para decimal.
-     * 3. Atualiza as informações de um item específico na tabela `order_products`.
-     * 4. Recalcula o valor total da ordem, somando todos os `total_price` de
-     *    `order_products` vinculados a esta ordem (`order_products.order_id = orders.order_number`).
-     * 5. Atualiza o campo `order_total` na tabela `orders` com o valor recalculado.
-     * 6. Registra a alteração no log do sistema.
-     *
-     * @param  \Illuminate\Http\Request  $request  Dados da requisição contendo informações do item do pedido.
-     * @return \Illuminate\Http\RedirectResponse   Redireciona de volta para a tela de edição do pedido.
-     */
-    public function edit_line(Request $request)
-    {
-        if (!Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Acesso permitido somente para administradores!',
-            ];
-            return redirect()->route('orders.index')->with('error', 'Acesso permitido somente para administradores!');
-        }
-
-        // Coleta somente os campos necessários vindos do formulário
-        $data = $request->only([
-            'id',
-            'order_id',     // número da ordem (orders.order_number)
-            'id_order',     // id do item (order_products.id)
-            'product_id',   // produto selecionado
-            'quant',        // quantidade
-            'delivery_date', // data de entrega
-            'edit_fixar_data',
-        ]);
-
-        /**
-         * Validação dos campos obrigatórios
-         */
-        Validator::make($data, [
-            'id'            => 'required',
-            'order_id'      => 'required',
-            'id_order'      => 'required',
-            'product_id'    => 'required',
-            'quant'         => 'required',
-            'delivery_date' => 'required',
-        ])->validate();
-
-        /**
-         * Converte valores do formato brasileiro (1.234,56) para decimal
-         * - Primeiro remove os pontos dos milhares
-         * - Depois troca vírgula decimal por ponto
-         */
-        $data['quant']       = (float) str_replace(',', '.', str_replace('.', '', $data['quant']));
-
-        /**
-         * DB::transaction -> garante que todas as operações serão executadas juntas
-         * - Se algum passo falhar, nada será salvo (rollback)
-         */
-        DB::transaction(function () use ($data) {
-            /**
-             * 1) Atualiza a linha (item) da ordem na tabela order_products
-             */
-            $edit_line = Order_product::findOrFail($data['id']);
-            $edit_line->product_id    = $data['product_id'];
-            $edit_line->quant         = $data['quant'];
-            $edit_line->unit_price    = 0;
-            $edit_line->total_price   = 0;
-            $edit_line->delivery_date = $data['delivery_date'];
-            $edit_line->favorite_delivery = isset($data['edit_fixar_data']) ? 1 : 0;
-            $edit_line->save();
-
-            /**
-             * 4) Grava log da alteração (usuário, ação, id, etc.)
-             */
-            Helper::saveLog(Auth::user()->id, 'Alteração', $edit_line->id, $edit_line->order_id, 'Pedidos');
-        });
-
-        /**
-         * Redireciona de volta para a tela de edição da ordem
-         */
-        return redirect()->route('orders.edit', ['order' => $data['id_order']]);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function order_product_destroy(Order_product $order_product)
-    {
-        $id = $order_product->id;
-        $order_product = Order_product::find($id);
-        $order_number = $order_product->order_id;
-        $order = Order::where('order_number', $order_number)->first();
-        if ($order_product->quant > 0) {
-            $order->order_total = $order->order_total - $order_product->total_price;
-            $order->save();
-        }
-        $order_product->delete();
-        Helper::saveLog(Auth::user()->id, 'Alteração', $id, $order->id, 'Pedidos');
-        return redirect()->route('orders.edit', ['order' => $order->id]);
     }
 }

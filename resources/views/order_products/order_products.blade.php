@@ -12,6 +12,13 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                <i class="icon fas fa-check"></i> {{ session('error') }}
+            </div>
+        @endif
+
         {{-- Título + Voltar (compacto) --}}
         <div class="d-flex justify-content-between align-items-center page-header mb-2">
             <h2 class="page-title mb-0">Detalhes do Pedido</h2>

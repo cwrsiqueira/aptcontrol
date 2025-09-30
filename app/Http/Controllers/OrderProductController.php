@@ -216,6 +216,16 @@ class OrderProductController extends Controller
 
         $main_order_product = $request->input('main_order_product');
 
+        if (!$main_order_product) {
+            $delivery_product = Order_product::where('order_id', $order_product->order_id)
+                ->where('quant', '<', 0)
+                ->count();
+
+            if ($delivery_product > 0) {
+                return redirect()->route('order_products.index', ['order' => $order_product->order->id])->with('error', 'Produto pedido já possui entrega registrada e não pode ser excluído!');
+            }
+        }
+
         $order = Order::where('order_number', $order_product->order_id)->first();
         $order_product->delete();
         Helper::saveLog(Auth::user()->id, 'Deleção', $order_product->id, $order_product->order_number, 'Pedidos');
