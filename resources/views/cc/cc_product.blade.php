@@ -106,7 +106,7 @@
                             <th>Pedido</th>
                             <th>Cliente</th>
                             <th>Categoria</th>
-                            <th class="text-right">Quantidade</th>
+                            <th class="text-right">Saldo</th>
                             <th>Vendedor</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
@@ -129,7 +129,7 @@
                                     </a>
                                 </td>
                                 <td>{{ $item->category_name }}</td>
-                                <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
+                                <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td>{{ $item->seller_name ?? ' - ' }}</td>
                                 <td>
                                     <a href="#"

@@ -65,45 +65,27 @@
                             <th>Nome</th>
                             <th>Tipo de Contato</th>
                             <th>Contato</th>
-                            <th style="width: 220px">Ações</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($sellers as $seller)
                             <tr>
-                                <td>
-                                    <a href="{{ route('sellers.show', $seller->id) }}">{{ $seller->name }}</a>
+                                <td class="text-left">
+                                    <a class="ml-3"
+                                        href="{{ route('sellers.show', $seller->id) }}">{{ $seller->name }}</a>
                                 </td>
-                                <td>
-                                    @switch($seller->contact_type)
-                                        @case('whatsapp')
-                                            WhatsApp
-                                        @break
-
-                                        @case('telefone')
-                                            Telefone
-                                        @break
-
-                                        @case('email')
-                                            Email
-                                        @break
-
-                                        @case('instagram')
-                                            Instagram
-                                        @break
-
-                                        @default
-                                            Outro
-                                    @endswitch
+                                <td class="text-left">
+                                    {{ Str::ucfirst($seller->contact_type) }}
                                 </td>
                                 <td>{{ $seller->contact_value }}</td>
                                 <td>
                                     @if (in_array('sellers.cc', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-warning"
-                                            href="{{ route('cc_seller', $seller->id) }}">Entregas</a>
+                                            href="{{ route('cc_seller', $seller->id) }}">Ver entregas</a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-warning" disabled
-                                            title="Solicitar Acesso">Entregas</button>
+                                        <button class="btn btn-sm btn-outline-warning" disabled title="Solicitar Acesso">Ver
+                                            entregas</button>
                                     @endif
 
                                     @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
@@ -128,28 +110,28 @@
                                     @endif
                                 </td>
                             </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-muted">Nenhum registro encontrado.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                @if ($sellers->hasPages())
-                    <div class="card-footer">
-                        {{ $sellers->links() }}
-                    </div>
-                @endif
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-muted">Nenhum registro encontrado.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </main>
-    @endsection
 
-    @section('css')
-        <style>
-            .w-80 {
-                width: 80%;
-            }
-        </style>
-    @endsection
+            @if ($sellers->hasPages())
+                <div class="card-footer">
+                    {{ $sellers->links() }}
+                </div>
+            @endif
+        </div>
+    </main>
+@endsection
+
+@section('css')
+    <style>
+        .w-80 {
+            width: 80%;
+        }
+    </style>
+@endsection

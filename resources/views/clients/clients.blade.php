@@ -90,16 +90,17 @@
                         @forelse ($clients as $item)
                             <tr>
                                 <td>{{ $item->id }}</td>
-                                <td><a href="{{ route('clients.show', $item) }}">{{ $item->name }}</a></td>
+                                <td class="text-left"><a href="{{ route('clients.show', $item) }}">{{ $item->name }}</a>
+                                </td>
                                 <td>{{ $item->category->name }}</td>
                                 <td>{{ $item->contact }}</td>
                                 <td>
                                     @if (in_array('clients.cc', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-warning"
-                                            href="{{ route('cc_client', $item->id) }}">Entregas</a>
+                                            href="{{ route('cc_client', $item->id) }}">Ver entregas</a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-warning" disabled
-                                            title="Solicitar Acesso">Entregas</button>
+                                        <button class="btn btn-sm btn-outline-warning" disabled title="Solicitar Acesso">Ver
+                                            entregas</button>
                                     @endif
 
                                     @if (in_array('clients.update', $user_permissions) || Auth::user()->is_admin)

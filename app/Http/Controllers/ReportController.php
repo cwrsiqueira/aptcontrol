@@ -96,7 +96,8 @@ class ReportController extends Controller
     public function report_delivery(Request $request)
     {
         // 1) Entrada (com defaults simples)
-        $date      = $request->query('delivery_date');   // pode vir null
+        $date_ini      = $request->query('date_ini', date('Y-m-01 00:00:00'));   // pode vir null
+        $date_fin      = $request->query('date_fin', date('Y-m-t 23:59:59'));   // pode vir null
         $withdraw  = $request->query('withdraw', '%');   // mantém o LIKE '%'
         $productIds = $request->query('por_produto');    // array de IDs (opcional)
 
@@ -107,22 +108,11 @@ class ReportController extends Controller
             $productIds = Product::pluck('id')->all();
         }
 
-        // Se não vier data, devolve view “zerada” (coerente com seu código original)
-        if (empty($date)) {
-            return view('reports.reports_delivery', [
-                'orders'        => collect(),  // coleção vazia
-                'date'          => null,
-                'product_total' => [],
-            ]);
-        }
-
         // 2) Query principal (enxuta e performática)
         $items = Order_product::query()
             ->with([
                 'product:id,name',
-                // orders.order_number é a owner key
                 'order:order_number,client_id,seller_id,complete_order,withdraw,order_date',
-                // traga id_categoria para permitir order.client->category
                 'order.client:id,id_categoria,name,full_address,contact',
                 'order.client.category:id,name',
                 'order.seller:id,name',
@@ -133,7 +123,8 @@ class ReportController extends Controller
             ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
             ->where('o.complete_order', 0)
             ->when($withdraw !== '%', fn($q) => $q->where('o.withdraw', 'LIKE', $withdraw))
-            ->whereDate('order_products.delivery_date', '<=', $date)
+            ->whereDate('order_products.delivery_date', '>=', $date_ini . " 00:00:00")
+            ->whereDate('order_products.delivery_date', '<=', $date_fin . " 23:59:59")
             ->whereIn('order_products.product_id', $productIds)
             ->orderBy('order_products.delivery_date')
             ->select('order_products.*') // evita colunas duplicadas do join
@@ -141,23 +132,22 @@ class ReportController extends Controller
 
         // 3) Cálculo do saldo por (product_id, order_id), mantendo sua regra
         //    - acumula quant por chave e define saldo = min(acumulado, quant da linha)
-        $acumulado = [];
-        $orders = $items->map(function ($row) use (&$acumulado) {
-            $key = $row->product_id . '|' . $row->order_id; // order_id aqui é order_number
-            $acumulado[$key] = ($acumulado[$key] ?? 0) + (float) $row->quant;
+        $acc = [];
+        foreach ($items as $k => $row) {
+            $product = $row->product_id;
+            $acc[$product] = ($acc[$product] ?? 0) + $row->quant;
+            $items[$k]->saldo = ($acc[$product] > $row->quant) ? $row->quant : $acc[$product];
+        }
 
-            $row->saldo = $acumulado[$key] > (float) $row->quant
-                ? (float) $row->quant
-                : (float) $acumulado[$key];
-
-            return $row;
-        })
-            ->where('saldo', '>', 0)
-            ->where('delivery_date', '>', '1970-01-01')
-            ->values();
+        // Se NÃO marcar "entregas realizadas", filtra para mostrar só previstas (saldo > 0 e data válida)
+        if (!$request->filled('entregas')) {
+            $items = $items
+                ->where('saldo', '>', 0)
+                ->where('delivery_date', '>', '1970-01-01');
+        }
 
         // 4) Totais por produto (nome → id + soma de saldo)
-        $product_total = $orders
+        $product_total = $items
             ->groupBy(fn($r) => optional($r->product)->name ?? '—')
             ->map(function ($group) {
                 $first = $group->first();
@@ -170,9 +160,10 @@ class ReportController extends Controller
 
         // 5) View
         return view('reports.reports_delivery', [
-            'orders'        => $orders,
-            'date'          => $date,
-            'product_total' => $product_total,
+            'orders'            => $items,
+            'date_ini'          => $date_ini,
+            'date_fin'          => $date_fin,
+            'product_total'     => $product_total,
         ]);
     }
 

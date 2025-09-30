@@ -17,19 +17,24 @@
                     </div>
                     <div class="card-body">
                         <form action="{{ route('report_delivery') }}" method="get">
-                            <div class="form-group">
-                                <label for="delivery_date" class="mb-1">Selecione a data</label>
-                                <div class="input-group">
-                                    <input class="form-control" type="date" name="delivery_date" id="delivery_date"
-                                        value="{{ date('Y-m-d') }}">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-secondary" type="submit">
-                                            <i class="fas fa-search mr-1"></i> Buscar
-                                        </button>
-                                    </div>
+                            <div class="row">
+                                <div class="form-group mr-3">
+                                    <label for="date_ini" class="mb-1">Data inicial</label>
+                                    <input class="form-control" type="date" name="date_ini" id="date_ini"
+                                        value="{{ date('Y-m-01') }}">
+                                </div>
+                                <div class="form-group mr-3">
+                                    <label for="date_fin" class="mb-1">Data final</label>
+                                    <input class="form-control" type="date" name="date_fin" id="date_fin"
+                                        value="{{ date('Y-m-t') }}">
+                                </div>
+                                <div class="form-group d-flex align-items-center mt-4">
+                                    <button class="btn btn-secondary" type="submit">
+                                        <i class="fas fa-search mr-1"></i> Buscar
+                                    </button>
                                 </div>
                             </div>
-                            <small class="text-muted">Gera a lista de entregas pendentes até o dia selecionado.</small>
+                            <small class="text-muted">Gera a lista de entregas pendentes no período selecionado.</small>
                         </form>
                     </div>
                 </div>

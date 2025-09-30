@@ -95,7 +95,6 @@
                             <th>Cliente</th>
                             <th>Categoria</th>
                             <th>Produto</th>
-                            <th class="text-right">Quant</th>
                             <th class="text-right">Saldo</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
@@ -120,7 +119,6 @@
                                 <td>{{ $item->order->client->name ?? ' - ' }}</td>
                                 <td>{{ $item->order->client->category->name ?? ' - ' }}</td>
                                 <td>{{ $item->product->name }}</td>
-                                <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td class="d-flex flex-column">{{ date('d/m/Y', strtotime($item->delivery_date)) }}
                                     <span class="badge badge-danger @if (!$item->favorite_delivery) d-none @endif"

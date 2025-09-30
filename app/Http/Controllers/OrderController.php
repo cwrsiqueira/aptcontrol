@@ -321,10 +321,11 @@ class OrderController extends Controller
             ->get();
 
         // Saldo acumulado por pedido (mesma lógica do original)
-        $acc = 0;
+        $acc = [];
         foreach ($data as $k => $row) {
-            $acc += $row->quant;
-            $data[$k]->saldo = $acc;
+            $product = $row->product_id;
+            $acc[$product] = ($acc[$product] ?? 0) + $row->quant;
+            $data[$k]->saldo = ($acc[$product] > $row->quant) ? $row->quant : $acc[$product];
         }
 
         // Se NÃO marcar "entregas realizadas", mostra somente previstas

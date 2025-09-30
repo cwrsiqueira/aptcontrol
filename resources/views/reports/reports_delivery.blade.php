@@ -33,7 +33,6 @@
                 <div class="card card-lift mb-3">
                     <div class="card-header">
                         <h4 class="mb-0 d-flex align-items-center">
-                            <i class="fas fa-arrow-left less-date mr-3" style="font-size:20px;"></i>
                             <span class="flex-grow-1 text-center" style="letter-spacing:.2px">
                                 @if (!empty($date))
                                     {{ date('d/m/Y', strtotime($date ?? $date_ini . '/' . $date_fin)) }}
@@ -41,69 +40,66 @@
                                     {{ date('d/m/Y', strtotime($date_ini)) }} a {{ date('d/m/Y', strtotime($date_fin)) }}
                                 @endif
                             </span>
-                            <i class="fas fa-arrow-right plus-date ml-3" style="font-size:20px;"></i>
                         </h4>
                     </div>
 
-                    @if (!empty($date))
-                        <form action="{{ route('report_delivery') }}" method="get">
-                        @else
-                            <form action="{{ route('report_delivery_byPeriod') }}" method="get">
-                    @endif
 
-                    <div class="card-body">
-                        {{-- FILTROS --}}
-                        <div class="form-group mb-2">
-                            <label class="mb-1">Filtrar por Tipo de Material:</label>
-                            <div class="row">
-                                @foreach ($product_total as $key => $value)
-                                    <div class="col-md-6 mb-2">
-                                        <label class="mb-0 d-flex align-items-center">
-                                            <input class="mr-2" type="checkbox" name="por_produto[]"
-                                                value="{{ $value['id'] }}"
-                                                @if (!empty($_GET['por_produto']) && in_array($value['id'], $_GET['por_produto'])) checked @endif>
-                                            <span class="text-truncate" title="{{ $key }}">Total de
-                                                {{ $key }}</span>
-                                            <span
-                                                class="ml-2 badge badge-light">{{ number_format($value['qt'], 0, '', '.') }}</span>
-                                        </label>
-                                    </div>
-                                @endforeach
+                    <form action="{{ route('report_delivery') }}" method="get">
+
+                        <div class="card-body">
+                            {{-- FILTROS --}}
+                            <div class="form-group mb-2">
+                                <label class="mb-1">Filtrar por Tipo de Material:</label>
+                                <div class="row">
+                                    @foreach ($product_total as $key => $value)
+                                        <div class="col-md-6 mb-2">
+                                            <label class="mb-0 d-flex align-items-center">
+                                                <input class="mr-2" type="checkbox" name="por_produto[]"
+                                                    value="{{ $value['id'] }}"
+                                                    @if (!empty($_GET['por_produto']) && in_array($value['id'], $_GET['por_produto'])) checked @endif>
+                                                <span class="text-truncate" title="{{ $key }}">Total de
+                                                    {{ $key }}</span>
+                                                <span
+                                                    class="ml-2 badge badge-light">{{ number_format($value['qt'], 0, '', '.') }}</span>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="withdraw" class="mb-1">Filtrar por Forma de Entrega:</label>
+                                <select class="form-control col-sm-6" name="withdraw" id="withdraw">
+                                    <option value="todas">Todas</option>
+                                    <option value="entregar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'entregar') selected @endif>
+                                        Entregar na Obra (CIF)
+                                    </option>
+                                    <option value="retirar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'retirar') selected @endif>
+                                        Retirar na Fábrica (FOB)
+                                    </option>
+                                </select>
+                            </div>
+
+                            {{-- Hidden de data(s) --}}
+                            @if (!empty($date))
+                                <input type="hidden" name="delivery_date" value="{{ $date }}">
+                            @else
+                                <input type="hidden" name="date_ini" value="{{ $date_ini }}">
+                                <input type="hidden" name="date_fin" value="{{ $date_fin }}">
+                            @endif
+
+                            <div class="d-flex align-items-center mt-3">
+                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
+                                @if (!empty($date))
+                                    <a href="{{ route('report_delivery', ['delivery_date' => $date]) }}" id="clean_search"
+                                        class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
+                                @else
+                                    <a href="{{ route('report_delivery', ['date_ini' => $date_ini, 'date_fin' => $date_fin]) }}"
+                                        id="clean_search" class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
+                                @endif
                             </div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="withdraw" class="mb-1">Filtrar por Forma de Entrega:</label>
-                            <select class="form-control col-sm-6" name="withdraw" id="withdraw">
-                                <option>Todas</option>
-                                <option value="entregar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'entregar') selected @endif>
-                                    Entregar na Obra (CIF)
-                                </option>
-                                <option value="retirar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'retirar') selected @endif>
-                                    Retirar na Fábrica (FOB)
-                                </option>
-                            </select>
-                        </div>
-
-                        {{-- Hidden de data(s) --}}
-                        @if (!empty($date))
-                            <input type="hidden" name="delivery_date" value="{{ $date }}">
-                        @else
-                            <input type="hidden" name="date_ini" value="{{ $date_ini }}">
-                            <input type="hidden" name="date_fin" value="{{ $date_fin }}">
-                        @endif
-
-                        <div class="d-flex align-items-center mt-3">
-                            <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                            @if (!empty($date))
-                                <a href="{{ route('report_delivery', ['delivery_date' => $date]) }}" id="clean_search"
-                                    class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                            @else
-                                <a href="{{ route('report_delivery_byPeriod', ['date_ini' => $date_ini, 'date_fin' => $date_fin]) }}"
-                                    id="clean_search" class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                            @endif
-                        </div>
-                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -145,7 +141,7 @@
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td style="min-width:100px">{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
                                 <td>{{ $item->order->seller->name ?? '-' }}</td>
-                                @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'retirar')
+                                @if (Str::lower($item->order->withdraw) == 'retirar')
                                     <td>{{ ucfirst($item->order->withdraw) }} (FOB)</td>
                                 @else
                                     <td>{{ ucfirst($item->order->withdraw) }} (CIF)</td>

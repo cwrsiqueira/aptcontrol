@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OrderProductController;
+use App\Order_product;
 use Hamcrest\Number\OrderingComparison;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -49,6 +50,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/clients/cc_clients/{id}',   'ClientController@cc_client')->name('cc_client');
     Route::get('/orders/cc_orders/{id}',     'OrderController@cc_order')->name('cc_order');
     Route::get('/sellers/cc_sellers/{id}',   'SellerController@cc_seller')->name('cc_seller');
+
+    Route::get('order_products/{order_product}/delivery', 'OrderProductController@delivery')->name('order_products.delivery');
+    Route::post('order_products/{order_product}/delivered', 'OrderProductController@delivered')->name('order_products.delivered');
 
     Route::get('/products/day_delivery_recalc/{id}', 'ProductController@day_delivery_recalc')->name('day_delivery_recalc');
 

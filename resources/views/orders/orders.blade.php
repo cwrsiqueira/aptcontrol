@@ -86,7 +86,8 @@
                         @forelse ($orders as $item)
                             <tr>
                                 <td>{{ $item->id }}</td>
-                                <td><a href="{{ route('orders.show', $item) }}">{{ $item->order_number }}</a></td>
+                                <td class="text-left"><a
+                                        href="{{ route('orders.show', $item) }}">{{ $item->order_number }}</a></td>
                                 <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
                                 <td class="cursor-help" title="{{ $item->client->name }}">
                                     {{ Str::limit($item->client->name, 30, '...') }}</td>
@@ -96,12 +97,20 @@
                                 <td>{{ Str::ucfirst($item->seller->name ?? '-') }}</td>
                                 <td>
                                     <div class="d-flex flex-column flex-sm-row">
+                                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                            <a class="btn btn-sm btn-success mr-1 mb-1"
+                                                href="{{ route('order_products.index', ['order' => $item->id]) }}">ENTREGAR</a>
+                                        @else
+                                            <button class="btn btn-sm btn-success mr-1 mb-1" disabled
+                                                title="Solicitar Acesso">ENTREGAR</button>
+                                        @endif
+
                                         @if (in_array('orders.cc', $user_permissions) || Auth::user()->is_admin)
                                             <a class="btn btn-sm btn-outline-warning mr-1 mb-1"
-                                                href="{{ route('cc_order', $item) }}">Entregas</a>
+                                                href="{{ route('cc_order', $item) }}">Ver entregas</a>
                                         @else
                                             <button class="btn btn-sm btn-outline-warning mr-1 mb-1" disabled
-                                                title="Solicitar Acesso">Entregas</button>
+                                                title="Solicitar Acesso">Ver entregas</button>
                                         @endif
 
                                         @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)

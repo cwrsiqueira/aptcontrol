@@ -56,7 +56,7 @@
                         <label for="favorite_delivery">Fixar data</label>
                     </div>
 
-                    <button class="btn btn-primary">Salvar</button>
+                    <button class="btn btn-primary" id="btn-salvar">Salvar</button>
                     <a class="btn btn-light" href="{{ route('order_products.index', ['order' => $order]) }}">Cancelar</a>
                 </form>
             </div>
@@ -75,6 +75,17 @@
         // Calcular e preencher data de entrega
         var product = document.querySelector('#product_name');
         var quant = document.querySelector('#quant');
+
+        document.querySelector('#btn-salvar').addEventListener('click', function(e) {
+            e.preventDefault();
+            this.setAttribute('disabled', true);
+            if (product.value != '' && quant.value != '') {
+                get_data_product(product.value, quant.value);
+                setTimeout(() => {
+                    this.form.submit();
+                }, 1000);
+            }
+        })
 
         product.addEventListener('blur', function() {
             if (product.value != '' && quant.value != '') {

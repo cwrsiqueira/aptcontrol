@@ -41,8 +41,8 @@
                                     <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Alteração') selected @endif>Alteração</option>
                                     <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Deleção') selected @endif>Deleção</option>
                                     <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Cancelamento') selected @endif>Cancelamento</option>
-                                    <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Registro de Entrega') selected @endif>
-                                        Registro de Entrega
+                                    <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Entrega') selected @endif>
+                                        Entrega
                                     </option>
                                     <option @if (!empty($_GET['acao']) && $_GET['acao'] == 'Permissão') selected @endif>Permissão</option>
                                 </select>
@@ -75,13 +75,13 @@
                                     'Alteração' => 'badge-warning',
                                     'Deleção' => 'badge-danger',
                                     'Cancelamento' => 'badge-danger',
-                                    'Registro de Entrega' => 'badge-info',
+                                    'Entrega' => 'badge-info',
                                 ];
                                 $badgeCls = $actionMap[$item['action']] ?? 'badge-secondary';
                                 $hora = explode(' ', $item['created_at']);
                             @endphp
                             <tr>
-                                <td><span class="badge {{ $badgeCls }}">{{ $item['action'] }}</span></td>
+                                <td><span class="badge py-2 px-4 {{ $badgeCls }}">{{ $item['action'] }}</span></td>
                                 <td>{{ $item['item_id'] }}</td>
                                 <td>{{ $item['item_name'] }}</td>
                                 <td>{{ $item['menu'] }}</td>

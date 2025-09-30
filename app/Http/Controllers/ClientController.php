@@ -102,11 +102,11 @@ class ClientController extends Controller
             ->get();
 
         // Saldo acumulado por pedido (mesma lógica do código original)
-        $saldoPorPedido = [];
+        $acc = [];
         foreach ($data as $k => $row) {
-            $pedido = $row->order_id;
-            $saldoPorPedido[$pedido] = ($saldoPorPedido[$pedido] ?? 0) + $row->quant;
-            $data[$k]->saldo = $saldoPorPedido[$pedido];
+            $product = $row->product_id;
+            $acc[$product] = ($acc[$product] ?? 0) + $row->quant;
+            $data[$k]->saldo = ($acc[$product] > $row->quant) ? $row->quant : $acc[$product];
         }
 
         // Se NÃO marcar "entregas realizadas", filtra para mostrar só previstas (saldo > 0 e data válida)
@@ -141,12 +141,6 @@ class ClientController extends Controller
                 'qt' => $row->quant_total,
             ];
         }
-
-        // foreach ($data as $item) {
-        //     dd($item->order->client->id);
-        // }
-
-        // dd($data);
 
         return view('cc.cc_client', compact(
             'data',

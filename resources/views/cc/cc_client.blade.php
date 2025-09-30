@@ -99,7 +99,6 @@
                             <th>Data</th>
                             <th>Pedido</th>
                             <th>Produto</th>
-                            <th class="text-right">Quant</th>
                             <th class="text-right">Saldo</th>
                             <th>Vendedor</th>
                             <th>Data Entrega</th>
@@ -123,7 +122,6 @@
                                         href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order->order_number }}</a>
                                 </td>
                                 <td>{{ $item->product->name }}</td>
-                                <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                 <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                 <td>{{ $item->order->seller->name ?? ' - ' }}</td>
                                 <td class="d-flex flex-column">{{ date('d/m/Y', strtotime($item->delivery_date)) }}
