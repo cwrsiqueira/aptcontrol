@@ -37,36 +37,27 @@ class OrderProductController extends Controller
 
         $order_products = Order_product::where('order_id', $order->order_number)
             ->with('order', 'product', 'order.client', 'order.seller')
+            ->withSaldo()
+            ->orderBy('product_id')
             ->orderBy('delivery_date')
+            ->orderBy('id')
             ->get();
 
         $delivery_products = $order_products->where('quant', '<', 0)->count();
 
         $saldo_produtos = Order_product::where('order_id', $order->order_number)
-            ->select('product_id', DB::raw('SUM(order_products.quant) as saldo'))
+            ->select(
+                'product_id',
+                DB::raw('SUM(order_products.quant) as saldo'),
+                DB::raw('SUM(CASE WHEN quant > 0 THEN quant ELSE 0 END) as saldo_inicial')
+            )
             ->groupBy('product_id')
             ->get();
 
-        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
-        $acc = [];
-        foreach ($order_products as $k => $row) {
-            $pedido = $row->order_id;
-            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
-            $order_products[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
-        }
-
         // Filtra após calcular saldo (preserva comportamento do original)
         $order_products = $order_products
-            ->where('saldo', '>', 0)
+            // ->where('saldo', '>=', 0)
             ->where('delivery_date', '>', '1970-01-01');
-
-        foreach ($order_products as $key => $op) {
-            foreach ($saldo_produtos as $sp) {
-                if ($op->product_id === $sp->product_id) {
-                    $order_products[$key]['saldo'] = $sp->saldo > $op->quant ? $op->quant : $sp->saldo;
-                }
-            }
-        }
 
         return view('order_products.order_products', compact(
             'user_permissions',
@@ -75,44 +66,6 @@ class OrderProductController extends Controller
             'saldo_produtos',
             'delivery_products'
         ));
-    }
-
-    public function indexBackup(Request $request)
-    {
-        $id = (int) $request->query('order');
-        abort_if($id === 0, 404);
-
-        $user_permissions = Helper::get_permissions();
-        $order = Order::findOrFail($id);
-
-        $order_products = Order_product::where('order_id', $order->order_number)
-            ->orderBy('product_id')
-            ->orderBy('delivery_date')
-            ->orderBy('id')
-            ->get();
-
-        $acc = [];
-        foreach ($order_products as $k => $row) {
-            $product = $row->product_id;
-            $acc[$product] = ($acc[$product] ?? 0) + $row->quant;
-            $order_products[$k]->saldo = ($acc[$product] > $row->quant) ? $row->quant : $acc[$product];
-        }
-
-        $order_products = $order_products
-            ->where('saldo', '>=', 0)
-            ->where('delivery_date', '>', '1970-01-01');
-
-        // saldo total por produto (cabecalho)
-        $saldo_produtos = Order_product::where('order_id', $order->order_number)
-            ->select('product_id', DB::raw('SUM(quant) as saldo'), DB::raw('SUM(CASE WHEN quant > 0 THEN quant ELSE 0 END) as saldo_positivo'))
-            ->groupBy('product_id')
-            ->get();
-
-        $delivery_products = Order_product::where('order_id', $order->order_number)
-            ->where('quant', '<', 0)
-            ->count();
-
-        return view('order_products.order_products', compact('user_permissions', 'order', 'order_products', 'saldo_produtos', 'delivery_products'));
     }
 
     public function create(Request $request)
@@ -319,7 +272,7 @@ class OrderProductController extends Controller
         // saldo total por produto (cabecalho)
         $saldo_produto = Order_product::where('order_id', $order_product->order_id)
             ->where('product_id', $order_product->product_id)
-            ->select('product_id', DB::raw('SUM(quant) as saldo'), DB::raw('SUM(CASE WHEN quant > 0 THEN quant ELSE 0 END) as total_pedido'))
+            ->select('product_id', DB::raw('SUM(quant) as saldo'), DB::raw('SUM(CASE WHEN quant > 0 THEN quant ELSE 0 END) as saldo_inicial'))
             ->groupBy('product_id')
             ->first();
 
@@ -357,7 +310,7 @@ class OrderProductController extends Controller
                 'delivery_date.after_or_equal' => 'A data de entrega deve ser hoje ou uma data futura.',
                 'delivery_date.required'       => 'Informe a data de entrega.',
                 'delivery_date.date'           => 'Informe uma data válida.',
-                'quant.max'                    => "A quantidade a entregar não pode exceder {$formated_max_delivery}.",
+                'quant.max'                    => "A quantidade a entregar não pode exceder o saldo de {$formated_max_delivery} disponível.",
             ],
             [
                 'delivery_date' => 'Previsão de Entrega',

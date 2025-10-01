@@ -112,9 +112,9 @@
                             <ul>
                                 @foreach ($saldo_produtos as $item)
                                     <li class="text-muted">{{ $item->product->name }}:
-                                        <ul class="font-weight-bold">{{ number_format($item->saldo_positivo, 0, '', '.') }}
+                                        <ul class="font-weight-bold">{{ number_format($item->saldo_inicial, 0, '', '.') }}
                                             -
-                                            {{ number_format($item->saldo_positivo - $item->saldo, 0, '', '.') }} =
+                                            {{ number_format($item->saldo_inicial - $item->saldo, 0, '', '.') }} =
                                             {{ number_format($item->saldo, 0, '', '.') }} <br></ul>
                                     </li>
                                 @endforeach
@@ -144,7 +144,8 @@
                                         <td>{{ $item->id }}</td>
                                         <td>{{ $item->product->name }}</td>
                                         <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
-                                        <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
+                                        <td class="text-right">
+                                            {{ number_format($item->saldo < 0 ? 0 : $item->saldo, 0, '', '.') }}</td>
                                         <td class="text-right d-flex flex-column align-items-end">
                                             {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
                                             <span

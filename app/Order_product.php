@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Order_product extends Model
 {
@@ -24,5 +25,20 @@ class Order_product extends Model
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_id', 'order_number');
+    }
+
+    // App\OrderProduct.php (Model)
+    public function scopeWithSaldo($query)
+    {
+        return $query->addSelect([
+            '*',
+            DB::raw("
+            SUM(quant) OVER (
+                PARTITION BY order_id, product_id
+                ORDER BY delivery_date, id
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) as saldo
+        ")
+        ]);
     }
 }
