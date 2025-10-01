@@ -69,12 +69,12 @@
                         </dl>
                     </div>
                     <div class="col-sm-2">
-                        @if ($order->complete_order != 2)
+                        @if ($order->complete_order == 0)
                             @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.edit', $order) }}">Editar
                                     pedido</a>
                             @endif
-                        @else
+                        @elseif($order->complete_order == 2)
                             @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
                                 <form action="{{ route('orders.destroy', $order) }}" method="post"
                                     style="display:inline-block"
@@ -99,12 +99,17 @@
                     <th>Produto</th>
                     <th>Quantidade</th>
                     <th>Data da entrega</th>
-                    <th>
-                        @if ($order->complete_order != 2)
+                    <th colspan="2">
+                        @if ($order->complete_order == 0)
                             @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
                                 <a class="btn btn-sm btn-outline-primary"
                                     href="{{ route('order_products.index', ['order' => $order->id]) }}">Editar
                                     produtos</a>
+                            @endif
+                        @elseif($order->complete_order == 1)
+                            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                <a class="btn btn-sm btn-outline-primary"
+                                    href="{{ route('order.reopen', ['order' => $order]) }}">Reabrir pedido</a>
                             @endif
                         @endif
                     </th>
@@ -117,6 +122,7 @@
                         <td class="text-end">{{ number_format($item->quant, 0, '', '.') }}</td>
                         <td>{{ date('d/m/Y', strtotime($item->delivery_date == '1970-01-01' ? $item->created_at : $item->delivery_date)) }}
                         </td>
+                        <td></td>
                     </tr>
                 @endforeach
             </tbody>

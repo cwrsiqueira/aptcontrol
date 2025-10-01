@@ -31,6 +31,28 @@
                 < Pedidos</a>
         </div>
 
+        @php
+            switch ($order->complete_order) {
+                case '0':
+                    $status = 'Pendente';
+                    $badge = 'info';
+                    break;
+                case '1':
+                    $status = 'Finalizado';
+                    $badge = 'success';
+                    break;
+                case '2':
+                    $status = 'Cancelado';
+                    $badge = 'danger';
+                    break;
+
+                default:
+                    $status = 'Pendente';
+                    $badge = 'info';
+                    break;
+            }
+        @endphp
+
         {{-- ITENS (PRIORIDADE NO TOPO) --}}
         <div class="card card-lift items-card">
             <div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center">
@@ -47,6 +69,8 @@
                     <span class="meta-chip {{ $isCif ? 'meta-cif' : 'meta-fob' }} mr-2">
                         {{ ucfirst(strtolower($order->withdraw)) }} ({{ $isCif ? 'CIF' : 'FOB' }})
                     </span>
+
+                    <div class="badge badge-{{ $badge }}">{{ $status }}</div>
                 </div>
 
                 <div class="text-right">
@@ -156,14 +180,6 @@
                                                         title="Solicitar Acesso">Editar</button>
                                                 @endif
 
-                                                @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                                                    <a class="btn btn-sm btn-outline-primary"
-                                                        href="{{ route('order_products.edit', $item) }}">Editar</a>
-                                                @else
-                                                    <button class="btn btn-sm btn-outline-primary" disabled
-                                                        title="Solicitar Acesso">Editar</button>
-                                                @endif
-
                                                 @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
                                                     <form action="{{ route('order_products.destroy', $item) }}"
                                                         method="post" style="display:inline-block"
@@ -182,7 +198,7 @@
                                 @endif
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">Nenhum item encontrado para este
+                                    <td colspan="6" class="text-center text-muted">Nenhum item encontrado para este
                                         pedido.
                                     </td>
                                 </tr>

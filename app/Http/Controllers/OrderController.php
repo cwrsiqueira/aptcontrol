@@ -290,6 +290,23 @@ class OrderController extends Controller
         }
     }
 
+    public function reopen(Request $request, Order $order)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = [
+                'no-access' => 'Solicite acesso ao administrador!',
+            ];
+            return redirect()->route('orders.index')->withErrors($message);
+        }
+
+        $order->update(['complete_order' => 0]);
+
+        Helper::saveLog(Auth::user()->id, 'Reabertura', $order->id, $order->order_number, 'Pedidos');
+
+        return redirect()->route('order_products.index', ['order' => $order->id])->with('success', 'Atualizado com sucesso!');
+    }
+
     public function cc_order(Request $request, $id)
     {
         $user_permissions = Helper::get_permissions();

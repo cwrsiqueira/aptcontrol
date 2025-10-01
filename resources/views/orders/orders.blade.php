@@ -112,7 +112,7 @@
                                 <td class="cursor-help fs-sm text-left" title="{{ $item->client->name }}">
                                     {{ Str::limit($item->client->name, 30, '...') }}</td>
                                 <td class="fs-sm">{{ Str::ucfirst($item->withdraw) }}
-                                    {{ (Str::lower($item->withdraw) === 'entregar' ? '(CIF)' : Str::lower($item->withdraw) === 'retirar') ? '(FOB)' : ' - ' }}
+                                    {{ Str::lower($item->withdraw) == 'entregar' ? '(CIF)' : '(FOB)' }}
                                 </td>
                                 <td class="fs-sm">{{ Str::ucfirst($item->seller->name ?? '-') }}</td>
 

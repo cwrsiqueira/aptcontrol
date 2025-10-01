@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders/cc_orders/{id}',     'OrderController@cc_order')->name('cc_order');
     Route::get('/sellers/cc_sellers/{id}',   'SellerController@cc_seller')->name('cc_seller');
 
+    Route::get('/orders/{order}/reopen', 'OrderController@reopen')->name('order.reopen');
+
     Route::get('order_products/{order_product}/delivery', 'OrderProductController@delivery')->name('order_products.delivery');
     Route::post('order_products/{order_product}/delivered', 'OrderProductController@delivered')->name('order_products.delivered');
 
