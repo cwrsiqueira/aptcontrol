@@ -47,7 +47,7 @@
                     </div>
                     <div class="col-sm-4 d-flex align-items-center">
                         <div class="form-group form-check m-0">
-                            <input type="checkbox" @if ($complete_order === '1') checked @endif class="form-check-input"
+                            <input type="checkbox" @if ($complete_order === '1' || $complete_order === '2') checked @endif class="form-check-input"
                                 value="1" id="complete_order" name="complete_order">
                             <label class="form-check-label" for="complete_order">Baixados/cancelados</label>
                         </div>
@@ -73,76 +73,107 @@
                 <table class="table" style="text-align:center">
                     <thead>
                         <tr>
-                            <th>#ID</th>
-                            <th>Número</th>
                             <th>Data</th>
+                            <th>Número</th>
                             <th>Cliente</th>
                             <th>Retirada</th>
                             <th>Vendedor</th>
-                            <th>Ações</th>
+                            @if ($complete_order == 0)
+                                <th>Ações</th>
+                            @else
+                                <th>Status</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($orders as $item)
+                            @php
+                                switch ($item->complete_order) {
+                                    case '0':
+                                        $status = 'Pendente';
+                                        $badge = 'info';
+                                        break;
+                                    case '1':
+                                        $status = 'Finalizado';
+                                        $badge = 'success';
+                                        break;
+                                    case '2':
+                                        $status = 'Cancelado';
+                                        $badge = 'danger';
+                                        break;
+
+                                    default:
+                                        $status = 'Pendente';
+                                        $badge = 'info';
+                                        break;
+                                }
+                            @endphp
                             <tr>
-                                <td>{{ $item->id }}</td>
-                                <td class="text-left"><a
+                                <td class="fs-sm">{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
+                                <td class="text-left"><a class="fs-sm"
                                         href="{{ route('orders.show', $item) }}">{{ $item->order_number }}</a></td>
-                                <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
-                                <td class="cursor-help" title="{{ $item->client->name }}">
+                                <td class="cursor-help fs-sm text-left" title="{{ $item->client->name }}">
                                     {{ Str::limit($item->client->name, 30, '...') }}</td>
-                                <td>{{ Str::ucfirst($item->withdraw) }}
+                                <td class="fs-sm">{{ Str::ucfirst($item->withdraw) }}
                                     {{ (Str::lower($item->withdraw) === 'entregar' ? '(CIF)' : Str::lower($item->withdraw) === 'retirar') ? '(FOB)' : ' - ' }}
                                 </td>
-                                <td>{{ Str::ucfirst($item->seller->name ?? '-') }}</td>
-                                <td>
-                                    <div class="d-flex flex-column flex-sm-row">
-                                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                                            <a class="btn btn-sm btn-success mr-1 mb-1"
-                                                href="{{ route('order_products.index', ['order' => $item->id]) }}">ENTREGAR</a>
-                                        @else
-                                            <button class="btn btn-sm btn-success mr-1 mb-1" disabled
-                                                title="Solicitar Acesso">ENTREGAR</button>
-                                        @endif
+                                <td class="fs-sm">{{ Str::ucfirst($item->seller->name ?? '-') }}</td>
 
-                                        @if (in_array('orders.cc', $user_permissions) || Auth::user()->is_admin)
-                                            <a class="btn btn-sm btn-outline-warning mr-1 mb-1"
-                                                href="{{ route('cc_order', $item) }}">Ver entregas</a>
-                                        @else
-                                            <button class="btn btn-sm btn-outline-warning mr-1 mb-1" disabled
-                                                title="Solicitar Acesso">Ver entregas</button>
-                                        @endif
+                                @if ($item->complete_order == 0)
+                                    <td>
+                                        <div class="d-flex flex-column flex-sm-row">
+                                            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                <a class="btn btn-sm btn-success mr-1 mb-1 fs-sm"
+                                                    href="{{ route('order_products.index', ['order' => $item->id]) }}">ENTREGAR</a>
+                                            @else
+                                                <button class="btn btn-sm btn-success mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso">ENTREGAR</button>
+                                            @endif
 
-                                        @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
-                                            <a class="btn btn-sm btn-outline-info mr-1 mb-1"
-                                                href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>
-                                        @else
-                                            <button class="btn btn-sm btn-outline-info mr-1 mb-1" disabled
-                                                title="Solicitar Acesso">Produtos</button>
-                                        @endif
+                                            @if (in_array('orders.cc', $user_permissions) || Auth::user()->is_admin)
+                                                <a class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm"
+                                                    href="{{ route('cc_order', $item) }}">Ver entregas</a>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso">Ver entregas</button>
+                                            @endif
 
-                                        @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                                            <a class="btn btn-sm btn-outline-primary mr-1 mb-1"
-                                                href="{{ route('orders.edit', $item) }}">Editar</a>
-                                        @else
-                                            <button class="btn btn-sm btn-outline-primary mr-1 mb-1" disabled
-                                                title="Solicitar Acesso">Editar</button>
-                                        @endif
+                                            @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
+                                                <a class="btn btn-sm btn-outline-info mr-1 mb-1 fs-sm"
+                                                    href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-info mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso">Produtos</button>
+                                            @endif
 
-                                        @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
-                                            <form action="{{ route('orders.destroy', $item) }}" method="post"
-                                                style="display:inline-block"
-                                                onsubmit="return confirm('Tem certeza que deseja excluir?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger mr-1 mb-1">Excluir</button>
-                                            </form>
-                                        @else
-                                            <button class="btn btn-sm btn-outline-danger mr-1 mb-1" disabled
-                                                title="Solicitar Acesso">Excluir</button>
-                                        @endif
-                                    </div>
-                                </td>
+                                            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                <a class="btn btn-sm btn-outline-primary mr-1 mb-1 fs-sm"
+                                                    href="{{ route('orders.edit', $item) }}">Editar</a>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-primary mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso">Editar</button>
+                                            @endif
+
+                                            @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
+                                                <form action="{{ route('orders.destroy', $item) }}" method="post"
+                                                    style="display:inline-block"
+                                                    onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button
+                                                        class="btn btn-sm btn-outline-danger mr-1 mb-1 fs-sm">Excluir</button>
+                                                </form>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-danger mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso">Excluir</button>
+                                            @endif
+                                        </div>
+                                    </td>
+                                @else
+                                    <td>
+                                        <div class="badge badge-{{ $badge }}">{{ $status }}</div>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
@@ -165,6 +196,10 @@
 
         .w-80 {
             width: 80%;
+        }
+
+        .fs-sm {
+            font-size: 12px;
         }
     </style>
 @endsection

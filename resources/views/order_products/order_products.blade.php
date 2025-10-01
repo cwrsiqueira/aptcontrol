@@ -149,7 +149,7 @@
                                                     title="Solicitar Acesso">Editar</button>
                                             @endif
 
-                                            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                            @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
                                                 <form action="{{ route('order_products.destroy', $item) }}" method="post"
                                                     style="display:inline-block"
                                                     onsubmit="return confirm('Tem certeza que deseja excluir?');">

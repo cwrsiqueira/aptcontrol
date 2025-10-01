@@ -29,11 +29,11 @@
                     <dd class="col-sm-9">{{ $order->client->name }}</dd>
 
                     <dt class="col-sm-3">Entrega</dt>
-                    <dd class="col-sm-9">{{ ucfirst($order->withdraw) }}
-                        ({{ $order->withdraw === 'entregar' ? 'CIF' : 'FOB' }})</dd>
+                    <dd class="col-sm-9">{{ Str::ucfirst($order->withdraw) }}
+                        ({{ Str::lower($order->withdraw) === 'entregar' ? 'CIF' : 'FOB' }})</dd>
 
                     <dt class="col-sm-3">Vendedor</dt>
-                    <dd class="col-sm-9">{{ $order->seller->name }}</dd>
+                    <dd class="col-sm-9">{{ $order->seller->name ?? '-' }}</dd>
 
                     <dt class="col-sm-3">Criado em</dt>
                     <dd class="col-sm-9">{{ optional($order->created_at)->format('d/m/Y H:i') }}</dd>

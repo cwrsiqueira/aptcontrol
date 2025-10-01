@@ -43,7 +43,8 @@ class OrderController extends Controller
         }
 
         $q = trim((string) $request->input('q'));
-        $complete_order = $request->query('complete_order', 0);
+        $complete_order = $request->input('complete_order', 0);
+        $filter_complete_order = $complete_order == '1' ? [1, 2] : [0];
 
         $orders = Order::query()
             ->select([
@@ -59,7 +60,7 @@ class OrderController extends Controller
                         ->orWhere('orders.order_number', 'LIKE', "%{$needle}%");
                 });
             })
-            ->where('complete_order', $complete_order)
+            ->whereIn('complete_order', $filter_complete_order)
             ->orderBy('orders.order_date')
             ->paginate(10)
             ->withQueryString();
@@ -168,6 +169,7 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
+        $order->load(['client', 'seller']);
         $order_products = Order_product::where('order_id', $order->order_number)
             ->orderBy('delivery_date')
             ->get();
@@ -274,7 +276,7 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
-        $orders = Order_product::where('order_id', $order->id)->get();
+        $orders = Order_product::where('order_id', $order->order_number)->get();
 
         if (count($orders) > 0) {
             $message = [

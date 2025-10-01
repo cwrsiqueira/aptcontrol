@@ -38,29 +38,17 @@ class Order extends Model
         return $this->belongsTo(Seller::class, 'seller_id');
     }
 
-    /**
-     * Itens da ordem (tabela pivot/itens): orders -> order_products
-     * FK em order_products: order_id
-     * Chave local em orders: order_number
-     */
     public function orderProducts(): HasMany
     {
         return $this->hasMany(OrderProduct::class, 'order_id', 'order_number');
     }
 
-    /**
-     * Alias opcional para quem preferir 'items'
-     */
+    // Alias opcional
     public function items(): HasMany
     {
         return $this->orderProducts();
     }
 
-    /**
-     * Produtos da ordem (via hasManyThrough): orders -> order_products -> products
-     * order_products.order_id    -> orders.order_number
-     * order_products.product_id  -> products.id
-     */
     public function products(): HasManyThrough
     {
         return $this->hasManyThrough(
@@ -71,23 +59,5 @@ class Order extends Model
             'order_number',        // chave local em orders
             'product_id'           // chave local no intermediário (order_products)
         );
-    }
-
-    /**
-     * Recalcula e persiste o total da ordem somando order_products.total_price.
-     * Se você armazena em centavos, ajuste a conversão aqui.
-     */
-    public function recalcTotal(): self
-    {
-        // Somatório bruto
-        $sum = $this->orderProducts()->sum('total_price');
-
-        // Caso seu total_price esteja em centavos, descomente a próxima linha:
-        // $sum = $sum / 100;
-
-        $this->order_total = $sum;
-        $this->save();
-
-        return $this;
     }
 }
