@@ -35,56 +35,67 @@
         <div class="card card-lift items-card">
             <div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center">
                 <div class="d-flex flex-wrap align-items-center">
-                    <strong class="mr-2">{{ $order_product->product->name }}</strong>
+                    <strong class="mr-2">#{{ $order_product->order_id }}</strong>
+
+                    {{-- Data (maior/legível, mas ainda compacto) --}}
+                    <span class="meta-chip mr-2">
+                        {{ $order_product->product->name }}
+                    </span>
                 </div>
             </div>
         </div>
 
         <div class="card">
             <div class="card-body">
-                <form action="{{ route('order_products.delivered', ['order_product' => $order_product]) }}" method="post"
-                    novalidate>
-                    @csrf
+                <div class="row">
+                    @if ($saldo_produto->saldo > 0)
+                        <div class="col-sm">
+                            <form action="{{ route('order_products.delivered', ['order_product' => $order_product]) }}"
+                                method="post" novalidate>
+                                @csrf
 
-                    <input type="hidden" class="form-control @error('product_name') is-invalid @enderror" id="product_name"
-                        name="product_name" value="{{ $order_product->product->name }}">
-                    <div class="row">
-                        <div class="col-sm">
-                            <div class="form-group">
-                                <label for="quant">Quantidade a entregar <small>(Saldo)</small></label>
-                                <input type="text" name="quant" id="quant"
-                                    class="form-control @error('quant') is-invalid @enderror qt"
-                                    placeholder="Quantidade máxima: {{ $saldo_produto->saldo * -1 }}"
-                                    value="{{ $saldo_produto->saldo }}">
-                            </div>
+                                <input type="hidden" class="form-control @error('product_name') is-invalid @enderror"
+                                    id="product_name" name="product_name" value="{{ $order_product->product->name }}">
+                                <div class="row">
+                                    <div class="col-sm">
+                                        <div class="form-group">
+                                            <label for="quant">Quantidade a entregar <small>(Saldo)</small></label>
+                                            <input type="text" name="quant" id="quant"
+                                                class="form-control @error('quant') is-invalid @enderror qt"
+                                                placeholder="Quantidade máxima: {{ $saldo_produto->saldo * -1 }}"
+                                                value="{{ $saldo_produto->saldo }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm">
+                                        <div class="form-group">
+                                            <label for="delivery_date">Data da entrega</label>
+                                            <input type="date" name="delivery_date" id="delivery_date"
+                                                class="form-control @error('delivery_date') is-invalid @enderror"
+                                                value="{{ date('Y-m-d') }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" id="confirm-delivery">Confirmar entrega</button>
+                                <a class="btn btn-light"
+                                    href="{{ route('order_products.index', ['order' => $order_product->order]) }}">Cancelar</a>
+                            </form>
                         </div>
-                        <div class="col-sm">
-                            <div class="form-group">
-                                <label for="delivery_date">Data da entrega</label>
-                                <input type="date" name="delivery_date" id="delivery_date"
-                                    class="form-control @error('delivery_date') is-invalid @enderror"
-                                    value="{{ date('Y-m-d') }}">
-                            </div>
-                        </div>
-                        <div class="col-sm">
-                            <span class="muted-label">Saldo</span>
-                            <ul>
-                                <li class="text-muted">Pedido - entregue = saldo:
-                                    <ul class="font-weight-bold">
-                                        {{ number_format($saldo_produto->saldo_inicial, 0, '', '.') }}
-                                        -
-                                        {{ number_format($saldo_produto->saldo_inicial - $saldo_produto->saldo, 0, '', '.') }}
-                                        =
-                                        {{ number_format($saldo_produto->saldo, 0, '', '.') }} <br></ul>
-                                </li>
-                            </ul>
-                        </div>
+                    @endif
+                    <div class="col-sm-3">
+                        <span class="muted-label">Saldo</span>
+                        <ul>
+                            <li class="text-muted">Pedido - entregue = saldo:
+                                <ul class="font-weight-bold">
+                                    {{ number_format($saldo_produto->saldo_inicial, 0, '', '.') }}
+                                    -
+                                    {{ number_format($saldo_produto->saldo_inicial - $saldo_produto->saldo, 0, '', '.') }}
+                                    =
+                                    {{ number_format($saldo_produto->saldo, 0, '', '.') }} <br></ul>
+                            </li>
+                        </ul>
                     </div>
-
-                    <button class="btn btn-primary" id="confirm-delivery">Confirmar entrega</button>
-                    <a class="btn btn-light"
-                        href="{{ route('order_products.index', ['order' => $order_product->order]) }}">Cancelar</a>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -136,6 +147,21 @@
         </div>
 
     </main>
+@endsection
+
+@section('css')
+    <style>
+        .meta-chip {
+            display: inline-block;
+            padding: .2rem .5rem;
+            font-size: .95rem;
+            font-weight: 600;
+            border-radius: .375rem;
+            background: #f1f3f5;
+            color: #495057;
+            line-height: 1.1;
+        }
+    </style>
 @endsection
 
 @section('js')
