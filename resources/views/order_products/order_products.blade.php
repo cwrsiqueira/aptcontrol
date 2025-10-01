@@ -5,17 +5,22 @@
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
 
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                <i class="icon fas fa-ban"></i> Erro!
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         @if (session('success'))
             <div class="alert alert-success alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
                 <i class="icon fas fa-check"></i> {{ session('success') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
-                <i class="icon fas fa-check"></i> {{ session('error') }}
             </div>
         @endif
 
@@ -102,6 +107,7 @@
                             <tr>
                                 <th style="width:60px;">#</th>
                                 <th>Produto</th>
+                                <th class="text-right">Quantidade</th>
                                 <th class="text-right">Saldo</th>
                                 <th class="text-right">Entrega</th>
                                 <th class="text-right">Ações</th>
@@ -113,6 +119,7 @@
                                     <tr>
                                         <td>{{ $item->id }}</td>
                                         <td>{{ $item->product->name }}</td>
+                                        <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                         <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
                                         <td class="text-right d-flex flex-column align-items-end">
                                             {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
@@ -140,26 +147,35 @@
                                                         title="Solicitar Acesso">Ver histórico</button>
                                                 @endif
                                             @endif
+                                            @if ($delivery_products <= 0)
+                                                @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                        href="{{ route('order_products.edit', $item) }}">Editar</a>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-primary" disabled
+                                                        title="Solicitar Acesso">Editar</button>
+                                                @endif
 
-                                            @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
-                                                <a class="btn btn-sm btn-outline-primary"
-                                                    href="{{ route('order_products.edit', $item) }}">Editar</a>
-                                            @else
-                                                <button class="btn btn-sm btn-outline-primary" disabled
-                                                    title="Solicitar Acesso">Editar</button>
-                                            @endif
+                                                @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                        href="{{ route('order_products.edit', $item) }}">Editar</a>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-primary" disabled
+                                                        title="Solicitar Acesso">Editar</button>
+                                                @endif
 
-                                            @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
-                                                <form action="{{ route('order_products.destroy', $item) }}" method="post"
-                                                    style="display:inline-block"
-                                                    onsubmit="return confirm('Tem certeza que deseja excluir?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="btn btn-sm btn-outline-danger">Excluir</button>
-                                                </form>
-                                            @else
-                                                <button class="btn btn-sm btn-outline-danger" disabled
-                                                    title="Solicitar Acesso">Excluir</button>
+                                                @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
+                                                    <form action="{{ route('order_products.destroy', $item) }}"
+                                                        method="post" style="display:inline-block"
+                                                        onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                                                    </form>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-danger" disabled
+                                                        title="Solicitar Acesso">Excluir</button>
+                                                @endif
                                             @endif
                                         </td>
                                     </tr>

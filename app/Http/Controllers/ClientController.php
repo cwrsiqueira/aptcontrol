@@ -251,7 +251,7 @@ class ClientController extends Controller
         $clients = Order::where('client_id', $id)->get();
         if (count($clients) > 0) {
             $message = [
-                'cannot_exclude' => 'Cliente não pode ser excluído, pois possui pedidos vinculados!',
+                'cannot_exclude' => 'Cliente possui pedidos vinculados e não pode ser excluído!',
             ];
             return redirect()->route('clients.index')->withErrors($message);
         } else {

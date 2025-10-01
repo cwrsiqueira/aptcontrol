@@ -36,7 +36,6 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $user_permissions = Helper::get_permissions();
-
         if (!in_array('menu-pedidos', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('home')->withErrors($message);

@@ -140,9 +140,9 @@
                                     </a>
                                 </td>
                                 <td>
-                                    @php $isCif = ($item->order->withdraw === 'entregar'); @endphp
+                                    @php $isCif = (Str::lower($item->order->withdraw) === 'entregar'); @endphp
                                     <span class="badge {{ $isCif ? 'badge-success' : 'badge-info' }}">
-                                        {{ $item->order->withdraw }} ({{ $isCif ? 'CIF' : 'FOB' }})
+                                        {{ Str::ucfirst($item->order->withdraw) }} ({{ $isCif ? 'CIF' : 'FOB' }})
                                     </span>
                                 </td>
                             </tr>

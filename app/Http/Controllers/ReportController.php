@@ -112,7 +112,7 @@ class ReportController extends Controller
         $items = Order_product::query()
             ->with([
                 'product:id,name',
-                'order:order_number,client_id,seller_id,complete_order,withdraw,order_date',
+                'order:id,order_number,client_id,seller_id,complete_order,withdraw,order_date',
                 'order.client:id,id_categoria,name,full_address,contact',
                 'order.client.category:id,name',
                 'order.seller:id,name',
@@ -160,7 +160,7 @@ class ReportController extends Controller
 
         // 5) View
         return view('reports.reports_delivery', [
-            'orders'            => $items,
+            'order_products'    => $items,
             'date_ini'          => $date_ini,
             'date_fin'          => $date_fin,
             'product_total'     => $product_total,

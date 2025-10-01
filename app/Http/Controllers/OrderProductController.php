@@ -22,10 +22,62 @@ class OrderProductController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('can:menu-pedidos');
+        $this->middleware('can:menu-produtos-pedidos');
     }
 
     public function index(Request $request)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('menu-produtos-pedidos', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
+
+        $order = Order::where('id', $request->input('order'))->with('client', 'seller')->first();
+
+        $order_products = Order_product::where('order_id', $order->order_number)
+            ->with('order', 'product', 'order.client', 'order.seller')
+            ->orderBy('delivery_date')
+            ->get();
+
+        $delivery_products = $order_products->where('quant', '<', 0)->count();
+
+        $saldo_produtos = Order_product::where('order_id', $order->order_number)
+            ->select('product_id', DB::raw('SUM(order_products.quant) as saldo'))
+            ->groupBy('product_id')
+            ->get();
+
+        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
+        $acc = [];
+        foreach ($order_products as $k => $row) {
+            $pedido = $row->order_id;
+            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
+            $order_products[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
+        }
+
+        // Filtra após calcular saldo (preserva comportamento do original)
+        $order_products = $order_products
+            ->where('saldo', '>', 0)
+            ->where('delivery_date', '>', '1970-01-01');
+
+        foreach ($order_products as $key => $op) {
+            foreach ($saldo_produtos as $sp) {
+                if ($op->product_id === $sp->product_id) {
+                    $order_products[$key]['saldo'] = $sp->saldo > $op->quant ? $op->quant : $sp->saldo;
+                }
+            }
+        }
+
+        return view('order_products.order_products', compact(
+            'user_permissions',
+            'order',
+            'order_products',
+            'saldo_produtos',
+            'delivery_products'
+        ));
+    }
+
+    public function indexBackup(Request $request)
     {
         $id = (int) $request->query('order');
         abort_if($id === 0, 404);
@@ -56,7 +108,11 @@ class OrderProductController extends Controller
             ->groupBy('product_id')
             ->get();
 
-        return view('order_products.order_products', compact('user_permissions', 'order', 'order_products', 'saldo_produtos'));
+        $delivery_products = Order_product::where('order_id', $order->order_number)
+            ->where('quant', '<', 0)
+            ->count();
+
+        return view('order_products.order_products', compact('user_permissions', 'order', 'order_products', 'saldo_produtos', 'delivery_products'));
     }
 
     public function create(Request $request)
@@ -90,7 +146,6 @@ class OrderProductController extends Controller
             "product_name",
             "quant",
             "delivery_date",
-            "favorite_delivery",
             "order",
         ]);
 
@@ -102,7 +157,6 @@ class OrderProductController extends Controller
                 "product_name" => ['required'],
                 "quant" => ['required'],
                 "delivery_date" => ['required'],
-                "favorite_delivery" => ['required'],
             ],
             [],
             [
@@ -135,6 +189,15 @@ class OrderProductController extends Controller
                 'no-access' => 'Solicite acesso ao administrador!',
             ];
             return redirect()->route('orders.index')->withErrors($message);
+        }
+
+        $delivery_product = Order_product::where('order_id', $order_product->order_id)
+            ->where('quant', '<', 0)
+            ->count();
+
+        if ($delivery_product > 0) {
+            $message = ['has-order' => 'Produto do pedido possui entrega registrada e não pode ser editado!'];
+            return redirect()->route('order_products.index', ['order' => $order_product->order->id])->withErrors($message);
         }
 
         $products = Product::all();
@@ -222,7 +285,8 @@ class OrderProductController extends Controller
                 ->count();
 
             if ($delivery_product > 0) {
-                return redirect()->route('order_products.index', ['order' => $order_product->order->id])->with('error', 'Produto pedido já possui entrega registrada e não pode ser excluído!');
+                $message = ['has-order' => 'Produto do pedido possui entrega registrada e não pode ser excluído!'];
+                return redirect()->route('order_products.index', ['order' => $order_product->order->id])->withErrors($message);
             }
         }
 

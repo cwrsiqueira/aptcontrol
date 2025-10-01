@@ -8,11 +8,7 @@
         {{-- Cabeçalho --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
             <h2 class="mb-0">
-                @if (!empty($date))
-                    Entregas até esta data
-                @else
-                    Entregas neste período
-                @endif
+                Entregas pendentes no período
             </h2>
             <div class="btn-group">
                 <button class="btn btn-sm btn-secondary" onclick="window.location.href = 'reports'" id="btn_voltar">
@@ -126,7 +122,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($orders as $item)
+                        @foreach ($order_products as $item)
                             @php $isLate = ($item->delivery_date < date('Y-m-d')); @endphp
                             <tr class="{{ $isLate ? 'row-late' : '' }}">
                                 <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td>
