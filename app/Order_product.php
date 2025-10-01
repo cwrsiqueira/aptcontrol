@@ -35,7 +35,7 @@ class Order_product extends Model
             DB::raw("
             SUM(quant) OVER (
                 PARTITION BY order_id, product_id
-                ORDER BY delivery_date, id
+                ORDER BY quant, delivery_date, id
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             ) as saldo
         ")

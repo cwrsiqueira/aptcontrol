@@ -39,6 +39,7 @@ class OrderProductController extends Controller
             ->with('order', 'product', 'order.client', 'order.seller')
             ->withSaldo()
             ->orderBy('product_id')
+            ->orderBy('quant')
             ->orderBy('delivery_date')
             ->orderBy('id')
             ->get();
