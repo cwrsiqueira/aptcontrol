@@ -55,16 +55,22 @@ class OrderProductController extends Controller
             ->get();
 
         // Filtra após calcular saldo (preserva comportamento do original)
-        $order_products = $order_products
-            // ->where('saldo', '>=', 0)
-            ->where('delivery_date', '>', '1970-01-01');
+        // $order_products = $order_products
+        // ->where('saldo', '>=', 0)
+        // ->where('delivery_date', '>', '1970-01-01');
+
+        $total_products = $order_products->pluck('quant')->sum();
+        if ($total_products > 0) {
+            $order->update(['complete_order' => 0]);
+        }
 
         return view('order_products.order_products', compact(
             'user_permissions',
             'order',
             'order_products',
             'saldo_produtos',
-            'delivery_products'
+            'delivery_products',
+            'total_products',
         ));
     }
 

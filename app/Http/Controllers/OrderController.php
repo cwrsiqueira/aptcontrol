@@ -290,7 +290,7 @@ class OrderController extends Controller
         }
     }
 
-    public function reopen(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order)
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
@@ -300,7 +300,9 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
-        $order->update(['complete_order' => 0]);
+        $status = $request->input('status', 0);
+
+        $order->update(['complete_order' => $status]);
 
         Helper::saveLog(Auth::user()->id, 'Reabertura', $order->id, $order->order_number, 'Pedidos');
 

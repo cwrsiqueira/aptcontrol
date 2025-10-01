@@ -108,17 +108,34 @@
                             <div class="text-body">{{ optional($order->seller)->name }}</div>
                         </div>
                         <div class="col-md mb-1">
-                            <span class="muted-label">Saldos</span>
-                            <ul>
-                                @foreach ($saldo_produtos as $item)
-                                    <li class="text-muted">{{ $item->product->name }}:
-                                        <ul class="font-weight-bold">{{ number_format($item->saldo_inicial, 0, '', '.') }}
-                                            -
-                                            {{ number_format($item->saldo_inicial - $item->saldo, 0, '', '.') }} =
-                                            {{ number_format($item->saldo, 0, '', '.') }} <br></ul>
-                                    </li>
-                                @endforeach
-                            </ul>
+                            <div class="row">
+                                <div class="col-sm">
+                                    <span class="muted-label">Saldos</span>
+                                    <ul>
+                                        @foreach ($saldo_produtos as $item)
+                                            <li class="text-muted">{{ $item->product->name }}:
+                                                <ul class="font-weight-bold">
+                                                    {{ number_format($item->saldo_inicial, 0, '', '.') }}
+                                                    -
+                                                    {{ number_format($item->saldo_inicial - $item->saldo, 0, '', '.') }} =
+                                                    {{ number_format($item->saldo, 0, '', '.') }} <br></ul>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="row">
+                                @if ($total_products <= 0)
+                                    <a href="{{ route('order.update_status', ['order' => $order, 'status' => 1]) }}"
+                                        class="col-sm btn btn-sm btn-warning text-left">
+                                        <i class="icon fas fa-exclamation-triangle"></i> Atenção!
+                                        <ul class="list-unstyled">
+                                            <li>Todos os produtos do pedido foram entregues.</li>
+                                            <li class="font-weight-bold">Clique para dar baixa no pedido</li>
+                                        </ul>
+                                    </a>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

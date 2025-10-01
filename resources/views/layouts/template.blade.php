@@ -39,7 +39,7 @@
                 {{ config('app.name', 'Laravel') }}
             </a>
         </div>
-        <span style="color:#fff;">Sessão aberta por: {{ $user->id ?? '' }} - {{ $user->name ?? '' }}</span>
+        <span style="color:#fff;">Olá, {{ Auth::user()->name ?? '' }}</span>
         <ul class="navbar-nav px-3">
             <li class="nav-item text-nowrap">
                 <a class="nav-link" href="{{ route('logout') }}">{{ __('Logout') }}</a>

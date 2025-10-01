@@ -109,7 +109,8 @@
                         @elseif($order->complete_order == 1)
                             @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
                                 <a class="btn btn-sm btn-outline-primary"
-                                    href="{{ route('order.reopen', ['order' => $order]) }}">Reabrir pedido</a>
+                                    href="{{ route('order.update_status', ['order' => $order, 'status' => 0]) }}">Reabrir
+                                    pedido</a>
                             @endif
                         @endif
                     </th>
