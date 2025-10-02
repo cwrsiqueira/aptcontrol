@@ -345,19 +345,4 @@ class ClientController extends Controller
             'user_permissions',
         ));
     }
-
-    public function toggleFavorite($clientId)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('clients.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('clients.index')->withErrors($message);
-        }
-
-        $client = \App\Client::findOrFail($clientId);
-        $client->is_favorite = !$client->is_favorite;
-        $client->save();
-
-        return response()->json(['ok' => true, 'is_favorite' => (bool) $client->is_favorite]);
-    }
 }

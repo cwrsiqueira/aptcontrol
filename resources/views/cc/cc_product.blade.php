@@ -20,7 +20,7 @@
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <span class="font-weight-bold">Produto</span>
-                        <span class="badge badge-primary badge-client-name">{{ $product->name }}</span>
+                        <span class="badge badge-mute badge-client-name">{{ $product->name }}</span>
                     </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-2">
@@ -32,13 +32,6 @@
                             <i class="far fa-calendar-alt mr-2"></i>
                             <strong class="mr-2">Entregas a partir de:</strong>
                             <span>{{ date('d/m/Y', strtotime($delivery_in)) }}</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="icon fas fa-exclamation-triangle mr-2"></i>
-                            <strong class="mr-2">OBS:</strong>
-                            <span class="meta-chip mt-3">Clique na linha do pedido para marcar o pedido e
-                                incluir
-                                observações.</span>
                         </div>
                     </div>
                 </div>
@@ -102,37 +95,71 @@
                             <th>Vendedor</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($data as $item)
                             @if ($item->saldo > 0)
-                                <tr class="linha" data-id="{{ $item->id }}">
+                                <tr>
+                                    {{-- DATA --}}
                                     <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td>
+                                    {{-- PEDIDO --}}
                                     <td>
                                         <a
                                             href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
                                     </td>
-                                    <td
-                                        class="@if ($item->checkmark == 1) btn btn-sm btn-warning p-0 px-1 @elseif($item->checkmark == 2) btn btn-sm btn-success p-0 px-1 @endif">
-                                        {{ $item->order->client->name }}
+                                    {{-- CLIENTE --}}
+                                    <td title="{{ $item->order->client->name }}"
+                                        class="@if ($item->checkmark == 1) btn btn-sm btn-warning p-0 px-1 @elseif($item->checkmark == 2) btn btn-sm btn-success p-0 px-1 @endif mouse-help name-field">
+                                        {{ Str::limit($item->order->client->name, 30, '...') }}
                                     </td>
+                                    {{-- CATEGORIA --}}
                                     <td>{{ $item->order->client->category->name }}</td>
+                                    {{-- SALDO --}}
                                     <td class="text-right">
                                         {{ number_format($item->saldo > $item->quant ? $item->quant : $item->saldo, 0, '', '.') }}
                                     </td>
+                                    {{-- VENDEDOR --}}
                                     <td>{{ $item->order->seller->name ?? ' - ' }}</td>
+                                    {{-- DATA DA ENTREGA --}}
                                     <td class="text-right d-flex flex-column align-items-end">
                                         {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
                                         <span
-                                            class="btn btn-sm btn-danger p-0 px-1 @if (!$item->favorite_delivery) d-none @endif">Data
+                                            class="btn btn-sm btn-danger p-0 px-1 @if (!$item->favorite_delivery) d-none @endif date-field">Data
                                             fixada</span>
                                     </td>
+                                    {{-- TIPO DE ENTREGA --}}
                                     <td>
                                         @php $isCif = (Str::lower($item->order->withdraw) === 'entregar'); @endphp
                                         <span class="badge {{ $isCif ? 'badge-dark' : 'badge-info' }}">
                                             {{ Str::ucfirst($item->order->withdraw) }} ({{ $isCif ? 'CIF' : 'FOB' }})
                                         </span>
+                                    </td>
+                                    {{-- AÇÕES --}}
+                                    <td>
+                                        <button
+                                            class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning btn-fav"
+                                            data-id="{{ $item->id }}"
+                                            data-url="{{ route('order_products.toggle_mark', ['order_product' => $item, 'action' => 'checkmark', 'value' => 1]) }}"
+                                            title="Marcar aguardando antecipação"><i class="icon fas fa-clock"></i></button>
+
+                                        <button
+                                            class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success btn-fav"
+                                            data-id="{{ $item->id }}"
+                                            data-url="{{ route('order_products.toggle_mark', ['order_product' => $item, 'action' => 'checkmark', 'value' => 2]) }}"
+                                            title="Marcar liberado para entrega"><i
+                                                class="icon fas fa-thumbs-up"></i></button>
+
+                                        <button
+                                            class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger btn-fav"
+                                            data-id="{{ $item->id }}"
+                                            data-url="{{ route('order_products.toggle_mark', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
+                                            title="Marcar fixar data"><i class="icon fas fa-calendar-day"></i></button>
+
+                                        <button class="btn btn-sm btn-outline-secondary btn-fav" disabled
+                                            data-id="{{ $item->id }}" data-url="url" title="Adicionar observação"><i
+                                                class="icon fas fa-comment-dots"></i></button>
                                     </td>
                                 </tr>
                             @endif
@@ -167,41 +194,6 @@
             line-height: 1.1;
         }
 
-        /* hover suave nas linhas */
-        tbody tr:hover {
-            background-color: #f6f9fc;
-            cursor: pointer;
-        }
-
-        /* padrão: links de favorito como texto normal */
-        a.fav-client,
-        a.fav-date {
-            color: inherit;
-            text-decoration: none;
-            font-weight: 400;
-        }
-
-        /* destaque CLIENTE (amarelo) */
-        .is-fav-client {
-            background: #ffde59;
-            color: #111;
-            font-weight: 700 !important;
-            font-size: 1.06em;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        /* destaque DATA (roxo) */
-        .is-fav-date {
-            background: #dc3545;
-            /* roxo bootstrap-ish */
-            color: #fff !important;
-            font-weight: 700 !important;
-            font-size: 1.06em;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
         .page-header h2 {
             font-weight: 600;
         }
@@ -210,6 +202,12 @@
             font-size: .85rem;
             padding: .25rem .5rem;
         }
+
+        .mouse-help {
+            cursor: help;
+        }
+
+        .btn-checkmark-1 {}
     </style>
 @endsection
 
@@ -230,47 +228,22 @@
             history.go(0);
         });
 
-        // Toggle favorito do CLIENTE (com confirmação)
-        $(document).on('click', 'a.fav-client', function(e) {
-            e.preventDefault();
-            const $el = $(this);
-            const elId = $el.data('client-id');
-            const url = $el.data('url');
+        var btnFav = document.querySelectorAll('.btn-fav');
+        btnFav.forEach(item => {
+            item.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const url = this.dataset.url;
 
-            const marcando = !$el.hasClass('is-fav-client');
-            const msg = marcando ? 'Favoritar este cliente?' : 'Remover favorito deste cliente?';
-            if (!confirm(msg)) return;
-
-            $.post(url, {}, function(resp) {
-                if (resp && resp.ok) {
-                    // aplica no clicado
-                    $el.toggleClass('is-fav-client', !!resp.is_favorite);
-                    // aplica em TODOS com o mesmo data-client-id
-                    $(`[data-client-id="${elId}"]`).toggleClass('is-fav-client', !!resp.is_favorite);
-                }
-            }).fail(function(xhr) {
-                console.error('Falha ao favoritar cliente', xhr.responseText);
-                alert('Não foi possível alterar o favorito do cliente.');
-            });
-        });
-
-        // Toggle favorito da DATA DE ENTREGA (com confirmação)
-        $(document).on('click', 'a.fav-date', function(e) {
-            e.preventDefault();
-            var $el = $(this);
-            var url = $el.data('url'); // rota /order-products/{id}/toggle-delivery-favorite
-            var marcando = !$el.hasClass('is-fav-date');
-            var msg = marcando ? 'Destacar esta DATA DE ENTREGA?' : 'Remover destaque desta DATA DE ENTREGA?';
-            if (!confirm(msg)) return;
-
-            $.post(url, {}, function(resp) {
-                if (resp && resp.ok) {
-                    $el.toggleClass('is-fav-date', !!resp.favorite_delivery);
-                }
-            }).fail(function(xhr) {
-                console.error('Falha ao favoritar data de entrega', xhr.responseText);
-                alert('Não foi possível alterar o destaque da data de entrega.');
-            });
+                $.post(url, {}, function(resp) {
+                    if (resp && resp.ok) {
+                        console.log(resp);
+                        window.location.reload();
+                    }
+                }).fail(function(xhr) {
+                    console.error('Falha ao favoritar cliente', xhr.responseText);
+                    alert('Não foi possível alterar o favorito do cliente.');
+                });
+            })
         });
     </script>
 @endsection

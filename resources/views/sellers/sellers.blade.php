@@ -77,13 +77,13 @@
                                 </td>
                                 <td>{{ $seller->contact_value }}</td>
                                 <td>
-                                    @if (in_array('sellers.cc', $user_permissions) || Auth::user()->is_admin)
+                                    {{-- @if (in_array('sellers.cc', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-warning"
                                             href="{{ route('cc_seller', $seller->id) }}">Ver entregas</a>
                                     @else
                                         <button class="btn btn-sm btn-outline-warning" disabled title="Solicitar Acesso">Ver
                                             entregas</button>
-                                    @endif
+                                    @endif --}}
 
                                     @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary"

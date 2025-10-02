@@ -29,16 +29,8 @@
                     <input type="hidden" name="order_id" value="{{ $order->id }}">
 
                     <div class="form-group">
-                        <label for="product_name">Produto <small>(Digite um novo nome para cadastrar)</small>:</label>
-                        <input type="search" class="form-control @error('product_name') is-invalid @enderror"
-                            id="product_name" name="product_name" list="lista-produtos" placeholder="Busca produto..."
-                            value="{{ old('product_name') ?? $order_product->product->name }}">
-                        <datalist id="lista-produtos">
-                            @foreach ($products as $item)
-                                <option @if (old('product_name') == $item->name) selected @endif value="{{ $item->name }}">
-                                </option>
-                            @endforeach
-                        </datalist>
+                        <label for="product_name">Produto:</label>
+                        <div class="form-control" readonly>{{ $order_product->product->name }}</div>
                     </div>
 
                     <div class="form-group">

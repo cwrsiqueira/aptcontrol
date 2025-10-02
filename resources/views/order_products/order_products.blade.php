@@ -93,15 +93,6 @@
                         <div class="col-md mb-1">
                             <span class="muted-label">Cliente</span>
                             <div class="text-body font-weight-bold">{{ optional($order->client)->name }}</div>
-                            <div class="d-flex jalign-items-center mb-3 small">
-                                <input type="checkbox" name="fav-client" id="fav-client"
-                                    data-url="{{ route('clients.toggle_favorite', $order->client->id) }}"
-                                    @if ($order->client->is_favorite) checked @endif>
-                                <label for="fav-client"
-                                    class="fav-client @if ($order->client->is_favorite) is-fav-client @endif d-inline-block my-0 mx-1">Cliente
-                                    aguardando antecipação
-                                </label>
-                            </div>
                         </div>
                         <div class="col-md mb-1">
                             <span class="muted-label">Vendedor</span>
@@ -324,53 +315,4 @@
             border-radius: 4px;
         }
     </style>
-@endsection
-
-@section('js')
-    <script>
-        // CSRF para Ajax
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        });
-
-        $(document).on('click', 'input#fav-client', function() {
-            const $el = $('.fav-client');
-            const url = $(this).data('url');
-
-            const marcando = !$el.hasClass('is-fav-client');
-            const msg = marcando ? 'Favoritar este cliente?' : 'Remover favorito deste cliente?';
-            if (!confirm(msg)) return;
-
-            $.post(url, {}, function(resp) {
-                if (resp && resp.ok) {
-                    // aplica no clicado
-                    $el.toggleClass('is-fav-client', !!resp.is_favorite);
-                }
-            }).fail(function(xhr) {
-                console.error('Falha ao favoritar cliente', xhr.responseText);
-                alert('Não foi possível alterar o favorito do cliente.');
-            });
-        });
-
-        // Toggle favorito da DATA DE ENTREGA (com confirmação)
-        $(document).on('click', 'a.fav-date', function(e) {
-            e.preventDefault();
-            var $el = $(this);
-            var url = $el.data('url'); // rota /order-products/{id}/toggle-delivery-favorite
-            var marcando = !$el.hasClass('is-fav-date');
-            var msg = marcando ? 'Destacar esta DATA DE ENTREGA?' : 'Remover destaque desta DATA DE ENTREGA?';
-            if (!confirm(msg)) return;
-
-            $.post(url, {}, function(resp) {
-                if (resp && resp.ok) {
-                    $el.toggleClass('is-fav-date', !!resp.favorite_delivery);
-                }
-            }).fail(function(xhr) {
-                console.error('Falha ao favoritar data de entrega', xhr.responseText);
-                alert('Não foi possível alterar o destaque da data de entrega.');
-            });
-        });
-    </script>
 @endsection

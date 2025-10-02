@@ -408,36 +408,4 @@ class OrderController extends Controller
 
         return $seq_order_number;
     }
-
-    public function toggleDateFavorite($orderId)
-    {
-        $user_permissions = Helper::get_permissions();
-        // Mantendo mesma permissão '10' da tela C/C Produto
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('orders.index')->withErrors($message);
-        }
-
-        $order = \App\Order::findOrFail($orderId);
-        $order->favorite_date = !$order->favorite_date;
-        $order->save();
-
-        return response()->json(['ok' => true, 'favorite_date' => (bool) $order->favorite_date]);
-    }
-
-    public function toggleDeliveryFavorite($orderProductId)
-    {
-        $user_permissions = Helper::get_permissions();
-        // mesma permissão que você já usa na tela C/C Produto
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('orders.index')->withErrors($message);
-        }
-
-        $op = Order_product::findOrFail($orderProductId);
-        $op->favorite_delivery = !$op->favorite_delivery;
-        $op->save();
-
-        return response()->json(['ok' => true, 'favorite_delivery' => (bool) $op->favorite_delivery, 'id' => $orderProductId]);
-    }
 }

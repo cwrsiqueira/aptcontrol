@@ -192,7 +192,6 @@ class OrderProductController extends Controller
         }
 
         $data = $request->only([
-            "product_name",
             "quant",
             "delivery_date",
             "favorite_delivery",
@@ -204,27 +203,20 @@ class OrderProductController extends Controller
         Validator::make(
             $data,
             [
-                "product_name" => ['required'],
                 "quant" => ['required'],
                 "delivery_date" => ['required'],
                 "favorite_delivery" => ['required'],
             ],
             [],
             [
-                'product_name' => 'Produto',
                 'delivery_date' => 'Data de entrega',
             ]
         )->validate();
 
-        $product = Product::firstOrCreate(
-            ['name' => trim($data['product_name'])],
-            ['daily_production_forecast' => 0],
-        );
         $order = Order::find($data['order_id']);
 
         $order_product = Order_product::find($order_product->id);
         $order_product->order_id = $order->order_number;
-        $order_product->product_id = $product->id;
         $order_product->quant = str_replace('.', '', $data['quant']);
         $order_product->delivery_date = $data['delivery_date'];
         $order_product->favorite_delivery = $data['favorite_delivery'];
@@ -349,5 +341,26 @@ class OrderProductController extends Controller
         Helper::saveLog(Auth::user()->id, 'Entrega', $order_product->id, $order_product->order_number, 'Pedidos');
 
         return redirect()->route('order_products.delivery', $order_product->id)->with('success', 'Salvo com sucesso!');
+    }
+
+    public function toggleMark(Request $request, Order_product $order_product)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('order_products.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', $order_product->order->id)->withErrors($message);
+        }
+
+        $action = $request->input('action');
+        $value = $request->input('value');
+        if ($order_product->$action == $value) {
+            $value = 0;
+        }
+
+        $order_product->$action = $value;
+        $order_product->save();
+
+        Helper::saveLog(Auth::user()->id, 'Marcação: ' . $action, $order_product->id, $order_product->order_number, 'Entregas por produto');
+        return response()->json(['ok' => true, 'id' => $order_product->id, 'action' => $action, 'value' => $value]);
     }
 }
