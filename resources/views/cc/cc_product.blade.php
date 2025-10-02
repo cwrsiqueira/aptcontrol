@@ -51,7 +51,7 @@
                                     <label class="mb-0 d-flex align-items-center btn btn-sm btn-warning">
                                         <input class="mr-2" type="checkbox" name="por_favorito[]" value="1"
                                             @if (!empty($_GET['por_favorito']) && in_array(1, $_GET['por_favorito'])) checked @endif>
-                                        <span class="text-truncate" title="Aguardando antecipação">Aguardando
+                                        <span class="text-truncate" title="Aguardando antecipação">A - Aguardando
                                             antecipação</span>
                                         <span
                                             class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[1] ?? 0, 0, '', '.') }}</span>
@@ -61,7 +61,7 @@
                                     <label class="mb-0 d-flex align-items-center btn btn-sm btn-success">
                                         <input class="mr-2" type="checkbox" name="por_favorito[]" value="2"
                                             @if (!empty($_GET['por_favorito']) && in_array(2, $_GET['por_favorito'])) checked @endif>
-                                        <span class="text-truncate" title="Liberados para entrega">Liberados para
+                                        <span class="text-truncate" title="Liberados para entrega">L - Liberados para
                                             entrega</span>
                                         <span
                                             class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[2] ?? 0, 0, '', '.') }}</span>
@@ -95,7 +95,7 @@
                             <th>Vendedor</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
-                            <th>Ações</th>
+                            <th class="nao-imprimir">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -112,7 +112,17 @@
                                     {{-- CLIENTE --}}
                                     <td title="{{ $item->order->client->name }}"
                                         class="@if ($item->checkmark == 1) btn btn-sm btn-warning p-0 px-1 @elseif($item->checkmark == 2) btn btn-sm btn-success p-0 px-1 @endif mouse-help name-field">
-                                        {{ Str::limit($item->order->client->name, 30, '...') }}
+                                        <div>
+                                            <button
+                                                class="btn btn-sm @if ($item->checkmark == 1) btn-warning @elseif($item->checkmark == 2) btn-success @endif mr-2 btn-legenda">
+                                                @if ($item->checkmark == 1)
+                                                    {{ 'A' }}
+                                                @elseif($item->checkmark == 2)
+                                                    {{ 'L' }}
+                                                @endif
+                                            </button>
+                                            {{ Str::limit($item->order->client->name, 30, '...') }}
+                                        </div>
                                     </td>
                                     {{-- CATEGORIA --}}
                                     <td>{{ $item->order->client->category->name }}</td>
@@ -137,7 +147,7 @@
                                         </span>
                                     </td>
                                     {{-- AÇÕES --}}
-                                    <td>
+                                    <td class="nao-imprimir">
                                         <button
                                             class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning btn-fav"
                                             data-id="{{ $item->id }}"
@@ -206,8 +216,6 @@
         .mouse-help {
             cursor: help;
         }
-
-        .btn-checkmark-1 {}
     </style>
 @endsection
 
@@ -221,9 +229,12 @@
         });
 
         // Imprimir
+        $('.btn-legenda').hide();
         $('#btn_imprimir').click(function() {
             $(this).hide();
             $('#btn_voltar, #btn_sair, #btn_recalc, #search, #clean_search, .nao-imprimir').hide();
+            $('.btn-legenda').show();
+            $('.name-field').attr('class', '');
             window.print();
             history.go(0);
         });
