@@ -82,7 +82,7 @@
                             </form>
                         </div>
                     @endif
-                    <div class="col-sm-3">
+                    <div class="col-sm-5">
                         <span class="muted-label">Saldo</span>
                         <ul>
                             <li class="text-muted">Pedido - entregue = saldo:

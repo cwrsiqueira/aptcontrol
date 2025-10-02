@@ -44,8 +44,6 @@ class OrderProductController extends Controller
             ->orderBy('id')
             ->get();
 
-        $delivery_products = $order_products->where('quant', '<', 0)->count();
-
         $saldo_produtos = Order_product::where('order_id', $order->order_number)
             ->select(
                 'product_id',
@@ -70,7 +68,6 @@ class OrderProductController extends Controller
             'order',
             'order_products',
             'saldo_produtos',
-            'delivery_products',
             'total_products',
         ));
     }
@@ -128,6 +125,14 @@ class OrderProductController extends Controller
         $product = Product::firstOrCreate(['name' => trim($data['product_name'])], ['daily_production_forecast' => 0]);
         $order = Order::find($request->input('order'));
 
+        $hasProduct = Order_product::where('order_id', $order->order_number)->where('product_id', $product->id)->count();
+        if ($hasProduct > 0) {
+            $message = [
+                'has-product' => 'Produto já cadastrado pra esse pedido!',
+            ];
+            return redirect()->route('order_products.index', ['order' => $order->id])->withErrors($message);
+        }
+
         $order_product = new Order_product();
         $order_product->order_id = $order->order_number;
         $order_product->product_id = $product->id;
@@ -151,7 +156,10 @@ class OrderProductController extends Controller
             return redirect()->route('orders.index')->withErrors($message);
         }
 
+        $product_id = $request->input('product_id');
+
         $delivery_product = Order_product::where('order_id', $order_product->order_id)
+            ->where('product_id', $product_id)
             ->where('quant', '<', 0)
             ->count();
 
@@ -240,7 +248,10 @@ class OrderProductController extends Controller
         $main_order_product = $request->input('main_order_product');
 
         if (!$main_order_product) {
+            $product_id = $request->input('product_id');
+
             $delivery_product = Order_product::where('order_id', $order_product->order_id)
+                ->where('product_id', $product_id)
                 ->where('quant', '<', 0)
                 ->count();
 

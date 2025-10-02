@@ -16,7 +16,7 @@
 
         <div class="row">
             {{-- RESUMO DO PRODUTO --}}
-            <div class="col-lg-4">
+            <div class="col-lg">
                 <div class="card card-lift mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <span class="font-weight-bold">Produto</span>
@@ -33,40 +33,49 @@
                             <strong class="mr-2">Entregas a partir de:</strong>
                             <span>{{ date('d/m/Y', strtotime($delivery_in)) }}</span>
                         </div>
+                        <div class="d-flex align-items-center">
+                            <i class="icon fas fa-exclamation-triangle mr-2"></i>
+                            <strong class="mr-2">OBS:</strong>
+                            <span class="meta-chip mt-3">Clique na linha do pedido para marcar o pedido e
+                                incluir
+                                observações.</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {{-- FILTROS --}}
-            <div class="col-lg-5">
+            <div class="col-lg">
                 <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
                     <div class="card card-lift mb-3">
                         <div class="card-header">
-                            <strong>Filtros por categoria do cliente</strong>
+                            <strong>Filtros por legendas</strong>
                         </div>
+
                         <div class="card-body">
                             <div class="row">
-                                @foreach ($quant_por_categoria as $item)
-                                    <div class="col-md-6 mb-2">
-                                        <label class="mb-0 d-flex align-items-center">
-                                            <input class="mr-2" type="checkbox" name="por_categoria[]"
-                                                value="{{ $item['id'] }}"
-                                                @if (!empty($_GET['por_categoria']) && in_array($item['id'], $_GET['por_categoria'])) checked @endif>
-                                            <span class="text-truncate"
-                                                title="{{ $item['name'] }}">{{ $item['name'] }}</span>
-                                            <span
-                                                class="ml-2 badge badge-light">{{ number_format($item['saldo'], 0, '', '.') }}</span>
-                                        </label>
-                                    </div>
-                                @endforeach
+                                <div class="col-md-6 mb-2">
+                                    <label class="mb-0 d-flex align-items-center btn btn-sm btn-warning">
+                                        <input class="mr-2" type="checkbox" name="por_favorito[]" value="1"
+                                            @if (!empty($_GET['por_favorito']) && in_array(1, $_GET['por_favorito'])) checked @endif>
+                                        <span class="text-truncate" title="Aguardando antecipação">Aguardando
+                                            antecipação</span>
+                                        <span
+                                            class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[1] ?? 0, 0, '', '.') }}</span>
+                                    </label>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="mb-0 d-flex align-items-center btn btn-sm btn-success">
+                                        <input class="mr-2" type="checkbox" name="por_favorito[]" value="2"
+                                            @if (!empty($_GET['por_favorito']) && in_array(2, $_GET['por_favorito'])) checked @endif>
+                                        <span class="text-truncate" title="Liberados para entrega">Liberados para
+                                            entrega</span>
+                                        <span
+                                            class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[2] ?? 0, 0, '', '.') }}</span>
+                                    </label>
+                                </div>
                             </div>
                             <hr>
-
-                            {{-- <div class="custom-control custom-checkbox mb-3">
-                                <input type="checkbox" class="custom-control-input" id="chk_entregas" name="entregas"
-                                    value="1" @if (!empty($_GET['entregas'])) checked @endif>
-                                <label class="custom-control-label" for="chk_entregas">Mostrar entregas realizadas</label>
-                            </div> --}}
 
                             <div class="d-flex align-items-center">
                                 <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
@@ -76,23 +85,6 @@
                         </div>
                     </div>
                 </form>
-            </div>
-
-            {{-- LEGENDAS --}}
-            <div class="col-lg-3 nao-imprimir">
-                <div class="card card-lift mb-3">
-                    <div class="card-header">
-                        <strong>Legendas</strong>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-block mb-3">
-                            <div class="fav-client is-fav-client d-inline-block">Cliente aguardando antecipação</div>
-                        </div>
-                        <div class="d-block">
-                            <div class="fav-date is-fav-date d-inline-block">Data fixa para entrega</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -114,38 +106,36 @@
                     </thead>
                     <tbody>
                         @foreach ($data as $item)
-                            <tr class="linha" data-id="{{ $item->id }}">
-                                <td>{{ date('d/m/Y', strtotime($item->order_date)) }}</td>
-                                <td>
-                                    <a
-                                        href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
-                                </td>
-                                <td>
-                                    <a href="#"
-                                        class="fav-client {{ (int) $item->client_favorite === 1 ? 'is-fav-client' : '' }}"
-                                        data-client-id="{{ $item->client_id }}"
-                                        data-url="{{ route('clients.toggle_favorite', $item->client_id) }}">
-                                        {{ $item->client_name }}
-                                    </a>
-                                </td>
-                                <td>{{ $item->category_name }}</td>
-                                <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
-                                <td>{{ $item->seller_name ?? ' - ' }}</td>
-                                <td>
-                                    <a href="#"
-                                        class="fav-date {{ (int) $item->favorite_delivery === 1 ? 'is-fav-date' : '' }}"
-                                        data-op-id="{{ $item->id }}"
-                                        data-url="{{ route('order_products.toggle_delivery_favorite', $item->id) }}">
-                                        {{ date('d/m/Y', strtotime($item->delivery_date)) }}
-                                    </a>
-                                </td>
-                                <td>
-                                    @php $isCif = (Str::lower($item->order->withdraw) === 'entregar'); @endphp
-                                    <span class="badge {{ $isCif ? 'badge-success' : 'badge-info' }}">
-                                        {{ Str::ucfirst($item->order->withdraw) }} ({{ $isCif ? 'CIF' : 'FOB' }})
-                                    </span>
-                                </td>
-                            </tr>
+                            @if ($item->saldo > 0)
+                                <tr class="linha" data-id="{{ $item->id }}">
+                                    <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td>
+                                    <td>
+                                        <a
+                                            href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
+                                    </td>
+                                    <td
+                                        class="@if ($item->checkmark == 1) btn btn-sm btn-warning p-0 px-1 @elseif($item->checkmark == 2) btn btn-sm btn-success p-0 px-1 @endif">
+                                        {{ $item->order->client->name }}
+                                    </td>
+                                    <td>{{ $item->order->client->category->name }}</td>
+                                    <td class="text-right">
+                                        {{ number_format($item->saldo > $item->quant ? $item->quant : $item->saldo, 0, '', '.') }}
+                                    </td>
+                                    <td>{{ $item->order->seller->name ?? ' - ' }}</td>
+                                    <td class="text-right d-flex flex-column align-items-end">
+                                        {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                        <span
+                                            class="btn btn-sm btn-danger p-0 px-1 @if (!$item->favorite_delivery) d-none @endif">Data
+                                            fixada</span>
+                                    </td>
+                                    <td>
+                                        @php $isCif = (Str::lower($item->order->withdraw) === 'entregar'); @endphp
+                                        <span class="badge {{ $isCif ? 'badge-dark' : 'badge-info' }}">
+                                            {{ Str::ucfirst($item->order->withdraw) }} ({{ $isCif ? 'CIF' : 'FOB' }})
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>
@@ -166,16 +156,15 @@
             box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
         }
 
-        /* tabela com cabeçalho grudado */
-        .tableFixHead {
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        .tableFixHead .sticky-header th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
+        .meta-chip {
+            display: inline-block;
+            padding: .2rem .5rem;
+            font-size: .95rem;
+            font-weight: 600;
+            border-radius: .375rem;
+            background: #f1f3f5;
+            color: #495057;
+            line-height: 1.1;
         }
 
         /* hover suave nas linhas */

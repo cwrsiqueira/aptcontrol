@@ -300,66 +300,44 @@ class ProductController extends Controller
             return redirect()->route('products.index')->withErrors($message);
         }
 
-        // Filtro por categoria (checkboxes)
-        $cats = (array) $request->input('por_categoria', []);
-        // (opcional) normalizar para int: $cats = array_map('intval', $cats);
+        $fav = $request->input('por_favorito', [0, 1, 2]);
 
-        $product = Product::findOrFail($id);
-        $complete_order = $request->input('entregas', 0);
+        $orderIds = Order_product::where('product_id', $id)
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->whereIn('checkmark', $fav)
+            ->where('orders.complete_order', 0)
+            ->pluck('order_id');
 
-        // Base: pedidos em aberto do produto
-        $data = Order_product::query()
-            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
-            ->join('clients', 'clients.id',         '=', 'orders.client_id')
-            ->leftJoin('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
-            ->leftJoin('sellers',            'sellers.id',            '=', 'orders.seller_id')
-            ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', $complete_order)
-            ->when(!empty($cats), fn($q) => $q->whereIn('clients.id_categoria', $cats))
-            ->orderBy('order_products.delivery_date')
-            ->select([
-                'order_products.*',                   // inclui id, product_id, quant, delivery_date, favorite_delivery, withdraw...
-                'orders.order_date',
-                'orders.order_number as order_id',
-                'orders.seller_id',
-                'clients.id as client_id',
-                'clients.name as client_name',
-                'clients.id_categoria as client_id_categoria',
-                'clients.is_favorite as client_favorite',
-                'clients_categories.name as category_name',
-                'sellers.name as seller_name',
-            ])
+        $data = Order_product::where('product_id', $id)
+            ->with('order', 'product', 'order.client', 'order.seller')
+            ->withSaldo()
+            ->whereIn('order_id', $orderIds)
+            ->orderBy('delivery_date')
             ->get();
 
-        // Recalcular "saldo" acumulado por pedido (mesma regra: min(acumulado, quant da linha))
-        $acc = [];
-        foreach ($data as $k => $row) {
-            $pedido = $row->order_id;
-            $acc[$pedido] = ($acc[$pedido] ?? 0) + $row->quant;
-            $data[$k]->saldo = ($acc[$pedido] > $row->quant) ? $row->quant : $acc[$pedido];
-        }
+        $product = Product::find($id);
 
-        // Filtra após calcular saldo (preserva comportamento do original)
-        $data = $data
-            ->where('saldo', '>', 0)
-            ->where('delivery_date', '>', '1970-01-01');
-
-        // Totais por categoria (para montar os checkboxes com badges)
-        $quant_por_categoria = Order_product::query()
-            ->join('orders',  'orders.order_number', '=', 'order_products.order_id')
-            ->join('clients', 'clients.id',          '=', 'orders.client_id')
-            ->join('clients_categories', 'clients_categories.id', '=', 'clients.id_categoria')
-            ->where('order_products.product_id', $id)
-            ->where('orders.complete_order', $complete_order)
-            ->groupBy('clients_categories.id', 'clients_categories.name')
-            ->select([
-                DB::raw('SUM(order_products.quant) as saldo'),
-                'clients_categories.id',
-                'clients_categories.name',
-            ])
+        // 1) calcula o total POR pedido (order_id) e pega o "checkmark do pedido" com MAX(checkmark)
+        $perOrders = Order_product::where('product_id', $id)
+            ->whereIn('order_id', $orderIds)
+            ->select(
+                'order_id',
+                DB::raw('SUM(quant) as order_total'),
+                DB::raw('MAX(checkmark) as order_checkmark') // se qualquer linha do pedido tem 1, o pedido vira 1
+            )
+            ->groupBy('order_id')
             ->get();
 
-        // Mantém seu cálculo existente
+        // 2) soma os order_total por order_checkmark
+        $quant_por_favorito = $perOrders
+            ->groupBy('order_checkmark')         // agrupa por 0,1,...
+            ->map(function ($group) {
+                return $group->sum('order_total');
+            })
+            ->toArray();
+
+        // dd($quant_por_favorito);
+
         $day_delivery_calc = Helper::day_delivery_calc($id);
         $quant_total = $day_delivery_calc['quant_total'];
         $delivery_in = $day_delivery_calc['delivery_in'];
@@ -370,7 +348,7 @@ class ProductController extends Controller
             'quant_total'         => $quant_total,
             'delivery_in'         => $delivery_in,
             'user_permissions'    => $user_permissions,
-            'quant_por_categoria' => $quant_por_categoria,
+            'quant_por_favorito' => $quant_por_favorito,
         ]);
     }
 }
