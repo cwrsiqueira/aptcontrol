@@ -27,6 +27,7 @@
                             <i class="far fa-clipboard mr-2"></i>
                             <strong class="mr-2">Total a entregar:</strong>
                             <span>{{ number_format($quant_total ?? 0, 0, '', '.') }}</span>
+                            <span>{{ number_format($quant_total ?? 0, 0, '', '.') }}</span>
                         </div>
                         <div class="d-flex align-items-center">
                             <i class="far fa-calendar-alt mr-2"></i>

@@ -299,56 +299,92 @@ class ProductController extends Controller
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('products.index')->withErrors($message);
         }
+        // checks pode vir do request (ex.: ?checks[]=1&checks[]=2)
+        $checks = (array) $request->input('por_favorito', []); // se vazio => sem filtro (todas as linhas do produto)
 
-        $fav = $request->input('por_favorito', [0, 1, 2]);
+        // 1) baseQuery: calcula o saldo usando window function (saidas primeiro)
+        $baseQuery = Order_product::select([
+            'order_products.id',
+            'order_products.order_id',
+            'order_products.product_id',
+            'order_products.quant',
+            'order_products.checkmark',
+            'order_products.delivery_date',
+            DB::raw("
+            SUM(CAST(quant AS INTEGER)) OVER (
+                PARTITION BY order_id, product_id
+                ORDER BY
+                    CASE WHEN CAST(quant AS INTEGER) < 0 THEN 0 ELSE 1 END,
+                    delivery_date,
+                    id
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) AS saldo
+        ")
+        ])->where('product_id', $id);
 
-        $orderIds = Order_product::where('product_id', $id)
-            ->join('orders', 'orders.order_number', 'order_products.order_id')
-            ->whereIn('checkmark', $fav)
-            ->where('orders.complete_order', 0)
-            ->pluck('order_id');
+        // 2) transforma em subquery para podermos filtrar sem quebrar a window function
+        $sub = DB::query()->fromSub($baseQuery, 'base');
 
-        $data = Order_product::where('product_id', $id)
-            ->with('order', 'product', 'order.client', 'order.seller')
-            ->withSaldo()
-            ->whereIn('order_id', $orderIds)
-            ->orderBy('delivery_date')
-            ->get();
+        // 3) aplicar filtro por checkmark se houver (caso contrário pega tudo)
+        if (!empty($checks)) {
+            $sub = $sub->whereIn('checkmark', $checks);
+        }
 
-        $product = Product::find($id);
+        // 4) ordenar e recuperar linhas (stdClass) — aqui usamos get() para trabalhar em memória
+        $rows = $sub->orderBy('delivery_date')->orderBy('id')->get();
 
-        // 1) calcula o total POR pedido (order_id) e pega o "checkmark do pedido" com MAX(checkmark)
-        $perOrders = Order_product::where('product_id', $id)
-            ->whereIn('order_id', $orderIds)
-            ->select(
-                'order_id',
-                DB::raw('SUM(quant) as order_total'),
-                DB::raw('MAX(checkmark) as order_checkmark') // se qualquer linha do pedido tem 1, o pedido vira 1
-            )
-            ->groupBy('order_id')
-            ->get();
+        // 5) extrair ids e map de saldo por id
+        $ids = $rows->pluck('id')->all();                 // ids de order_products retornados
+        $saldoMap = $rows->pluck('saldo', 'id')->all();   // [ id => saldo, ... ]
 
-        // 2) soma os order_total por order_checkmark
-        $quant_por_favorito = $perOrders
-            ->groupBy('order_checkmark')         // agrupa por 0,1,...
+        // 6) buscar os modelos Eloquent com relações (para usar no blade)
+        $models = Order_product::with('order', 'product', 'order.client', 'order.seller')
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id'); // index por id pra montar na ordem depois
+
+        // 7) montar coleção final na MESMA ordem do $rows e anexar o saldo em cada model
+        $data = collect($rows)->map(function ($r) use ($models, $saldoMap) {
+            $id = $r->id;
+            if (! isset($models[$id])) {
+                // fallback: se por algum motivo o model não existir, cria um objeto simples
+                $m = (object) (array) $r;
+                $m->saldo = (int) $saldoMap[$id];
+                return $m;
+            }
+            $model = $models[$id];
+            // anexa saldo (inteiro/float conforme sua coluna)
+            $model->saldo = is_null($r->saldo) ? 0 : (int) $r->saldo;
+            return $model;
+        })->values();
+
+        // 8) cálculos agregados:
+        // total (soma de todos os saldos exibidos)
+        $total_sum = $data->where('saldo', '>', 0)->sum('saldo');
+
+        // soma por checkmark (mesma coleção exibida)
+        $sum_by_check = $data
+            ->groupBy(function ($item) {
+                // garante chave coerente: se checkmark for null, trata como 0
+                return (string) (($item->checkmark !== null) ? $item->checkmark : 0);
+            })
             ->map(function ($group) {
-                return $group->sum('order_total');
+                return $group->sum('saldo');
             })
             ->toArray();
 
-        // dd($quant_por_favorito);
+        $delivery_in = Helper::day_delivery_calc($id);
 
-        $day_delivery_calc = Helper::day_delivery_calc($id);
-        $quant_total = $day_delivery_calc['quant_total'];
-        $delivery_in = $day_delivery_calc['delivery_in'];
-
+        // 9) retornar (ou passar para view)
         return view('cc.cc_product', [
-            'data'                => $data,
-            'product'             => $product,
-            'quant_total'         => $quant_total,
-            'delivery_in'         => $delivery_in,
+            'data'                => $data,                    // coleção de models (cada um tem ->saldo)
+            'product'             => Product::find($id),
+            'total_sum'           => $total_sum,
+            'delivery_in'         => $delivery_in['delivery_in'],
+            'quant_total'         => $delivery_in['quant_total'],
             'user_permissions'    => $user_permissions,
-            'quant_por_favorito' => $quant_por_favorito,
+            'quant_por_favorito'  => $sum_by_check,
+            'checks_filter'       => $checks,
         ]);
     }
 }
