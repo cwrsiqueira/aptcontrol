@@ -93,7 +93,124 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        //
+    }
+
     public function report_delivery(Request $request)
+    {
+        // 1) Entrada (com defaults simples)
+        $date_ini      = $request->query('date_ini', date('Y-m-01 00:00:00'));   // pode vir null
+        $date_fin      = $request->query('date_fin', date('Y-m-t 23:59:59'));   // pode vir null
+        $withdraw  = $request->query('withdraw', '%');   // mantém o LIKE '%'
+        $productIds = $request->query('por_produto');    // array de IDs (opcional)
+
+        $withdraw = $withdraw == 'Todas' ? '%' : $withdraw;
+
+        // Se não vier filtro de produto, usa todos (ids)
+        if (empty($productIds)) {
+            $productIds = Product::pluck('id')->all();
+        }
+
+        $items = Order_product::with('order:id,complete_order', 'product', 'order.client', 'order.seller')
+            ->join('orders', 'orders.order_number', 'order_products.order_id')
+            ->where('orders.complete_order', 0)
+            ->whereIn('product_id', [5])
+            ->orderBy('delivery_date')
+            ->paginate();
+
+        dd($items);
+
+        $array = [];
+        foreach ($items as $key => $item) {
+            if (!isset($array[$item->product_id])) {
+                $array[$item->product_id]['saldo'] = $item->quant;
+            } else {
+                $array[$item->product_id]['saldo'] += $item->quant;
+            }
+            echo $item->product_id . ' = ' . $array[$item->product_id]['saldo'] . '<br>';
+        }
+
+        dd($array);
+
+        $product_total = Order_product::select(DB::raw('SUM(quant) as total'))
+            ->groupBy('product_id')
+            ->get();
+
+        dd($items);
+
+        // 5) View
+        return view('reports.reports_delivery', [
+            'order_products'    => $items,
+            'date_ini'          => $date_ini,
+            'date_fin'          => $date_fin,
+            'product_total'     => $product_total,
+        ]);
+    }
+
+    public function report_delivery_BKP(Request $request)
     {
         // 1) Entrada (com defaults simples)
         $date_ini      = $request->query('date_ini', date('Y-m-01 00:00:00'));   // pode vir null
@@ -241,71 +358,5 @@ class ReportController extends Controller
             'date_fin'          => $date_fin,
             'product_total' => $product_total,
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
     }
 }
