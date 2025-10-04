@@ -128,12 +128,5 @@
             });
         }
         //
-
-        // Desabilita campo data para preenchimento
-        document.querySelector('#favorite_delivery').addEventListener('change', function() {
-            this.checked ?
-                document.querySelector('#delivery_date').setAttribute('readonly', true) :
-                document.querySelector('#delivery_date').removeAttribute('readonly')
-        })
     </script>
 @endsection

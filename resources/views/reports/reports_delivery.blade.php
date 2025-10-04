@@ -1,162 +1,222 @@
 @extends('layouts.estilos')
 
-@section('title', 'Entregas')
+@section('title', 'Relatório de Entregas')
 
 @section('content')
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
-
-        {{-- Cabeçalho --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
-            <h2 class="mb-0">
-                Entregas pendentes no período
-            </h2>
+            <h2 class="mb-0">Relatório de Entregas</h2>
             <div class="btn-group">
-                <button class="btn btn-sm btn-secondary" onclick="window.location.href = 'reports'" id="btn_voltar">
-                    < Relatórios</button>
-                        <button class="btn btn-sm btn-secondary"
-                            onclick="
-                    this.style.display='none';
-                    document.getElementById('btn_voltar').style.display='none';
-                    document.getElementById('search').style.display='none';
-                    document.getElementById('clean_search').style.display='none';
-                    window.print(); history.go(0);">Imprimir</button>
+                @php
+                    // preserva todos os filtros atuais (exceto export=csv)
+                    $backQs = request()->except('export');
+                @endphp
+
+                <a class="btn btn-sm btn-secondary" href="{{ route('reports.index', $backQs) }}" id="btn_voltar">&lt;
+                    Relatórios</a>
+                @php
+                    $qs = request()->all();
+                    $qs['export'] = 'csv';
+                @endphp
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('report_delivery', $qs) }}">Baixar CSV</a>
+                <button class="btn btn-sm btn-secondary" id="btn_print">Imprimir</button>
             </div>
         </div>
 
-        <div class="row">
-            {{-- CARTÃO DA DATA / NAVEGAÇÃO --}}
-            <div class="col-lg-6">
-                <div class="card card-lift mb-3">
-                    <div class="card-header">
-                        <h4 class="mb-0 d-flex align-items-center">
-                            <span class="flex-grow-1 text-center" style="letter-spacing:.2px">
-                                @if (!empty($date))
-                                    {{ date('d/m/Y', strtotime($date ?? $date_ini . '/' . $date_fin)) }}
-                                @else
-                                    {{ date('d/m/Y', strtotime($date_ini)) }} a {{ date('d/m/Y', strtotime($date_fin)) }}
-                                @endif
-                            </span>
-                        </h4>
+        {{-- Resumo dos filtros --}}
+        <div class="card card-lift mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2"><strong>Status:</strong><br>
+                        {{ $meta['status'] === 'ambos' ? 'Pendentes e Realizadas' : ucfirst($meta['status']) }}
                     </div>
+                    <div class="col-md-3"><strong>Período:</strong><br>
+                        @if ($meta['date_ini'] || $meta['date_fin'])
+                            {{ $meta['date_ini'] ? date('d/m/Y', strtotime($meta['date_ini'])) : '—' }}
+                            a
+                            {{ $meta['date_fin'] ? date('d/m/Y', strtotime($meta['date_fin'])) : '—' }}
+                        @else
+                            (sem filtro)
+                        @endif
+                    </div>
+                    <div class="col-md-2"><strong>Campo:</strong><br>
+                        {{ $meta['date_field'] === 'order' ? 'Data do pedido' : 'Data de entrega' }}
+                    </div>
+                    <div class="col-md-2"><strong>Entrega:</strong><br>
+                        @php $w = strtolower($meta['withdraw'] ?? 'todas'); @endphp
+                        {{ $w === 'todas' ? 'Todas' : ($w === 'retirar' ? 'Retirar (FOB)' : 'Entregar (CIF)') }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Produtos:</strong><br>
+                        @if (!empty($products) && $products->count())
+                            @foreach ($products as $p)
+                                <span class="badge badge-mute">{{ $p->name }}</span>
+                            @endforeach
+                        @else
+                            Todos
+                        @endif
+                    </div>
+                </div>
 
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Cliente:</strong> {{ $meta['cliente'] ?? 'Todos' }}</div>
+                    <div class="col-md-3"><strong>Vendedor:</strong> {{ $meta['vendedor'] ?? 'Todos' }}</div>
+                    <div class="col-md-3"><strong>Pedido:</strong> {{ $meta['pedido'] ?? 'Todos' }}</div>
+                </div>
 
-                    <form action="{{ route('report_delivery') }}" method="get">
+                <hr class="my-3">
 
-                        <div class="card-body">
-                            {{-- FILTROS --}}
-                            <div class="form-group mb-2">
-                                <label class="mb-1">Filtrar por Tipo de Material:</label>
-                                <div class="row">
-                                    @foreach ($product_total as $key => $value)
-                                        <div class="col-md-6 mb-2">
-                                            <label class="mb-0 d-flex align-items-center">
-                                                <input class="mr-2" type="checkbox" name="por_produto[]"
-                                                    value="{{ $value['id'] }}"
-                                                    @if (!empty($_GET['por_produto']) && in_array($value['id'], $_GET['por_produto'])) checked @endif>
-                                                <span class="text-truncate" title="{{ $key }}">Total de
-                                                    {{ $key }}</span>
-                                                <span
-                                                    class="ml-2 badge badge-light">{{ number_format($value['qt'], 0, '', '.') }}</span>
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="withdraw" class="mb-1">Filtrar por Forma de Entrega:</label>
-                                <select class="form-control col-sm-6" name="withdraw" id="withdraw">
-                                    <option value="todas">Todas</option>
-                                    <option value="entregar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'entregar') selected @endif>
-                                        Entregar na Obra (CIF)
-                                    </option>
-                                    <option value="retirar" @if (!empty($_GET['withdraw']) && Str::lower($_GET['withdraw']) == 'retirar') selected @endif>
-                                        Retirar na Fábrica (FOB)
-                                    </option>
-                                </select>
-                            </div>
-
-                            {{-- Hidden de data(s) --}}
-                            @if (!empty($date))
-                                <input type="hidden" name="delivery_date" value="{{ $date }}">
-                            @else
-                                <input type="hidden" name="date_ini" value="{{ $date_ini }}">
-                                <input type="hidden" name="date_fin" value="{{ $date_fin }}">
-                            @endif
-
-                            <div class="d-flex align-items-center mt-3">
-                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                                @if (!empty($date))
-                                    <a href="{{ route('report_delivery', ['delivery_date' => $date]) }}" id="clean_search"
-                                        class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                                @else
-                                    <a href="{{ route('report_delivery', ['date_ini' => $date_ini, 'date_fin' => $date_fin]) }}"
-                                        id="clean_search" class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                                @endif
-                            </div>
-                        </div>
-                    </form>
+                <div class="row">
+                    @if (in_array($meta['status'], ['pendentes', 'ambos']))
+                        <div class="col-md-6"><strong>Total pendente:</strong>
+                            {{ number_format($meta['total_pendentes'] ?? 0, 0, '', '.') }}</div>
+                    @endif
+                    @if (in_array($meta['status'], ['realizadas', 'ambos']))
+                        <div class="col-md-6"><strong>Total realizadas:</strong>
+                            {{ number_format($meta['total_realizadas'] ?? 0, 0, '', '.') }}</div>
+                    @endif
                 </div>
             </div>
-
-            {{-- COLUNA AUXILIAR (vazia para equilíbrio visual em telas largas) --}}
-            <div class="col-lg-3 d-none d-lg-block"></div>
         </div>
 
-        {{-- TABELA --}}
-        <div class="card card-lift mb-5">
-            <div class="table-responsive">
-                <table class="table table table-striped mb-0">
-                    <thead class="thead-light sticky-header">
-                        <tr>
-                            <th>Data pedido</th>
-                            <th>Pedido</th>
-                            <th>Cliente</th>
-                            <th>Contato</th>
-                            <th>Categoria</th>
-                            <th>Produto</th>
-                            <th class="text-right">Quantidade</th>
-                            <th>Data entrega</th>
-                            <th>Vendedor</th>
-                            <th>Tipo de entrega</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($order_products as $item)
-                            @php $isLate = ($item->delivery_date < date('Y-m-d')); @endphp
-                            <tr class="{{ $isLate ? 'row-late' : '' }}">
-                                <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td>
-                                <td>
-                                    <a
-                                        href="{{ route('order_products.index', ['order' => $item->order->id]) }}">#{{ $item->order_id }}</a>
-                                </td>
-                                <td>{{ $item->order->client->name }}</td>
-                                <td>{{ $item->order->client->contact }}</td>
-                                <td>{{ $item->order->client->category->name }}</td>
-                                <td>{{ $item->product->name }}</td>
-                                <td class="text-right">{{ number_format($item->saldo, 0, '', '.') }}</td>
-                                <td style="min-width:100px">{{ date('d/m/Y', strtotime($item->delivery_date)) }}</td>
-                                <td>{{ $item->order->seller->name ?? '-' }}</td>
-                                @if (Str::lower($item->order->withdraw) == 'retirar')
-                                    <td>{{ ucfirst($item->order->withdraw) }} (FOB)</td>
-                                @else
-                                    <td>{{ ucfirst($item->order->withdraw) }} (CIF)</td>
-                                @endif
+        {{-- Tabela Pendentes --}}
+        @if (in_array($meta['status'], ['pendentes', 'ambos']))
+            <div class="card card-lift mb-4">
+                <div class="card-header"><strong>Pendentes</strong></div>
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead class="thead-light sticky-header">
+                            <tr>
+                                <th>Data pedido</th>
+                                <th>Pedido</th>
+                                <th>Cliente</th>
+                                <th>Contato</th>
+                                <th>Categoria</th>
+                                <th>Produto</th>
+                                <th class="text-right">Quantidade</th>
+                                <th>Data entrega</th>
+                                <th>Vendedor</th>
+                                <th>Tipo de entrega</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse ($pendingData as $item)
+                                @php
+                                    $order = $item->order ?? null;
+                                    $client = $order->client ?? null;
+                                    $seller = $order->seller ?? null;
+                                    $prod = $item->product ?? null;
+                                    $qtd = $item->saldo > 0 ? min((int) $item->saldo, (int) $item->quant) : 0;
+                                    if ($qtd <= 0) {
+                                        continue;
+                                    }
+                                    $isLate = $item->delivery_date && $item->delivery_date < date('Y-m-d');
+                                @endphp
+                                <tr class="{{ $isLate ? 'row-late' : '' }}">
+                                    <td>{{ $order ? date('d/m/Y', strtotime($order->order_date)) : '—' }}</td>
+                                    <td>
+                                        @if ($order)
+                                            <a
+                                                href="{{ route('order_products.index', ['order' => $order->id]) }}">#{{ $item->order_id }}</a>
+                                        @else
+                                            #{{ $item->order_id }}
+                                        @endif
+                                    </td>
+                                    <td>{{ $client->name ?? '—' }}</td>
+                                    <td>{{ $client->contact ?? '—' }}</td>
+                                    <td>{{ $client->category->name ?? '—' }}</td>
+                                    <td>{{ $prod->name ?? '#' . $item->product_id }}</td>
+                                    <td class="text-right">{{ number_format($qtd, 0, '', '.') }}</td>
+                                    <td>{{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                    </td>
+                                    <td>{{ $seller->name ?? '—' }}</td>
+                                    @php $isCif = isset($order->withdraw) ? (strtolower($order->withdraw) === 'entregar') : null; @endphp
+                                    <td>{{ isset($order->withdraw) ? ucfirst($order->withdraw) . ' (' . ($isCif ? 'CIF' : 'FOB') . ')' : '—' }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">Nenhum item pendente nos filtros.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            {{-- <div class="card-footer">{{ $orders->links() }}</div> --}}
-        </div>
+        @endif
 
-        <hr>
-
+        {{-- Tabela Realizadas --}}
+        @if (in_array($meta['status'], ['realizadas', 'ambos']))
+            <div class="card card-lift mb-5">
+                <div class="card-header"><strong>Realizadas</strong></div>
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead class="thead-light sticky-header">
+                            <tr>
+                                <th>Data pedido</th>
+                                <th>Pedido</th>
+                                <th>Cliente</th>
+                                <th>Contato</th>
+                                <th>Categoria</th>
+                                <th>Produto</th>
+                                <th class="text-right">Entregue</th>
+                                <th>Data entrega</th>
+                                <th>Vendedor</th>
+                                <th>Tipo de entrega</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($deliveredData as $item)
+                                @php
+                                    $order = $item->order ?? null;
+                                    $client = $order->client ?? null;
+                                    $seller = $order->seller ?? null;
+                                    $prod = $item->product ?? null;
+                                    $qtd = (int) ($item->delivered_qty ?? 0);
+                                    if ($qtd <= 0) {
+                                        continue;
+                                    }
+                                @endphp
+                                <tr>
+                                    <td>{{ $order ? date('d/m/Y', strtotime($order->order_date)) : '—' }}</td>
+                                    <td>
+                                        @if ($order)
+                                            <a
+                                                href="{{ route('order_products.index', ['order' => $order->id]) }}">#{{ $item->order_id }}</a>
+                                        @else
+                                            #{{ $item->order_id }}
+                                        @endif
+                                    </td>
+                                    <td>{{ $client->name ?? '—' }}</td>
+                                    <td>{{ $client->contact ?? '—' }}</td>
+                                    <td>{{ $client->category->name ?? '—' }}</td>
+                                    <td>{{ $prod->name ?? '#' . $item->product_id }}</td>
+                                    <td class="text-right">{{ number_format($qtd, 0, '', '.') }}</td>
+                                    <td>{{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                    </td>
+                                    <td>{{ $seller->name ?? '—' }}</td>
+                                    @php $isCif = isset($order->withdraw) ? (strtolower($order->withdraw) === 'entregar') : null; @endphp
+                                    <td>{{ isset($order->withdraw) ? ucfirst($order->withdraw) . ' (' . ($isCif ? 'CIF' : 'FOB') . ')' : '—' }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">Nenhuma entrega realizada nos
+                                        filtros.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
     </main>
 @endsection
 
 @section('css')
     <style>
+        /* layout normal */
         .card-lift {
             border: 1px solid #e9ecef;
             box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
@@ -166,9 +226,8 @@
             font-weight: 600;
         }
 
-        /* Tabela com cabeçalho fixo e hover suave */
         .tableFixHead {
-            max-height: 60vh;
+            max-height: 65vh;
             overflow-y: auto;
         }
 
@@ -182,46 +241,93 @@
             background-color: #f6f9fc;
         }
 
-        /* Atraso (vermelho) */
         .row-late {
             color: #d9534f;
             font-weight: 700;
         }
 
-        /* Setas de navegação de data */
-        .plus-date,
-        .less-date {
-            cursor: pointer;
-            color: gray;
+        .badge-mute {
+            background: #f1f3f5;
+            color: #495057;
+            padding: .25rem .5rem;
+            border-radius: .375rem;
+            font-weight: 600;
         }
 
-        .plus-date:hover,
-        .less-date:hover {
-            color: #000;
+        /* ------------ PRINT ------------- */
+        @page {
+            size: A4 landscape;
+            /* usa Paisagem */
+            margin: 8mm;
+            /* margem apertada */
+        }
+
+        @media print {
+
+            html,
+            body {
+                height: auto;
+            }
+
+            #btn_voltar,
+            #btn_print,
+            .btn-group a,
+            .btn-group button {
+                display: none !important;
+            }
+
+            .table-responsive {
+                overflow: visible !important;
+            }
+
+            /* evita cortar a tabela */
+            table.table {
+                table-layout: fixed;
+                /* distribui largura igualmente */
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 11px;
+                /* texto menor */
+            }
+
+            .table th,
+            .table td {
+                padding: 4px 6px !important;
+                /* menos padding = mais conteúdo por página */
+                vertical-align: top;
+                word-break: break-word;
+                /* quebra linhas longas */
+                white-space: normal;
+            }
+
+            /* Repete cabeçalho em cada página impressa */
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-row-group;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+
+            /* Se ainda assim “estourar”, descomente para reduzir mais:
+            body { zoom: 0.85; }  // Chrome costuma respeitar
+            */
         }
     </style>
 @endsection
 
+
 @section('js')
     <script>
-        $(function() {
-            // Navegação de data diária (somente faz sentido quando há $date único)
-            $('.plus-date').click(function() {
-                @if (!empty($date))
-                    const d = new Date("{{ $date }}");
-                    d.setDate(d.getDate() + 1);
-                    const next = d.toISOString().slice(0, 10);
-                    window.location.href = 'report_delivery?delivery_date=' + next;
-                @endif
-            });
-            $('.less-date').click(function() {
-                @if (!empty($date))
-                    const d = new Date("{{ $date }}");
-                    d.setDate(d.getDate() - 1);
-                    const prev = d.toISOString().slice(0, 10);
-                    window.location.href = 'report_delivery?delivery_date=' + prev;
-                @endif
-            });
+        document.getElementById('btn_print')?.addEventListener('click', function() {
+            this.style.display = 'none';
+            // document.getElementById('btn_voltar')?.style.display = 'none';
+            window.print();
+            location.reload();
         });
     </script>
 @endsection

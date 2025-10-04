@@ -93,7 +93,7 @@ class Helper
     {
         $product = Product::find($id);
         $quant_total = Order_product::select('*')
-            ->join('orders', 'order_number', 'order_id')
+            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
             ->where('order_products.product_id', $id)
             ->where('orders.complete_order', 0)
             ->sum('quant');

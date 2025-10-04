@@ -296,13 +296,13 @@ class ProductController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('products.index')->withErrors($message);
+            return redirect()->route('products.index')
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
-        // checks pode vir do request (ex.: ?checks[]=1&checks[]=2)
-        $checks = (array) $request->input('por_favorito', []); // se vazio => sem filtro (todas as linhas do produto)
 
-        // 1) baseQuery: calcula o saldo usando window function (saidas primeiro)
+        $checks = (array) $request->input('por_favorito', []); // 1 = A, 2 = L
+
+        // 1) Window function (saldo) por (order_id, product_id)
         $baseQuery = Order_product::select([
             'order_products.id',
             'order_products.order_id',
@@ -319,72 +319,65 @@ class ProductController extends Controller
                     id
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             ) AS saldo
-        ")
+        "),
         ])->where('product_id', $id);
 
-        // 2) transforma em subquery para podermos filtrar sem quebrar a window function
-        $sub = DB::query()->fromSub($baseQuery, 'base');
+        // 2) vira subquery e filtra por pedidos ABERTOS; checkmarks (opcional)
+        $sub = DB::query()->fromSub($baseQuery, 'base')
+            ->join('orders', 'orders.order_number', '=', 'base.order_id')
+            ->where('orders.complete_order', 0)
+            ->select('base.*');
 
-        // 3) aplicar filtro por checkmark se houver (caso contrário pega tudo)
         if (!empty($checks)) {
-            $sub = $sub->whereIn('checkmark', $checks);
+            $sub->whereIn('base.checkmark', $checks);
         }
 
-        // 4) ordenar e recuperar linhas (stdClass) — aqui usamos get() para trabalhar em memória
-        $rows = $sub->orderBy('delivery_date')->orderBy('id')->get();
+        // 3) linhas já na ordem da view
+        $rows = $sub->orderBy('base.delivery_date')->orderBy('base.id')->get();
 
-        // 5) extrair ids e map de saldo por id
-        $ids = $rows->pluck('id')->all();                 // ids de order_products retornados
-        $saldoMap = $rows->pluck('saldo', 'id')->all();   // [ id => saldo, ... ]
-
-        // 6) buscar os modelos Eloquent com relações (para usar no blade)
+        // 4) carregar models + relações (na mesma ordem) e anexar saldo
+        $ids    = $rows->pluck('id')->all();
         $models = Order_product::with('order', 'product', 'order.client', 'order.seller')
-            ->whereIn('id', $ids)
-            ->get()
-            ->keyBy('id'); // index por id pra montar na ordem depois
+            ->whereIn('id', $ids)->get()->keyBy('id');
 
-        // 7) montar coleção final na MESMA ordem do $rows e anexar o saldo em cada model
-        $data = collect($rows)->map(function ($r) use ($models, $saldoMap) {
-            $id = $r->id;
-            if (! isset($models[$id])) {
-                // fallback: se por algum motivo o model não existir, cria um objeto simples
-                $m = (object) (array) $r;
-                $m->saldo = (int) $saldoMap[$id];
-                return $m;
-            }
-            $model = $models[$id];
-            // anexa saldo (inteiro/float conforme sua coluna)
-            $model->saldo = is_null($r->saldo) ? 0 : (int) $r->saldo;
-            return $model;
+        $data = collect($rows)->map(function ($r) use ($models) {
+            $m = $models[$r->id] ?? (object) (array) $r; // fallback improvável
+            $m->saldo = (int) ($r->saldo ?? 0);
+            return $m;
         })->values();
 
-        // 8) cálculos agregados:
-        // total (soma de todos os saldos exibidos)
-        $total_sum = $data->where('saldo', '>', 0)->sum('saldo');
+        // 5) totais iguais à tabela
+        $total_sum = $rows->sum(function ($r) {
+            $saldo = (int) ($r->saldo ?? 0);
+            $quant = (int) $r->quant;
+            return $saldo > 0 ? min($saldo, $quant) : 0;
+        });
 
-        // soma por checkmark (mesma coleção exibida)
-        $sum_by_check = $data
-            ->groupBy(function ($item) {
-                // garante chave coerente: se checkmark for null, trata como 0
-                return (string) (($item->checkmark !== null) ? $item->checkmark : 0);
-            })
-            ->map(function ($group) {
-                return $group->sum('saldo');
-            })
+        $sum_by_check = $rows
+            ->filter(fn($r) => (int) ($r->saldo ?? 0) > 0)
+            ->groupBy(fn($r) => (int) ($r->checkmark ?? 0))
+            ->map(fn($group) => $group->sum(function ($r) {
+                $saldo = (int) ($r->saldo ?? 0);
+                $quant = (int) $r->quant;
+                return $saldo > $quant ? $quant : $saldo;
+            }))
             ->toArray();
 
+        // garantir chaves 0/1/2
+        $sum_by_check += [0 => 0, 1 => 0, 2 => 0];
+
+        // 6) helper (conferência global de ABERTOS)
         $delivery_in = Helper::day_delivery_calc($id);
 
-        // 9) retornar (ou passar para view)
         return view('cc.cc_product', [
-            'data'                => $data,                    // coleção de models (cada um tem ->saldo)
-            'product'             => Product::find($id),
-            'total_sum'           => $total_sum,
-            'delivery_in'         => $delivery_in['delivery_in'],
-            'quant_total'         => $delivery_in['quant_total'],
-            'user_permissions'    => $user_permissions,
-            'quant_por_favorito'  => $sum_by_check,
-            'checks_filter'       => $checks,
+            'data'               => $data,                       // listagem
+            'product'            => Product::find($id),          // dados do produto
+            'total_sum'          => (int) $total_sum,            // soma pela lista
+            'delivery_in'        => $delivery_in['delivery_in'], // data do helper
+            'quant_total'        => (int) $delivery_in['quant_total'], // total helper
+            'user_permissions'   => $user_permissions,
+            'quant_por_favorito' => $sum_by_check,               // badges A/L
+            'checks_filter'      => $checks,
         ]);
     }
 }

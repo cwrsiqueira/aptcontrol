@@ -81,8 +81,9 @@ Route::middleware('auth')->group(function () {
         ->name('order_products.toggle_mark');
 
     // Relatórios adicionais e concluídos
-    Route::get('/report_delivery',           'ReportController@report_delivery')->name('report_delivery');
-    Route::get('/report_delivery_byPeriod',  'ReportController@report_delivery_byPeriod')->name('report_delivery_byPeriod');
+    Route::get('/reports', 'ReportController@index')->name('reports.index');
+    Route::get('/report/delivery', 'ReportController@reportDelivery')->name('report_delivery');
+
     Route::get('/orders_conclude',           'OrderController@orders_conclude')->name('orders_conclude');
 
     // Logout por GET (mantido para compatibilidade com seu layout)
