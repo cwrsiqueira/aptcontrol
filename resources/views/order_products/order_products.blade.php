@@ -116,7 +116,7 @@
                                 </div>
                             </div>
                             <div class="row">
-                                @if ($total_products <= 0)
+                                @if ($total_products <= 0 && $order->complete_order == 0)
                                     <a href="{{ route('order.update_status', ['order' => $order, 'status' => 1]) }}"
                                         class="col-sm btn btn-sm btn-warning text-left">
                                         <i class="icon fas fa-exclamation-triangle"></i> Atenção!

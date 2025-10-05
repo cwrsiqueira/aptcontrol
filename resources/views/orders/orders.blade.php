@@ -127,14 +127,6 @@
                                                     title="Solicitar Acesso">ENTREGAR</button>
                                             @endif
 
-                                            {{-- @if (in_array('orders.cc', $user_permissions) || Auth::user()->is_admin)
-                                                <a class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm"
-                                                    href="{{ route('cc_order', $item) }}">Ver entregas</a>
-                                            @else
-                                                <button class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm" disabled
-                                                    title="Solicitar Acesso">Ver entregas</button>
-                                            @endif --}}
-
                                             @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
                                                 <a class="btn btn-sm btn-outline-info mr-1 mb-1 fs-sm"
                                                     href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>

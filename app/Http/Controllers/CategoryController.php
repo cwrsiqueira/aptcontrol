@@ -30,6 +30,12 @@ class CategoryController extends Controller
      */
     public function index()
     {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('menu-categorias', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
+
         $categories = Clients_category::orderBy('id')->paginate(10);
 
         $user_permissions = Helper::get_permissions();

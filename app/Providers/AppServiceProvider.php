@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Order_product;
+use App\Observers\OrderProductObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,5 +35,8 @@ class AppServiceProvider extends ServiceProvider
                 1
             );
         }
+
+        // Cria observer para order_products
+        Order_product::observe(OrderProductObserver::class);
     }
 }
