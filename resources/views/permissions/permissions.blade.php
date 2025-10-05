@@ -3,7 +3,7 @@
 @section('title', 'Permissões')
 
 @section('content')
-    <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
+    <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4 mb-5">
         {{-- Cabeçalho --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
             <h2 class="mb-0">Permissões <small class="text-muted d-block d-sm-inline">· Clique na linha para editar</small>
@@ -94,23 +94,51 @@
                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                         </div>
 
-                        @if ($errors->any())
-                            <div class="alert alert-danger mb-0">
-                                <ul class="mb-0">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
                         <div class="modal-body" style="max-height:65vh; overflow:auto;">
-                            <div class="form-group">
-                                <label for="edit_name">Nome do Usuário:</label>
-                                <input readonly class="form-control @error('name') is-invalid @enderror" type="text"
-                                    name="name" id="edit_name" placeholder="Nome do Cliente"
-                                    value="{{ $user_edit['name'] ?? '' }}">
-                                <input type="hidden" name="user_id" value="{{ $user_edit->id ?? '' }}">
+
+                            {{-- Alerts de erro/sucesso --}}
+                            @if ($errors->any())
+                                <div class="alert alert-danger alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                                    <i class="icon fas fa-ban"></i> Erro!
+                                    <ul>
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if (session('success'))
+                                <div class="alert alert-success alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                                    <i class="icon fas fa-check"></i> {{ session('success') }}
+                                </div>
+                            @endif
+
+                            <div class="row">
+                                <div class="col-sm">
+                                    <div class="form-group">
+                                        <label for="edit_name">Nome do Usuário:</label>
+                                        <input readonly class="form-control @error('name') is-invalid @enderror"
+                                            type="text" name="name" id="edit_name" placeholder="Nome do Cliente"
+                                            value="{{ $user_edit['name'] ?? '' }}">
+                                        <input type="hidden" name="user_id" value="{{ $user_edit->id ?? '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-sm">
+                                    <div class="form-group">
+                                        <label for="edit_email">E-mail:</label>
+                                        <input disabled class="form-control" type="text" name="email" id="edit_email"
+                                            value="{{ $user_edit['email'] ?? '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-sm d-flex justify-content-center align-items-center">
+                                    @if (isset($user_edit))
+                                        <a href="{{ route('users.edit', ['user' => $user_edit]) }}"
+                                            class="btn btn-sm btn-outline-secondary">Resetar senha</a>
+                                    @endif
+                                </div>
                             </div>
 
                             <label class="d-block">Permissões:</label>
@@ -145,7 +173,7 @@
                                                 <label class="mb-0 {{ $isMenu ? 'font-weight-bold' : '' }}">
                                                     <input type="checkbox" class="mr-2" name="permission_item[]"
                                                         id="perm_{{ $item->id }}" value="{{ $item->id }}"
-                                                        @if (in_array($item->slug, $user_permissions)) checked @endif>
+                                                        @if (in_array($item->id, $user_permissions)) checked @endif>
                                                     {{ $isMenu ? $item->id . ' - ' . 'Menu ' . $conf['label'] : $item->id . ' - ' . $item->name }}
                                                 </label>
                                             </li>

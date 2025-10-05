@@ -101,14 +101,13 @@
                                 Relatórios
                             </a>
                         </li>
+                        <hr>
+
+                        <li class="nav-item">
+                            <h6 class="nav-link">Configurações</h6>
+                        </li>
 
                         @if (Auth::user()->is_admin)
-                            <hr>
-
-                            <li class="nav-item">
-                                <h6 class="nav-link">Configurações</h6>
-                            </li>
-
                             <li class="nav-item">
                                 <a class="nav-link @if (Request::is('permissions')) active @endif"
                                     href="{{ route('permissions.index') }}">
@@ -125,6 +124,14 @@
                                 </a>
                             </li>
                         @endif
+
+                        <li class="nav-item">
+                            <a class="nav-link @if (Request::is('users')) active @endif"
+                                href="{{ route('users.index') }}">
+                                <span data-feather="user"></span>
+                                Perfil do usuário
+                            </a>
+                        </li>
 
                     </ul>
 

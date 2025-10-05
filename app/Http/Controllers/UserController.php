@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Helper;
 use Illuminate\Http\Request;
 use App\Permission_link;
 use App\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -15,7 +18,12 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        $user_permissions = Helper::get_permissions();
+        $user = Auth::user();
+        return view('profile.profile', compact(
+            'user_permissions',
+            'user',
+        ));
     }
 
     /**
@@ -56,9 +64,19 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(User $user)
     {
-        //
+        if (!Auth::user()->is_admin) {
+            return redirect()
+                ->route('permissions.edit', ['permission' => $user->id])
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
+        $user->password = Hash::make('12345678');
+        $user->save();
+
+        Helper::saveLog(Auth::user()->id, 'Reset de senha', $user->id, $user->name, 'Permissões');
+        return redirect()->route('permissions.edit', ['permission' => $user->id])->with('success', 'Senha resetada para senha padrão: 12345678');
     }
 
     /**
@@ -68,9 +86,37 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
-        //
+        $currentUser = Auth::user();
+        if ($currentUser != $user) {
+            return redirect()
+                ->route('users.index')
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
+        // validação básica
+        $data = $request->validate([
+            'name'               => 'required|string|max:255',
+            'password'           => 'nullable|string|min:8|confirmed',
+        ], [], [
+            'name' => 'nome',
+            'password' => 'nova senha',
+        ]);
+
+        // atualiza nome
+        $user->name = $data['name'];
+
+        // troca de senha (opcional): só se foi informada nova senha
+        if (!empty($data['password'])) {
+            $user->password = Hash::make($data['password']);
+        }
+
+        $user->save();
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'Perfil atualizado com sucesso!');
     }
 
     /**
