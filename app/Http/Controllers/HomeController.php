@@ -11,13 +11,14 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.9',
-            'updated_at' => '23/09/2025',
+            'version'    => 'v2.0,0',
+            'updated_at' => '07/10/2025',
             'updates'    => [
-                'Resolve bug de concluir produto',
-                'Ajusta formulários de Concluir e Visualizar',
-                'Ajusta formulários e funções pra não precisar mais de valores',
-                'Outros pequenos ajustes',
+                'NOVO SISTEMA APTCONTROL',
+                'Novas funcionalidades',
+                'Melhorias nas funcionalidades antigas',
+                'Melhorias nas visualizações',
+                'E muitas outras novidades!',
             ],
         ];
     }

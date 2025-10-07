@@ -43,7 +43,7 @@ class ReportController extends Controller
             'vendedor'    => $request->input('vendedor'),
             'pedido'      => $request->input('pedido'),
             'withdraw'    => $request->input('withdraw', 'todas'),
-            'payment'    => $request->input('payment', 'Aberto'),
+            'payment'    => $request->input('payment', 'Total'),
             'date_field'  => $request->input('date_field', 'delivery'),
             'status'      => $request->input('status', 'pendentes'),
             'date_ini'    => $request->input('date_ini', $defaultIni),
