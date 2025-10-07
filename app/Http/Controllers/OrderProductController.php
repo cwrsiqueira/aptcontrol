@@ -140,7 +140,7 @@ class OrderProductController extends Controller
         $order_product->favorite_delivery = $data['favorite_delivery'];
         $order_product->save();
 
-        Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Pedidos');
+        Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Produtos Pedidos');
 
         return redirect()->route('order_products.index', ['order' => $order])->with('success', 'Salvo com sucesso!');
     }
@@ -219,7 +219,7 @@ class OrderProductController extends Controller
         $order_product->favorite_delivery = $data['favorite_delivery'];
         $order_product->save();
 
-        Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Pedidos');
+        Helper::saveLog(Auth::user()->id, 'Alteração', $order_product->id, $order_product->order_number, 'Produtos Pedidos');
 
         return redirect()->route('order_products.index', ['order' => $data['order_id']])->with('success', 'Atualizado com sucesso!');
     }
@@ -251,7 +251,7 @@ class OrderProductController extends Controller
 
         $order = Order::where('order_number', $order_product->order_id)->first();
         $order_product->delete();
-        Helper::saveLog(Auth::user()->id, 'Deleção', $order_product->id, $order_product->order_number, 'Pedidos');
+        Helper::saveLog(Auth::user()->id, 'Deleção', $order_product->id, $order_product->order_number, 'Produtos Pedidos');
 
         if ($main_order_product)
             return redirect()->route('order_products.delivery', $main_order_product)->with('success', 'Excluído com sucesso!');
