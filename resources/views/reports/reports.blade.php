@@ -146,6 +146,27 @@
                                         value="{{ $date_fin }}">
                                 </div>
 
+                                {{-- Status (radios) --}}
+                                <div class="form-group col-md-6">
+                                    <label class="mb-1 d-block">Pagamento</label>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="s_aberto" name="payment" value="Aberto"
+                                            {{ $payment === 'Aberto' ? 'checked' : '' }} class="custom-control-input"
+                                            checked>
+                                        <label class="custom-control-label" for="s_aberto">Aberto</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="s_parcial" name="payment" value="Parcial"
+                                            {{ $payment === 'Parcial' ? 'checked' : '' }} class="custom-control-input">
+                                        <label class="custom-control-label" for="s_parcial">Parcial</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="s_total" name="payment" value="Total"
+                                            {{ $payment === 'Total' ? 'checked' : '' }} class="custom-control-input">
+                                        <label class="custom-control-label" for="s_total">Total</label>
+                                    </div>
+                                </div>
+
                                 <div class="form-group col-md-12 mt-2">
                                     <button class="btn btn-secondary"><i class="fas fa-search mr-1"></i> Gerar
                                         relatório</button>

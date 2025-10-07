@@ -119,20 +119,14 @@
                                 @if ($item->complete_order == 0)
                                     <td>
                                         <div class="d-flex flex-column flex-sm-row">
-                                            @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin)
-                                                <a class="btn btn-sm btn-success mr-1 mb-1 fs-sm"
-                                                    href="{{ route('order_products.index', ['order' => $item->id]) }}">ENTREGAR</a>
-                                            @else
-                                                <button class="btn btn-sm btn-success mr-1 mb-1 fs-sm" disabled
-                                                    title="Solicitar Acesso">ENTREGAR</button>
-                                            @endif
 
                                             @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin)
-                                                <a class="btn btn-sm btn-outline-info mr-1 mb-1 fs-sm"
-                                                    href="{{ route('order_products.index', ['order' => $item]) }}">Produtos</a>
+                                                <a class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm"
+                                                    href="{{ route('order_products.index', ['order' => $item]) }}">Ver
+                                                    pedido</a>
                                             @else
-                                                <button class="btn btn-sm btn-outline-info mr-1 mb-1 fs-sm" disabled
-                                                    title="Solicitar Acesso">Produtos</button>
+                                                <button class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso">Ver pedido</button>
                                             @endif
 
                                             @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)

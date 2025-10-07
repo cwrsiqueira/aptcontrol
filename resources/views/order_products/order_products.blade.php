@@ -27,7 +27,7 @@
         {{-- Título + Voltar (compacto) --}}
         <div class="d-flex justify-content-between align-items-center page-header mb-2">
             <h2 class="page-title mb-0">Detalhes do Pedido</h2>
-            <a class="btn btn-sm btn-light" href="{{ route('orders.index') }}">
+            <a class="btn btn-sm btn-light" href="{{ route('orders.index', ['q' => $order->order_number]) }}">
                 < Pedidos</a>
         </div>
 
@@ -97,6 +97,10 @@
                         <div class="col-md mb-1">
                             <span class="muted-label">Vendedor</span>
                             <div class="text-body">{{ optional($order->seller)->name }}</div>
+                        </div>
+                        <div class="col-md mb-1">
+                            <span class="muted-label">Pagamento</span>
+                            <div class="text-body">{{ $order->payment }}</div>
                         </div>
                         <div class="col-md mb-1">
                             <div class="row">

@@ -62,6 +62,7 @@
                     <div class="col-md-3"><strong>Cliente:</strong> {{ $meta['cliente'] ?? 'Todos' }}</div>
                     <div class="col-md-3"><strong>Vendedor:</strong> {{ $meta['vendedor'] ?? 'Todos' }}</div>
                     <div class="col-md-3"><strong>Pedido:</strong> {{ $meta['pedido'] ?? 'Todos' }}</div>
+                    <div class="col-md-3"><strong>Pagamento:</strong> {{ $meta['payment'] ?? 'Aberto' }}</div>
                 </div>
 
                 <hr class="my-3">
@@ -314,8 +315,8 @@
             }
 
             /* Se ainda assim “estourar”, descomente para reduzir mais:
-            body { zoom: 0.85; }  // Chrome costuma respeitar
-            */
+                body { zoom: 0.85; }  // Chrome costuma respeitar
+                */
         }
     </style>
 @endsection

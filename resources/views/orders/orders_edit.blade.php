@@ -93,6 +93,17 @@
                                 </datalist>
                             </div>
                         </div>
+                        <div class="col-sm">
+                            <div class="form-group">
+                                <label for="payment">Pagamento:</label>
+                                <select name="payment" id="payment" class="form-control">
+                                    <option @if (old('payment') ?? $order->payment == 'Aberto') selected @endif value="Aberto">Aberto</option>
+                                    <option @if (old('payment') ?? $order->payment == 'Parcial') selected @endif value="Parcial">Parcial
+                                    </option>
+                                    <option @if (old('payment') ?? $order->payment == 'Total') selected @endif value="Total">Total</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <button class="btn btn-primary">Salvar</button>
                     <a class="btn btn-light" href="{{ route('orders.index') }}">Cancelar</a>

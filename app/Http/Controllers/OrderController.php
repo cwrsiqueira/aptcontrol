@@ -231,6 +231,7 @@ class OrderController extends Controller
             "order_number",
             "seller_name",
             "withdraw",
+            "payment",
         ]);
 
         Validator::make(
@@ -257,6 +258,7 @@ class OrderController extends Controller
         $order->order_date = $data['order_date'];
         $order->order_number = $data['order_number'];
         $order->withdraw = $data['withdraw'];
+        $order->payment = $data['payment'];
         $order->seller_id = $seller->id;
         $order->save();
 

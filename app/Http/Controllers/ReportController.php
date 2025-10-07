@@ -43,6 +43,7 @@ class ReportController extends Controller
             'vendedor'    => $request->input('vendedor'),
             'pedido'      => $request->input('pedido'),
             'withdraw'    => $request->input('withdraw', 'todas'),
+            'payment'    => $request->input('payment', 'Aberto'),
             'date_field'  => $request->input('date_field', 'delivery'),
             'status'      => $request->input('status', 'pendentes'),
             'date_ini'    => $request->input('date_ini', $defaultIni),
@@ -61,6 +62,7 @@ class ReportController extends Controller
         // -------- inputs --------
         $productIds = array_filter((array) $request->input('products', []), fn($v) => strlen((string)$v));
         $withdraw   = $request->input('withdraw', 'todas');        // radios: todas|entregar|retirar
+        $payment   = $request->input('payment', 'Aberto');        // radios: Aberto|Parcial|Total
         $dateField  = $request->input('date_field', 'delivery');   // radios: delivery|order
         $status     = $request->input('status', 'pendentes');      // radios: pendentes|realizadas|ambos
 
@@ -137,6 +139,9 @@ class ReportController extends Controller
             }
             if ($withdraw && strtolower($withdraw) !== 'todas') {
                 $sub->whereRaw('LOWER(orders.withdraw) = ?', [mb_strtolower($withdraw)]);
+            }
+            if ($payment) {
+                $sub->where('orders.payment', $payment);
             }
 
             // período (inclusivo) usando date() do SQLite
@@ -329,6 +334,7 @@ class ReportController extends Controller
         $meta = [
             'status'          => $status,
             'withdraw'        => $withdraw,
+            'payment'         => $payment,
             'date_field'      => $dateField,
             'date_ini'        => $iniObj,
             'date_fin'        => $finObj,
