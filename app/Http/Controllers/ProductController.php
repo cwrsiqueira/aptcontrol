@@ -380,4 +380,25 @@ class ProductController extends Controller
             'checks_filter'      => $checks,
         ]);
     }
+
+    public function marcar_produto(Request $request, Order_product $order_product)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('products.marcar_produto', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return response()->json(['ok' => false, 'message' => $message], 403);
+        }
+
+        $action = $request->input('action');
+        $value = $request->input('value');
+        if ($order_product->$action == $value) {
+            $value = 0;
+        }
+
+        $order_product->$action = $value;
+        $order_product->save();
+
+        Helper::saveLog(Auth::user()->id, 'Marcação: ' . $action, $order_product->id, $order_product->order_number, 'Entregas por produto');
+        return response()->json(['ok' => true, 'id' => $order_product->id, 'action' => $action, 'value' => $value]);
+    }
 }

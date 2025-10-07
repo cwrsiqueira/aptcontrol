@@ -29,7 +29,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('/products',      'ProductController');
     Route::resource('/clients',       'ClientController');
     Route::resource('/reports',       'ReportController');
-    Route::resource('/integrations',  'IntegrationController');
     Route::resource('/permissions',   'PermissionController');
     Route::resource('/users',         'UserController');
     Route::resource('/categories',    'CategoryController');
@@ -77,8 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/get_data_product',     'AjaxController@get_data_product')->name('get_data_product');
 
     // Toggle favoritos por item (order_products)
-    Route::post('/order-products/{order_product}/toggle-mark', 'OrderProductController@toggleMark')
-        ->name('order_products.toggle_mark');
+    Route::post('/products/{order_product}/marcar-produto', 'ProductController@marcar_produto')->name('products.marcar_produto');
 
     // Relatórios adicionais e concluídos
     Route::get('/reports', 'ReportController@index')->name('reports.index');

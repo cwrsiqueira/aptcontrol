@@ -18,7 +18,8 @@ class ReportController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('home')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
         }
 
         $clients  = \App\Client::orderBy('name')->pluck('name')->toArray();
@@ -51,6 +52,12 @@ class ReportController extends Controller
 
     public function reportDelivery(Request $request)
     {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
+
         // -------- inputs --------
         $productIds = array_filter((array) $request->input('products', []), fn($v) => strlen((string)$v));
         $withdraw   = $request->input('withdraw', 'todas');        // radios: todas|entregar|retirar

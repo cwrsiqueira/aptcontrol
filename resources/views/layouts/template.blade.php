@@ -61,7 +61,6 @@
                                 Painel <span class="sr-only">(current)</span>
                             </a>
                         </li>
-
                         <li class="nav-item" @if (in_array('menu-produtos', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['products', 'products/*'])) active @endif"
                                 href="{{ route('products.index') }}">
@@ -94,7 +93,7 @@
                             </a>
                         </li>
 
-                        <li class="nav-item" @if (in_array('relatorios', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                        <li class="nav-item" @if (in_array('menu-relatorios', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is('reports')) active @endif"
                                 href="{{ route('reports.index') }}">
                                 <span data-feather="bar-chart-2"></span>

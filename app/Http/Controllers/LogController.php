@@ -11,6 +11,11 @@ class LogController extends Controller
 {
     public function index()
     {
+        $user_permissions = Helper::get_permissions();
+        if (!Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('home')->withErrors($message);
+        }
 
         $acao = '%';
         if (!empty($_GET['acao'])) {

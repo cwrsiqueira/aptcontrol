@@ -20,17 +20,29 @@ class AjaxController extends Controller
         $this->middleware('auth');
     }
 
-    public function edit_complete_order()
+    public function edit_complete_order(Request $request)
     {
-        if (!empty($_GET['id'])) {
-            $id = $_GET['id'];
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('order_products.delivery', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['error' => 'Solicite acesso ao administrador!'];
+            echo json_encode($message);
+            exit;
+        }
+
+        if (!$id = $request->input('id')) {
 
             $order = Order::find($id);
             $order->complete_order = 1;
             $order->save();
 
-            echo json_encode('Pedido ' . $order->order_number . ' Concluído com sucesso!');
+            $message = ['success' => 'Pedido ' . $order->order_number . ' Concluído com sucesso!'];
+            echo json_encode($message);
+            exit;
         }
+
+        $message = ['error' => 'Pedido não encontrado ou já excluído!'];
+        echo json_encode($message);
+        exit;
     }
 
     public function day_delivery_calc()

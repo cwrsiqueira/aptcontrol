@@ -29,7 +29,7 @@ class Helper
         $user_permissions_obj = User::find($id)->permissions;
         $user_permissions = array();
         foreach ($user_permissions_obj as $item) {
-            $user_permissions[] = $item->slug;
+            $user_permissions[] = $item->slug_permission_item;
         }
         return $user_permissions;
     }

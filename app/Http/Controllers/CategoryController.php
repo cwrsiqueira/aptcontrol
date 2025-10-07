@@ -76,9 +76,7 @@ class CategoryController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.create', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('categories.index')->withErrors($message);
         }
 
@@ -113,7 +111,7 @@ class CategoryController extends Controller
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.view', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('home')->withErrors($message);
+            return redirect()->route('categories.index')->withErrors($message);
         }
 
         return view('categories.categories_view', [
@@ -133,9 +131,7 @@ class CategoryController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('categories.index')->withErrors($message);
         }
 
@@ -157,9 +153,7 @@ class CategoryController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('categories.index')->withErrors($message);
         }
 
@@ -197,9 +191,7 @@ class CategoryController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('categories.delete', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('categories.index')->withErrors($message);
         }
 

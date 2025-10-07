@@ -152,20 +152,20 @@
                                         <button
                                             class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning btn-fav"
                                             data-id="{{ $item->id }}"
-                                            data-url="{{ route('order_products.toggle_mark', ['order_product' => $item, 'action' => 'checkmark', 'value' => 1]) }}"
+                                            data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 1]) }}"
                                             title="Marcar aguardando antecipação"><i class="icon fas fa-clock"></i></button>
 
                                         <button
                                             class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success btn-fav"
                                             data-id="{{ $item->id }}"
-                                            data-url="{{ route('order_products.toggle_mark', ['order_product' => $item, 'action' => 'checkmark', 'value' => 2]) }}"
+                                            data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 2]) }}"
                                             title="Marcar liberado para entrega"><i
                                                 class="icon fas fa-thumbs-up"></i></button>
 
                                         <button
                                             class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger btn-fav"
                                             data-id="{{ $item->id }}"
-                                            data-url="{{ route('order_products.toggle_mark', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
+                                            data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
                                             title="Marcar fixar data"><i class="icon fas fa-calendar-day"></i></button>
 
                                         <button class="btn btn-sm btn-outline-secondary btn-fav" disabled
@@ -248,12 +248,22 @@
 
                 $.post(url, {}, function(resp) {
                     if (resp && resp.ok) {
-                        console.log(resp);
                         window.location.reload();
+                    } else {
+                        alert(resp.message || resp.error || 'Ocorreu um erro.');
                     }
-                }).fail(function(xhr) {
-                    console.error('Falha ao favoritar cliente', xhr.responseText);
-                    alert('Não foi possível alterar o favorito do cliente.');
+                }, 'json').fail(function(xhr) {
+                    if (xhr.status === 403) {
+                        alert('Você não tem permissão para executar esta ação.');
+                    } else if (xhr.status === 404) {
+                        alert('Registro não encontrado.');
+                    } else if (xhr.status === 422) {
+                        alert(xhr.responseJSON?.message || 'Dados inválidos.');
+                    } else {
+                        alert('Erro no servidor. Tente novamente mais tarde.');
+                    }
+
+                    // console.error('Erro AJAX:', xhr.status, xhr.responseText);
                 });
             })
         });

@@ -22,13 +22,13 @@ class OrderProductController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('can:menu-produtos-pedidos');
+        $this->middleware('can:menu-pedidos');
     }
 
     public function index(Request $request)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('menu-produtos-pedidos', $user_permissions) && !Auth::user()->is_admin) {
+        if (!in_array('menu-pedidos', $user_permissions) && !Auth::user()->is_admin) {
             $message = ['no-access' => 'Solicite acesso ao administrador!'];
             return redirect()->route('home')->withErrors($message);
         }
@@ -74,29 +74,28 @@ class OrderProductController extends Controller
 
     public function create(Request $request)
     {
+        $order = Order::find($request->input('order'));
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.create', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order])->withErrors($message);
         }
+
         $products = Product::all();
         return view('order_products.order_products_create', [
             'products' => $products,
             'user_permissions' => $user_permissions,
-            'order' => Order::find($request->input('order')),
+            'order' => $order,
         ]);
     }
 
     public function store(Request $request)
     {
+        $order = Order::find($request->input('order'));
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.create', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order])->withErrors($message);
         }
 
         $data = $request->only([
@@ -148,12 +147,11 @@ class OrderProductController extends Controller
 
     public function edit(Request $request, Order_product $order_product)
     {
+        $order = Order::find($request->input('order'));
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order])->withErrors($message);
         }
 
         $product_id = $request->input('product_id');
@@ -183,12 +181,11 @@ class OrderProductController extends Controller
 
     public function update(Request $request, Order_product $order_product)
     {
+        $order = Order::find($request->input('order'));
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.update', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order])->withErrors($message);
         }
 
         $data = $request->only([
@@ -229,12 +226,11 @@ class OrderProductController extends Controller
 
     public function destroy(Order_product $order_product, Request $request)
     {
+        $order = Order::find($request->input('order'));
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.delete', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order])->withErrors($message);
         }
 
         $main_order_product = $request->input('main_order_product');
@@ -266,11 +262,9 @@ class OrderProductController extends Controller
     public function delivery(Order_product $order_product)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.delivery', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order_product->order_id])->withErrors($message);
         }
 
         $delivered = Order_product::where('order_id', $order_product->order_id)
@@ -292,11 +286,9 @@ class OrderProductController extends Controller
     public function delivered(Request $request, Order_product $order_product)
     {
         $user_permissions = Helper::get_permissions();
-        if (!in_array('orders.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = [
-                'no-access' => 'Solicite acesso ao administrador!',
-            ];
-            return redirect()->route('orders.index')->withErrors($message);
+        if (!in_array('order_products.delivery', $user_permissions) && !Auth::user()->is_admin) {
+            $message = ['no-access' => 'Solicite acesso ao administrador!'];
+            return redirect()->route('order_products.index', ['order' => $order_product->order_id])->withErrors($message);
         }
 
         $saldo_produto = Order_product::where('order_id', $order_product->order_id)
@@ -341,26 +333,5 @@ class OrderProductController extends Controller
         Helper::saveLog(Auth::user()->id, 'Entrega', $order_product->id, $order_product->order_number, 'Pedidos');
 
         return redirect()->route('order_products.delivery', $order_product->id)->with('success', 'Salvo com sucesso!');
-    }
-
-    public function toggleMark(Request $request, Order_product $order_product)
-    {
-        $user_permissions = Helper::get_permissions();
-        if (!in_array('order_products.update', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('order_products.index', $order_product->order->id)->withErrors($message);
-        }
-
-        $action = $request->input('action');
-        $value = $request->input('value');
-        if ($order_product->$action == $value) {
-            $value = 0;
-        }
-
-        $order_product->$action = $value;
-        $order_product->save();
-
-        Helper::saveLog(Auth::user()->id, 'Marcação: ' . $action, $order_product->id, $order_product->order_number, 'Entregas por produto');
-        return response()->json(['ok' => true, 'id' => $order_product->id, 'action' => $action, 'value' => $value]);
     }
 }

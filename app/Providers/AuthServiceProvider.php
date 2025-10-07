@@ -76,18 +76,17 @@ class AuthServiceProvider extends ServiceProvider
         }
 
         // ID da permissão (pelo slug); retorna null se não existir
-        $permissionId = Permission_item::where('slug', $menu)->value('id');
-        if (!$permissionId) {
+        $permissionSlug = Permission_item::where('slug', $menu)->value('slug');
+        if (!$permissionSlug) {
             return false;
         }
 
         // IDs de permissões do usuário (coleção de Permission_link)
-        $userPermissionIds = $user->permissions
-            ->pluck('id_permission_item')
-            ->map('intval')
+        $userPermissionSlugs = $user->permissions
+            ->pluck('slug_permission_item')
             ->all();
 
         // Comparação estrita e tipada
-        return in_array((int) $permissionId, $userPermissionIds, true);
+        return in_array($permissionSlug, $userPermissionSlugs, true);
     }
 }

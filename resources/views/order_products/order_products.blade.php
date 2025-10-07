@@ -74,7 +74,7 @@
                 </div>
 
                 <div class="text-right">
-                    @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                    @if (in_array('order_products.create', $user_permissions) || Auth::user()->is_admin)
                         <a class="btn btn-sm btn-primary" href="{{ route('order_products.create', ['order' => $order]) }}">
                             Adicionar produto
                         </a>
@@ -115,18 +115,6 @@
                                     </ul>
                                 </div>
                             </div>
-                            <div class="row">
-                                @if ($total_products <= 0 && $order->complete_order == 0)
-                                    <a href="{{ route('order.update_status', ['order' => $order, 'status' => 1]) }}"
-                                        class="col-sm btn btn-sm btn-warning text-left">
-                                        <i class="icon fas fa-exclamation-triangle"></i> Atenção!
-                                        <ul class="list-unstyled">
-                                            <li>Todos os produtos do pedido foram entregues.</li>
-                                            <li class="font-weight-bold">Clique para dar baixa no pedido</li>
-                                        </ul>
-                                    </a>
-                                @endif
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -163,7 +151,7 @@
                                         </td>
                                         <td class="text-right">
                                             @if ($item->saldo > 0)
-                                                @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                @if (in_array('order_products.delivery', $user_permissions) || Auth::user()->is_admin)
                                                     <a class="btn btn-sm btn-success"
                                                         href="{{ route('order_products.delivery', $item) }}">ENTREGAR</a>
                                                 @else
@@ -171,7 +159,7 @@
                                                         title="Solicitar Acesso">ENTREGAR</button>
                                                 @endif
                                             @else
-                                                @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                @if (in_array('order_products.delivery', $user_permissions) || Auth::user()->is_admin)
                                                     <a class="btn btn-sm btn-outline-warning"
                                                         href="{{ route('order_products.delivery', $item) }}">Ver
                                                         histórico</a>
@@ -181,7 +169,7 @@
                                                 @endif
                                             @endif
                                             @if ($item->saldo >= $item->quant)
-                                                @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
+                                                @if (in_array('order_products.update', $user_permissions) || Auth::user()->is_admin)
                                                     <a class="btn btn-sm btn-outline-primary"
                                                         href="{{ route('order_products.edit', [$item, 'product_id' => $item->product_id]) }}">Editar</a>
                                                 @else
@@ -189,7 +177,7 @@
                                                         title="Solicitar Acesso">Editar</button>
                                                 @endif
 
-                                                @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
+                                                @if (in_array('order_products.delete', $user_permissions) || Auth::user()->is_admin)
                                                     <form
                                                         action="{{ route('order_products.destroy', [$item, 'product_id' => $item->product_id]) }}"
                                                         method="post" style="display:inline-block"

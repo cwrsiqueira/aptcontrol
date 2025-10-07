@@ -127,6 +127,12 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        if (!Auth::user()->is_admin) {
+            return redirect()
+                ->route('permissions.edit', ['permission' => $id])
+                ->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
         $user_permissions = Permission_link::where('id_user', $id);
         $user_permissions->delete();
         $user = User::find($id);

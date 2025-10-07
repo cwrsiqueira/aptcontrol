@@ -79,6 +79,9 @@
                 setTimeout(() => {
                     this.form.submit();
                 }, 1000);
+            } else {
+                alert('Todos os campos são obrigatórios!');
+                window.location.reload();
             }
         })
 

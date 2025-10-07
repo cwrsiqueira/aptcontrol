@@ -40,7 +40,7 @@ class User extends Authenticatable
      */
     public function permissions()
     {
-        return $this->hasMany('App\Permission_link', 'id_user', 'id');
+        return $this->hasMany(Permission_link::class, 'id_user', 'id');
     }
 
     /**
