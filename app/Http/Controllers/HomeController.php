@@ -11,7 +11,7 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v2.0,0',
+            'version'    => 'v2.0.0',
             'updated_at' => '07/10/2025',
             'updates'    => [
                 'NOVO SISTEMA APTCONTROL',
