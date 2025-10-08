@@ -398,7 +398,7 @@ class ProductController extends Controller
         $order_product->$action = $value;
         $order_product->save();
 
-        Helper::saveLog(Auth::user()->id, 'Marcação: ' . $action, $order_product->id, $order_product->order_number, 'Entregas por produto');
+        Helper::saveLog(Auth::user()->id, 'Marcação: ' . $action, $order_product->id, $order_product->order_id, 'Entregas por produto');
         return response()->json(['ok' => true, 'id' => $order_product->id, 'action' => $action, 'value' => $value]);
     }
 }

@@ -194,7 +194,7 @@
                                     <td>{{ $client->category->name ?? '—' }}</td>
                                     <td>{{ $prod->name ?? '#' . $item->product_id }}</td>
                                     <td class="text-right">{{ number_format($qtd, 0, '', '.') }}</td>
-                                    <td>{{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                    <td>{{ $item->created_at ? date('d/m/Y', strtotime($item->created_at)) : '—' }}
                                     </td>
                                     <td>{{ $seller->name ?? '—' }}</td>
                                     @php $isCif = isset($order->withdraw) ? (strtolower($order->withdraw) === 'entregar') : null; @endphp
@@ -315,8 +315,8 @@
             }
 
             /* Se ainda assim “estourar”, descomente para reduzir mais:
-                body { zoom: 0.85; }  // Chrome costuma respeitar
-                */
+                    body { zoom: 0.85; }  // Chrome costuma respeitar
+                    */
         }
     </style>
 @endsection

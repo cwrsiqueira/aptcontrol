@@ -87,7 +87,7 @@ class OrderController extends Controller
             ];
             return redirect()->route('orders.index')->withErrors($message);
         }
-        $seq_order_number = $this->get_seq_order_number();
+        $seq_order_number = $this->get_seq_order_sn_number();
 
         $clients = Client::orderBy('name')->get(['id', 'name']);
         $sellers = Seller::orderBy('name')->get(['id', 'name']);
@@ -124,6 +124,8 @@ class OrderController extends Controller
             "withdraw",
             "seller_name",
         ]);
+
+        $data['order_number'] = $this->get_seq_order_number($data['order_number']);
 
         Validator::make(
             $data,
@@ -228,7 +230,6 @@ class OrderController extends Controller
         $data = $request->only([
             "order_date",
             "client_name",
-            "order_number",
             "seller_name",
             "withdraw",
             "payment",
@@ -239,7 +240,6 @@ class OrderController extends Controller
             [
                 "order_date" => ['required'],
                 "client_name" => ['required'],
-                "order_number" => ['required', Rule::unique('orders', 'order_number')->ignore($id)],
                 'seller_name' => ['required'],
                 'withdraw' => ['required'],
             ],
@@ -256,7 +256,6 @@ class OrderController extends Controller
         $order = Order::find($id);
         $order->client_id = $client->id;
         $order->order_date = $data['order_date'];
-        $order->order_number = $data['order_number'];
         $order->withdraw = $data['withdraw'];
         $order->payment = $data['payment'];
         $order->seller_id = $seller->id;
@@ -311,7 +310,7 @@ class OrderController extends Controller
         return redirect()->route('order_products.index', ['order' => $order->id])->with('success', 'Atualizado com sucesso!');
     }
 
-    private function get_seq_order_number()
+    private function get_seq_order_sn_number()
     {
         $items = array();
         $seq = 0;
@@ -328,6 +327,31 @@ class OrderController extends Controller
         }
 
         $seq_order_number = 'sn-' . ($seq + 1);
+
+        return $seq_order_number;
+    }
+
+    private function get_seq_order_number($order_number)
+    {
+        $items = array();
+        $seq = 0;
+        $orders = Order::where('order_number', 'LIKE', $order_number . '%')->pluck('order_number');
+
+        if (count($orders) <= 0) {
+            return $order_number;
+        }
+
+        foreach ($orders as $item) {
+            $item = explode('-', $item);
+            if (!empty($item[1])) {
+                $items[] = $item[1];
+            }
+        }
+        if (!empty($items)) {
+            $seq = max($items);
+        }
+
+        $seq_order_number = $order_number . '-' . ($seq + 1);
 
         return $seq_order_number;
     }

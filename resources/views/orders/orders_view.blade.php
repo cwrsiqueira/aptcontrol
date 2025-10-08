@@ -17,11 +17,11 @@
             switch ($order->complete_order) {
                 case '0':
                     $status = 'Pendente';
-                    $badge = 'info';
+                    $badge = 'success';
                     break;
                 case '1':
                     $status = 'Finalizado';
-                    $badge = 'success';
+                    $badge = 'warning';
                     break;
                 case '2':
                     $status = 'Cancelado';
@@ -30,7 +30,7 @@
 
                 default:
                     $status = 'Pendente';
-                    $badge = 'info';
+                    $badge = 'success';
                     break;
             }
         @endphp
@@ -109,8 +109,7 @@
                         @elseif($order->complete_order == 1)
                             @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
                                 <a class="btn btn-sm btn-outline-primary"
-                                    href="{{ route('order.update_status', ['order' => $order, 'status' => 0]) }}">Reabrir
-                                    pedido</a>
+                                    href="{{ route('order_products.index', ['order' => $order]) }}">Ver pedido</a>
                             @endif
                         @endif
                     </th>

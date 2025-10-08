@@ -69,7 +69,6 @@ class ReportController extends Controller
         $cliente    = trim((string) $request->input('cliente', '')) ?: null;  // nome único
         $vendedor   = trim((string) $request->input('vendedor', '')) ?: null; // nome único
         $pedido     = trim((string) $request->input('pedido', '')) ?: null;   // order_number único
-
         // Datas: geração de limites robustos (início do dia / próximo dia 00:00)
         // Datas: aceita dd/mm/yyyy ou yyyy-mm-dd e normaliza em Y-m-d
         $parseDate = function (?string $s) {
@@ -234,11 +233,11 @@ class ReportController extends Controller
                     }
                 } else { // delivery
                     if ($iniObj && $finObj) {
-                        $del->whereBetween(DB::raw('date(order_products.delivery_date)'), [$iniObj, $finObj]);
+                        $del->whereBetween(DB::raw('date(order_products.created_at)'), [$iniObj, $finObj]);
                     } elseif ($iniObj) {
-                        $del->where(DB::raw('date(order_products.delivery_date)'), '>=', $iniObj);
+                        $del->where(DB::raw('date(order_products.created_at)'), '>=', $iniObj);
                     } elseif ($finObj) {
-                        $del->where(DB::raw('date(order_products.delivery_date)'), '<=', $finObj);
+                        $del->where(DB::raw('date(order_products.created_at)'), '<=', $finObj);
                     }
                 }
             }

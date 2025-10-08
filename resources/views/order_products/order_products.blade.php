@@ -35,11 +35,11 @@
             switch ($order->complete_order) {
                 case '0':
                     $status = 'Pendente';
-                    $badge = 'info';
+                    $badge = 'success';
                     break;
                 case '1':
                     $status = 'Finalizado';
-                    $badge = 'success';
+                    $badge = 'warning';
                     break;
                 case '2':
                     $status = 'Cancelado';
@@ -48,7 +48,7 @@
 
                 default:
                     $status = 'Pendente';
-                    $badge = 'info';
+                    $badge = 'success';
                     break;
             }
         @endphp
@@ -100,7 +100,11 @@
                         </div>
                         <div class="col-md mb-1">
                             <span class="muted-label">Pagamento</span>
-                            <div class="text-body">{{ $order->payment }}</div>
+                            <select name="payment" id="payment" class="form-control">
+                                <option @if ($order->payment === 'Aberto') selected @endif>Aberto</option>
+                                <option @if ($order->payment === 'Parcial') selected @endif>Parcial</option>
+                                <option @if ($order->payment === 'Total') selected @endif>Total</option>
+                            </select>
                         </div>
                         <div class="col-md mb-1">
                             <div class="row">
@@ -307,4 +311,32 @@
             border-radius: 4px;
         }
     </style>
+@endsection
+
+@section('js')
+    <script>
+        // CSRF para Ajax
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+
+        const payment = document.querySelector('#payment');
+        payment.addEventListener('change', function() {
+            $.post("{{ route('update_payment_status') }}", {
+                    id: {{ $order->id }},
+                    status: this.value
+                })
+                .done(function(data) {
+                    alert(data.message);
+                    console.log('Sucesso:', data);
+                })
+                .fail(function(xhr, status, error) {
+                    alert("Erro interno, contacte o suporte!");
+                    const json = JSON.parse(xhr.responseText)
+                    console.error('Erro:', json);
+                });
+        })
+    </script>
 @endsection

@@ -35,7 +35,7 @@
     <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
         <div>
             <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="{{ route('home') }}">
-                <img src="{{ asset('favicon.ico') }}" width="25" alt="Logotipo APTControl">
+                <img src="{{ asset('favicon.ico') }}" width="25" alt="Logotipo PSDControl">
                 {{ config('app.name', 'Laravel') }}
             </a>
         </div>
@@ -106,6 +106,14 @@
                             <h6 class="nav-link">Configurações</h6>
                         </li>
 
+                        <li class="nav-item">
+                            <a class="nav-link @if (Request::is('users')) active @endif"
+                                href="{{ route('users.index') }}">
+                                <span data-feather="user"></span>
+                                Perfil do usuário
+                            </a>
+                        </li>
+
                         @if (Auth::user()->is_admin)
                             <li class="nav-item">
                                 <a class="nav-link @if (Request::is('permissions')) active @endif"
@@ -123,14 +131,6 @@
                                 </a>
                             </li>
                         @endif
-
-                        <li class="nav-item">
-                            <a class="nav-link @if (Request::is('users')) active @endif"
-                                href="{{ route('users.index') }}">
-                                <span data-feather="user"></span>
-                                Perfil do usuário
-                            </a>
-                        </li>
 
                     </ul>
 

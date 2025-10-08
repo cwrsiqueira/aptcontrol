@@ -340,4 +340,14 @@ class AjaxController extends Controller
         $product = Product::where('name', $_GET['product'])->first();
         echo json_encode($product);
     }
+
+    public function update_payment_status(Request $request)
+    {
+        $order = Order::find($request->input('id'));
+        $order->payment = $request->input('status');
+        $order->save();
+
+        Helper::saveLog(Auth::user()->id, 'Alteração', $order->id, $order->payment, 'Pedidos');
+        return response()->json(['ok' => true, 'message' => 'Alteração efetuada com sucesso!']);
+    }
 }

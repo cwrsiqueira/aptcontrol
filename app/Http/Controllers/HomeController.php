@@ -11,14 +11,17 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v2.0.0',
-            'updated_at' => '07/10/2025',
+            'version'    => 'v2.0.1',
+            'updated_at' => '08/10/2025',
             'updates'    => [
-                'NOVO SISTEMA APTCONTROL',
-                'Novas funcionalidades',
-                'Melhorias nas funcionalidades antigas',
-                'Melhorias nas visualizações',
-                'E muitas outras novidades!',
+                'NOVO SISTEMA PSDControl',
+                'Implementa opção de alterar status do pagamento',
+                'Inativa campo número do pedido para edição',
+                'Recalcula e grava número do pedido sequencial',
+                'Altera nome do sistema para PSDControl',
+                'Ajusta filtro de pesquisa por data de entrega do pedido',
+                'Altera posições do menu',
+                'Outros pequenos ajustes visuais e funcionais',
             ],
         ];
     }

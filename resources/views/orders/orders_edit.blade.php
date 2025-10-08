@@ -37,9 +37,7 @@
                         <div class="col-sm">
                             <div class="form-group">
                                 <label for="order_number">Número do pedido:</label>
-                                <input class="form-control @error('order_number') is-invalid @enderror" type="text"
-                                    name="order_number" id="order_number"
-                                    value="{{ old('order_number') ?? $order->order_number }}">
+                                <div class="form-control" readonly>{{ $order->order_number }}</div>
                             </div>
                         </div>
                         <div class="col-sm">

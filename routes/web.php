@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/order_change_status',  'AjaxController@order_change_status')->name('order_change_status');
     Route::get('/del_dup_order',        'AjaxController@del_dup_order')->name('del_dup_order');
     Route::get('/get_data_product',     'AjaxController@get_data_product')->name('get_data_product');
+    Route::post('/update-payment-status', 'AjaxController@update_payment_status')->name('update_payment_status');
 
     // Toggle favoritos por item (order_products)
     Route::post('/products/{order_product}/marcar-produto', 'ProductController@marcar_produto')->name('products.marcar_produto');
