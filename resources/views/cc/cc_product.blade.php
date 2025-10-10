@@ -88,11 +88,12 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead class="thead-light sticky-header">
                         <tr>
-                            <th>Data</th>
+                            {{-- <th>Data</th> --}}
                             <th>Pedido</th>
                             <th>Cliente</th>
                             <th>Categoria</th>
                             <th class="text-right">Saldo</th>
+                            <th>Paletes</th>
                             <th>Vendedor</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
@@ -104,7 +105,7 @@
                             @if ($item->saldo > 0)
                                 <tr>
                                     {{-- DATA --}}
-                                    <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td>
+                                    {{-- <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td> --}}
                                     {{-- PEDIDO --}}
                                     <td>
                                         <a
@@ -131,6 +132,17 @@
                                     <td class="text-right">
                                         {{ number_format($item->saldo > $item->quant ? $item->quant : $item->saldo, 0, '', '.') }}
                                     </td>
+                                    {{-- CARGA --}}
+                                    <td>
+                                        <ul>
+                                            @for ($i = 0; $i < 3; $i++)
+                                                @if (isset($item->carga['tipo'][$i]) && $item->carga['tipo'][$i] != '')
+                                                    <li>{{ $item->carga['tipo'][$i] ?? '' }} =
+                                                        {{ $item->carga['quant'][$i] ?? '' }}</li>
+                                                @endif
+                                            @endfor
+                                        </ul>
+                                    </td>
                                     {{-- VENDEDOR --}}
                                     <td>{{ $item->order->seller->name ?? ' - ' }}</td>
                                     {{-- DATA DA ENTREGA --}}
@@ -149,26 +161,43 @@
                                     </td>
                                     {{-- AÇÕES --}}
                                     <td class="nao-imprimir">
-                                        <button
-                                            class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning btn-fav"
-                                            data-id="{{ $item->id }}"
-                                            data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 1]) }}"
-                                            title="Marcar aguardando antecipação"><i class="icon fas fa-clock"></i></button>
+                                        @if (in_array('products.marcar_produto', $user_permissions) || Auth::user()->is_admin)
+                                            <button
+                                                class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning btn-fav"
+                                                data-id="{{ $item->id }}"
+                                                data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 1]) }}"
+                                                title="Marcar aguardando antecipação"><i
+                                                    class="icon fas fa-clock"></i></button>
 
-                                        <button
-                                            class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success btn-fav"
-                                            data-id="{{ $item->id }}"
-                                            data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 2]) }}"
-                                            title="Marcar liberado para entrega"><i
-                                                class="icon fas fa-thumbs-up"></i></button>
+                                            <button
+                                                class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success btn-fav"
+                                                data-id="{{ $item->id }}"
+                                                data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 2]) }}"
+                                                title="Marcar liberado para entrega"><i
+                                                    class="icon fas fa-thumbs-up"></i></button>
 
-                                        <button
-                                            class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger btn-fav"
-                                            data-id="{{ $item->id }}"
-                                            data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
-                                            title="Marcar fixar data"><i class="icon fas fa-calendar-day"></i></button>
+                                            <button
+                                                class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger btn-fav"
+                                                data-id="{{ $item->id }}"
+                                                data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
+                                                title="Marcar fixar data"><i class="icon fas fa-calendar-day"></i></button>
+                                        @else
+                                            <button
+                                                class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning"
+                                                title="Solicitar acesso" disabled><i class="icon fas fa-clock"></i></button>
 
-                                        <button class="btn btn-sm btn-outline-secondary btn-fav" disabled
+                                            <button
+                                                class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success"
+                                                title="Solicitar acesso" disabled><i
+                                                    class="icon fas fa-thumbs-up"></i></button>
+
+                                            <button
+                                                class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger"
+                                                title="Solicitar acesso" disabled><i
+                                                    class="icon fas fa-calendar-day"></i></button>
+                                        @endif
+
+                                        <button class="btn btn-sm btn-outline-secondary" disabled
                                             data-id="{{ $item->id }}" data-url="url" title="Adicionar observação"><i
                                                 class="icon fas fa-comment-dots"></i></button>
                                     </td>

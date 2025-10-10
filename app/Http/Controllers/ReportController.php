@@ -43,7 +43,7 @@ class ReportController extends Controller
             'vendedor'    => $request->input('vendedor'),
             'pedido'      => $request->input('pedido'),
             'withdraw'    => $request->input('withdraw', 'todas'),
-            'payment'    => $request->input('payment', 'Total'),
+            'payment'    => $request->input('payment'),
             'date_field'  => $request->input('date_field', 'delivery'),
             'status'      => $request->input('status', 'pendentes'),
             'date_ini'    => $request->input('date_ini', $defaultIni),
@@ -62,7 +62,7 @@ class ReportController extends Controller
         // -------- inputs --------
         $productIds = array_filter((array) $request->input('products', []), fn($v) => strlen((string)$v));
         $withdraw   = $request->input('withdraw', 'todas');        // radios: todas|entregar|retirar
-        $payment   = $request->input('payment', 'Aberto');        // radios: Aberto|Parcial|Total
+        $payment   = $request->input('payment');        // radios: todos|Aberto|Parcial|Total
         $dateField  = $request->input('date_field', 'delivery');   // radios: delivery|order
         $status     = $request->input('status', 'pendentes');      // radios: pendentes|realizadas|ambos
 

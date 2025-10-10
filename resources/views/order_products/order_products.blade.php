@@ -176,15 +176,15 @@
                                                         title="Solicitar Acesso">Ver histórico</button>
                                                 @endif
                                             @endif
-                                            @if ($item->saldo >= $item->quant)
-                                                @if (in_array('order_products.update', $user_permissions) || Auth::user()->is_admin)
-                                                    <a class="btn btn-sm btn-outline-primary"
-                                                        href="{{ route('order_products.edit', [$item, 'product_id' => $item->product_id]) }}">Editar</a>
-                                                @else
-                                                    <button class="btn btn-sm btn-outline-primary" disabled
-                                                        title="Solicitar Acesso">Editar</button>
-                                                @endif
 
+                                            @if (in_array('order_products.update', $user_permissions) || Auth::user()->is_admin)
+                                                <a class="btn btn-sm btn-outline-primary"
+                                                    href="{{ route('order_products.edit', [$item, 'product_id' => $item->product_id]) }}">Editar</a>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-primary" disabled
+                                                    title="Solicitar Acesso">Editar</button>
+                                            @endif
+                                            @if ($item->saldo >= $item->quant)
                                                 @if (in_array('order_products.delete', $user_permissions) || Auth::user()->is_admin)
                                                     <form
                                                         action="{{ route('order_products.destroy', [$item, 'product_id' => $item->product_id]) }}"

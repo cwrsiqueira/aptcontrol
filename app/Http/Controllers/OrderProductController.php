@@ -103,6 +103,8 @@ class OrderProductController extends Controller
             "quant",
             "delivery_date",
             "order",
+            "palete_tipo",
+            "palete_quant",
         ]);
 
         $data['favorite_delivery'] = isset($data['favorite_delivery']) ? 1 : 0;
@@ -121,6 +123,17 @@ class OrderProductController extends Controller
             ]
         )->validate();
 
+        $carga = [];
+        foreach ($data['palete_tipo'] as $tipoK => $tipo) {
+            foreach ($data['palete_quant'] as $quantK => $quant) {
+                if ($tipo != "" && $tipoK == $quantK) {
+                    $carga[$tipo] = $quant;
+                }
+            }
+        }
+
+        $carga = json_encode($carga);
+
         $product = Product::firstOrCreate(['name' => trim($data['product_name'])], ['daily_production_forecast' => 0]);
         $order = Order::find($request->input('order'));
 
@@ -138,6 +151,7 @@ class OrderProductController extends Controller
         $order_product->quant = str_replace('.', '', $data['quant']);
         $order_product->delivery_date = $data['delivery_date'];
         $order_product->favorite_delivery = $data['favorite_delivery'];
+        $order_product->carga = $carga;
         $order_product->save();
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $order_product->id, $order_product->order_number, 'Produtos Pedidos');
@@ -161,14 +175,29 @@ class OrderProductController extends Controller
             ->where('quant', '<', 0)
             ->count();
 
-        if ($delivery_product > 0) {
-            $message = ['has-order' => 'Produto do pedido possui entrega registrada e não pode ser editado!'];
-            return redirect()->route('order_products.index', ['order' => $order_product->order->id])->withErrors($message);
-        }
+        $saldo = Order_product::where('order_id', $order_product->order_id)
+            ->select(
+                DB::raw('SUM(order_products.quant) as saldo'),
+            )
+            ->sum('quant');
+
+        // if ($delivery_product > 0) {
+        //     $message = ['has-order' => 'Produto do pedido possui entrega registrada e não pode ser editado!'];
+        //     return redirect()->route('order_products.index', ['order' => $order_product->order->id])->withErrors($message);
+        // }
 
         $products = Product::all();
         $sellers = Seller::all();
         $order = Order::where('order_number', $order_product->order_id)->first();
+
+        $carga = json_decode($order_product->carga, true);
+        $palete = ['tipo' => [], 'quant' => []];
+        if ($carga) {
+            foreach ($carga as $k => $v) {
+                $palete['tipo'][]  = (int) $k;
+                $palete['quant'][] = (int) $v;
+            }
+        }
 
         return view('order_products.order_products_edit', compact(
             'order_product',
@@ -176,6 +205,8 @@ class OrderProductController extends Controller
             'sellers',
             'user_permissions',
             'order',
+            'palete',
+            'saldo',
         ));
     }
 
@@ -193,9 +224,13 @@ class OrderProductController extends Controller
             "delivery_date",
             "favorite_delivery",
             "order_id",
+            "palete_tipo",
+            "palete_quant",
         ]);
 
-        $data['favorite_delivery'] = isset($data['favorite_delivery']) ? 1 : 0;
+        $data['favorite_delivery'] = isset($data['favorite_delivery']) ?: 0;
+        $data['quant'] = isset($data['quant']) ? $data['quant'] : $order_product->quant;
+        $data['delivery_date'] = isset($data['delivery_date']) ? $data['delivery_date'] : $order_product->delivery_date;
 
         Validator::make(
             $data,
@@ -210,6 +245,17 @@ class OrderProductController extends Controller
             ]
         )->validate();
 
+        $carga = [];
+        foreach ($data['palete_tipo'] as $tipoK => $tipo) {
+            foreach ($data['palete_quant'] as $quantK => $quant) {
+                if ($tipo != "" && $tipoK == $quantK) {
+                    $carga[$tipo] = $quant;
+                }
+            }
+        }
+
+        $carga = json_encode($carga);
+
         $order = Order::find($data['order_id']);
 
         $order_product = Order_product::find($order_product->id);
@@ -217,6 +263,7 @@ class OrderProductController extends Controller
         $order_product->quant = str_replace('.', '', $data['quant']);
         $order_product->delivery_date = $data['delivery_date'];
         $order_product->favorite_delivery = $data['favorite_delivery'];
+        $order_product->carga = $carga;
         $order_product->save();
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $order_product->id, $order_product->order_number, 'Produtos Pedidos');

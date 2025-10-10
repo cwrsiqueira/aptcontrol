@@ -115,7 +115,7 @@
 
                                 {{-- Status (radios) --}}
                                 <div class="form-group col-md-6">
-                                    <label class="mb-1 d-block">Status</label>
+                                    <label class="mb-1 d-block">Status da entrega</label>
                                     <div class="custom-control custom-radio custom-control-inline">
                                         <input type="radio" id="s_pend" name="status" value="pendentes"
                                             {{ $status === 'pendentes' ? 'checked' : '' }} class="custom-control-input"
@@ -150,10 +150,9 @@
                                 <div class="form-group col-md-6">
                                     <label class="mb-1 d-block">Pagamento</label>
                                     <div class="custom-control custom-radio custom-control-inline">
-                                        <input type="radio" id="s_total" name="payment" value="Total"
-                                            {{ $payment === 'Total' ? 'checked' : '' }} class="custom-control-input"
-                                            checked>
-                                        <label class="custom-control-label" for="s_total">Total</label>
+                                        <input type="radio" id="s_todos" name="payment" value="" checked
+                                            {{ $payment === '' ? 'checked' : '' }} class="custom-control-input">
+                                        <label class="custom-control-label" for="s_todos">Todos</label>
                                     </div>
                                     <div class="custom-control custom-radio custom-control-inline">
                                         <input type="radio" id="s_aberto" name="payment" value="Aberto"
@@ -164,6 +163,11 @@
                                         <input type="radio" id="s_parcial" name="payment" value="Parcial"
                                             {{ $payment === 'Parcial' ? 'checked' : '' }} class="custom-control-input">
                                         <label class="custom-control-label" for="s_parcial">Parcial</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="s_total" name="payment" value="Total"
+                                            {{ $payment === 'Total' ? 'checked' : '' }} class="custom-control-input">
+                                        <label class="custom-control-label" for="s_total">Total</label>
                                     </div>
                                 </div>
 

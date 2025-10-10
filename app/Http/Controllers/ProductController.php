@@ -310,6 +310,7 @@ class ProductController extends Controller
             'order_products.quant',
             'order_products.checkmark',
             'order_products.delivery_date',
+            'order_products.carga',
             DB::raw("
             SUM(CAST(quant AS INTEGER)) OVER (
                 PARTITION BY order_id, product_id
@@ -368,6 +369,20 @@ class ProductController extends Controller
 
         // 6) helper (conferência global de ABERTOS)
         $delivery_in = Helper::day_delivery_calc($id);
+
+        foreach ($data as $key => $item) {
+            $carga = json_decode($item->carga, true);
+            $paletes = ['tipo' => [], 'quant' => []];
+            if ($carga) {
+                foreach ($carga as $k => $v) {
+                    $paletes['tipo'][]  = (int) $k;
+                    $paletes['quant'][] = (int) $v;
+                }
+            }
+            $data[$key]['carga'] = $paletes;
+        }
+
+        // dd($data);
 
         return view('cc.cc_product', [
             'data'               => $data,                       // listagem
