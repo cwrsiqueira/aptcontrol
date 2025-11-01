@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Order_product;
 use App\Observers\OrderProductObserver;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Paginator::useBootstrap();
+
         // Torna disponível a função SQL unaccent() quando o driver for SQLite
         if (DB::connection()->getDriverName() === 'sqlite') {
             DB::connection()->getPdo()->sqliteCreateFunction(
