@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Order_product;
 use App\Observers\OrderProductObserver;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Validator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Validator::includeUnvalidatedArrayKeys();
         Paginator::useBootstrap();
 
         // Torna disponível a função SQL unaccent() quando o driver for SQLite
