@@ -11,12 +11,10 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v2.0.2',
-            'updated_at' => '09/10/2025',
+            'version'    => 'v2.2.0',
+            'updated_at' => '12/11/2025',
             'updates'    => [
-                'NOVO SISTEMA PSDControl',
-                'Implementa montagem dos paletes',
-                'Altera o relatório pra buscar todos os status de pagamento',
+                'Implementa botão IMPRIMIR na tela de pedidos',
             ],
         ];
     }
