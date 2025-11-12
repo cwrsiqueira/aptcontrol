@@ -73,6 +73,9 @@
                     <div class="badge badge-{{ $badge }}">{{ $status }}</div>
                 </div>
 
+                <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.print', $order) }}" target="_blank"
+                    rel="noopener">Imprimir / PDF</a>
+
                 <div class="text-right">
                     @if (in_array('order_products.create', $user_permissions) || Auth::user()->is_admin)
                         <a class="btn btn-sm btn-primary" href="{{ route('order_products.create', ['order' => $order]) }}">

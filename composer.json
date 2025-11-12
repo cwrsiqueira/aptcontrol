@@ -1,5 +1,5 @@
 {
-    "name": "PSDControl/laravel-app",
+    "name": "psdcontrol/psdcontrol",
     "type": "project",
     "description": "Sistema de controle de produção e entregas para indústrias e pequenas fábricas.",
     "keywords": [
@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2.0",
+        "barryvdh/laravel-dompdf": "^3.1",
         "doctrine/dbal": "^3.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^12.0",

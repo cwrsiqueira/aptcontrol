@@ -90,4 +90,8 @@ Route::middleware('auth')->group(function () {
         Auth::logout();
         return redirect()->route('home');
     })->name('logout.get');
+
+    Route::get('/orders/{order}/print', 'OrderPrintController@show')
+        ->name('orders.print')
+        ->middleware('auth');
 });
