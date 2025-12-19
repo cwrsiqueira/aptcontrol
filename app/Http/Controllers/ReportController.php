@@ -14,12 +14,23 @@ use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('home')->withErrors($message);
+            return redirect()->route('home')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
+        return view('reports.index', [
+            'user_permissions' => $user_permissions,
+        ]);
+    }
+
+    public function deliveryForm(Request $request)
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
+            return redirect()->route('home')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $clients  = \App\Client::orderBy('name')->pluck('name')->toArray();
@@ -43,13 +54,50 @@ class ReportController extends Controller
             'vendedor'    => $request->input('vendedor'),
             'pedido'      => $request->input('pedido'),
             'withdraw'    => $request->input('withdraw', 'todas'),
-            'payment'    => $request->input('payment'),
+            'payment'     => $request->input('payment'),
             'date_field'  => $request->input('date_field', 'delivery'),
             'status'      => $request->input('status', 'pendentes'),
             'date_ini'    => $request->input('date_ini', $defaultIni),
             'date_fin'    => $request->input('date_fin', $defaultFin),
         ]);
     }
+
+    // public function index(Request $request)
+    // {
+    //     $user_permissions = Helper::get_permissions();
+    //     if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
+    //         $message = ['no-access' => 'Solicite acesso ao administrador!'];
+    //         return redirect()->route('home')->withErrors($message);
+    //     }
+
+    //     $clients  = \App\Client::orderBy('name')->pluck('name')->toArray();
+    //     $sellers  = \App\Seller::orderBy('name')->pluck('name')->toArray();
+    //     $orders   = \App\Order::orderBy('order_number')->pluck('order_number')->toArray();
+    //     $products = \App\Product::orderBy('name')->get(['id', 'name']);
+
+    //     $defaultIni = now()->startOfMonth()->format('Y-m-d');
+    //     $defaultFin = now()->endOfMonth()->format('Y-m-d');
+
+    //     return view('reports.reports', [
+    //         'user_permissions' => $user_permissions,
+    //         'products'   => $products,
+    //         'clients'    => $clients,
+    //         'sellers'    => $sellers,
+    //         'orders'     => $orders,
+
+    //         // valores atuais (preenche o form)
+    //         'product_ids' => (array) $request->input('products', []),
+    //         'cliente'     => $request->input('cliente'),
+    //         'vendedor'    => $request->input('vendedor'),
+    //         'pedido'      => $request->input('pedido'),
+    //         'withdraw'    => $request->input('withdraw', 'todas'),
+    //         'payment'    => $request->input('payment'),
+    //         'date_field'  => $request->input('date_field', 'delivery'),
+    //         'status'      => $request->input('status', 'pendentes'),
+    //         'date_ini'    => $request->input('date_ini', $defaultIni),
+    //         'date_fin'    => $request->input('date_fin', $defaultFin),
+    //     ]);
+    // }
 
     public function reportDelivery(Request $request)
     {
