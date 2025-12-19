@@ -24,6 +24,12 @@
                     </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-boxes mr-2"></i>
+                            <strong class="mr-2">Estoque atual:</strong>
+                            <span
+                                class="@if ($total_sum - $quant_total != 0) font-weight-bold text-danger @endif">{{ number_format($product->current_stock ?? 0, 0, '', '.') }}</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
                             <i class="far fa-clipboard mr-2"></i>
                             <strong class="mr-2">Total a entregar:</strong>
                             <span

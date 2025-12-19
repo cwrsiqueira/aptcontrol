@@ -33,6 +33,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('/users',         'UserController');
     Route::resource('/categories',    'CategoryController');
     Route::resource('/sellers',       'SellerController');
+    Route::resource('permission-items', 'PermissionItemController');
+
+    Route::prefix('products/{product}')->group(function () {
+        Route::get('stocks', 'ProductStockController@index')->name('products.stocks.index');
+        Route::get('stocks/create', 'ProductStockController@create')->name('products.stocks.create');
+        Route::post('stocks', 'ProductStockController@store')->name('products.stocks.store');
+
+        Route::get('stocks/{stock}', 'ProductStockController@show')->name('products.stocks.show');
+        Route::get('stocks/{stock}/edit', 'ProductStockController@edit')->name('products.stocks.edit');
+        Route::put('stocks/{stock}', 'ProductStockController@update')->name('products.stocks.update');
+        Route::delete('stocks/{stock}', 'ProductStockController@destroy')->name('products.stocks.destroy');
+    });
 
     //
     // Rotas já existentes (mantidas)

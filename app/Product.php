@@ -12,4 +12,9 @@ class Product extends Model
         'daily_production_forecast',
         'img_url',
     ];
+
+    public function stocks()
+    {
+        return $this->hasMany(ProductStock::class, 'product_id', 'id');
+    }
 }

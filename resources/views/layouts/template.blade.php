@@ -119,7 +119,7 @@
                                 <a class="nav-link @if (Request::is('permissions')) active @endif"
                                     href="{{ route('permissions.index') }}">
                                     <span data-feather="lock"></span>
-                                    Permissões
+                                    Usuários & Permissões
                                 </a>
                             </li>
 
@@ -128,6 +128,21 @@
                                     href="{{ route('logs.index') }}">
                                     <span data-feather="list"></span>
                                     Log do Sistema
+                                </a>
+                            </li>
+                        @endif
+                        <hr>
+
+                        <li class="nav-item">
+                            <h6 class="nav-link">Acesso Desenvolvedor</h6>
+                        </li>
+
+                        @if (Auth::user()->email == 'admin@ceramica.test')
+                            <li class="nav-item">
+                                <a class="nav-link @if (Request::is(['permission-items', 'permission-items/*'])) active @endif"
+                                    href="{{ route('permission-items.index') }}">
+                                    <span data-feather="list"></span>
+                                    Cadastro de Permissões
                                 </a>
                             </li>
                         @endif

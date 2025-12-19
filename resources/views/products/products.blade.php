@@ -61,7 +61,7 @@
                         <tr>
                             <th>#ID</th>
                             <th>Produto</th>
-                            <th>Estoque inicial</th>
+                            <th>Estoque Atualizado</th>
                             <th>Produção estima diária</th>
                             <th>Ações</th>
                         </tr>
@@ -75,6 +75,13 @@
                                 <td>{{ number_format($item->current_stock, 0, '', '.') }}</td>
                                 <td>{{ number_format($item->daily_production_forecast, 0, '', '.') }}</td>
                                 <td>
+                                    @if (in_array('products.stock', $user_permissions) || Auth::user()->is_admin)
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                            href="{{ route('products.stocks.index', $item->id) }}">Estoque</a>
+                                    @else
+                                        <button class="btn btn-sm btn-outline-secondary" disabled
+                                            title="Solicitar Acesso">Estoque</button>
+                                    @endif
                                     @if (in_array('products.cc', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-warning"
                                             href="{{ route('cc_product', $item->id) }}">Ver entregas</a>
