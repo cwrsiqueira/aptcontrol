@@ -14,6 +14,8 @@ class RemoveIdPermissionItemToPermissionLinks extends Migration
     public function up()
     {
         Schema::table('permission_links', function (Blueprint $table) {
+            $table->dropForeign(['id_permission_item']);
+            $table->dropUnique('uq_user_permission');
             $table->dropColumn('id_permission_item');
         });
     }
@@ -27,6 +29,10 @@ class RemoveIdPermissionItemToPermissionLinks extends Migration
     {
         Schema::table('permission_links', function (Blueprint $table) {
             $table->unsignedBigInteger('id_permission_item')->nullable()->after('id_user');
+            $table->foreign('id_permission_item')
+                ->references('id')->on('permission_items')
+                ->onDelete('cascade');
+            $table->unique(['id_user', 'id_permission_item'], 'uq_user_permission');
         });
     }
 }
