@@ -72,7 +72,15 @@
                         @forelse ($products as $item)
                             <tr>
                                 <td>{{ $item->id }}</td>
-                                <td class="text-left"><a href="{{ route('products.show', $item) }}"><?php echo $item['name']; ?></a>
+                                <td class="text-left">
+                                    @php
+                                        $fullName = (string) $item->name;
+                                        $shortName = \Illuminate\Support\Str::limit($fullName, 40, '...');
+                                    @endphp
+
+                                    <a href="{{ route('products.show', $item) }}" title="{{ $fullName }}">
+                                        <span class="product-name">{{ $shortName }}</span>
+                                    </a>
                                 </td>
                                 <td>{{ $item->current_stock ? number_format($item->current_stock, 0, '', '.') : 0 }}</td>
                                 <td>{{ number_format($item->daily_production_forecast, 0, '', '.') }}</td>
@@ -134,6 +142,16 @@
     <style>
         .w-80 {
             width: 80%;
+        }
+
+        .product-name {
+            display: inline-block;
+            max-width: 360px;
+            /* ajuste se quiser */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
         }
     </style>
 @endsection

@@ -133,11 +133,10 @@
                         @endif
                         <hr>
 
-                        <li class="nav-item">
-                            <h6 class="nav-link">Acesso Desenvolvedor</h6>
-                        </li>
-
                         @if (Auth::user()->email == 'admin@ceramica.test')
+                            <li class="nav-item">
+                                <h6 class="nav-link">Acesso Desenvolvedor</h6>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link @if (Request::is(['permission-items', 'permission-items/*'])) active @endif"
                                     href="{{ route('permission-items.index') }}">
