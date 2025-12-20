@@ -62,7 +62,9 @@
                             <th>#ID</th>
                             <th>Produto</th>
                             <th>Estoque Atualizado</th>
-                            <th>Produção estima diária</th>
+                            <th>Produção estimada diária</th>
+                            <th>Falta entregar</th>
+                            <th>Próxima entrega</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -74,6 +76,9 @@
                                 </td>
                                 <td>{{ number_format($item->current_stock, 0, '', '.') }}</td>
                                 <td>{{ number_format($item->daily_production_forecast, 0, '', '.') }}</td>
+                                <td>{{ number_format($item->quant_total, 0, '', '.') }}</td>
+                                <td>{{ $item->delivery_in ? \Carbon\Carbon::parse($item->delivery_in)->format('d/m/Y') : '--/--/----' }}
+                                </td>
                                 <td>
                                     @if (in_array('products.stock', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-secondary"

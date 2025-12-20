@@ -34,8 +34,7 @@ class ProductController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('menu-produtos', $user_permissions) && !Auth::user()->is_admin) {
-            $message = ['no-access' => 'Solicite acesso ao administrador!'];
-            return redirect()->route('home')->withErrors($message);
+            return redirect()->route('home')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $q = trim((string) $request->input('q'));
@@ -47,15 +46,25 @@ class ProductController extends Controller
                     $sub->whereRaw('LOWER(unaccent(name)) LIKE ?', ["%{$needle}%"]);
                 });
             })
+            ->orderByRaw("CASE WHEN current_stock > 0 THEN 0 ELSE 1 END")
+            ->orderByDesc('current_stock')
             ->orderBy('name')
             ->paginate(10)
             ->withQueryString();
+
+        // adiciona previsão de entrega para usar no Blade
+        $products->getCollection()->transform(function ($p) {
+            $calc = Helper::day_delivery_calc($p->id);
+            $p->delivery_in = $calc['delivery_in'] ?? null;
+            $p->quant_total = $calc['quant_total'] ?? 0; // opcional
+            return $p;
+        });
 
         return view('products.products', [
             'user_permissions' => $user_permissions,
             'user' => Auth::user(),
             'products' => $products,
-            'q' => $q
+            'q' => $q,
         ]);
     }
 
