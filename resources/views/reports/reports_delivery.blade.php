@@ -12,14 +12,19 @@
                     $backQs = request()->except('export');
                 @endphp
 
-                <a class="btn btn-sm btn-secondary" href="{{ route('reports.index', $backQs) }}" id="btn_voltar">&lt;
-                    Relatórios</a>
+                <a class="btn btn-sm btn-secondary" href="{{ route('reports.delivery_form', $backQs) }}" id="btn_voltar">&lt;
+                    Voltar</a>
                 @php
                     $qs = request()->all();
                     $qs['export'] = 'csv';
                 @endphp
                 <a class="btn btn-sm btn-outline-primary" href="{{ route('report_delivery', $qs) }}">Baixar CSV</a>
                 <button class="btn btn-sm btn-secondary" id="btn_print">Imprimir</button>
+                @php $qsPdf = request()->all(); @endphp
+                <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
+                    href="{{ route('report_delivery_pdf', $qsPdf) }}">
+                    Gerar PDF
+                </a>
             </div>
         </div>
 
@@ -315,8 +320,8 @@
             }
 
             /* Se ainda assim “estourar”, descomente para reduzir mais:
-                        body { zoom: 0.85; }  // Chrome costuma respeitar
-                        */
+                                    body { zoom: 0.85; }  // Chrome costuma respeitar
+                                    */
         }
     </style>
 @endsection

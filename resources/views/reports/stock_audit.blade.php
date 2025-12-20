@@ -10,7 +10,12 @@
                 <h2 class="mb-0">Auditoria de Estoque</h2>
                 <small class="text-muted">Confronto diário: estoque lançado × entregas × previsão</small>
             </div>
+            <a href="{{ route('reports.stock_audit_pdf', request()->all()) }}" target="_blank" rel="noopener"
+                class="btn btn-sm btn-outline-secondary mr-2">
+                Gerar PDF
+            </a>
             <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">Voltar</a>
+
         </div>
 
         @if ($errors->any())

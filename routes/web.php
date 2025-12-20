@@ -153,6 +153,9 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('orders/{order}/print', 'OrderPrintController@show')->name('orders.print');
 
+    Route::get('report/delivery/pdf', 'ReportPrintController@delivery')->name('report_delivery_pdf');
+    Route::get('reports/stock-audit/pdf', 'ReportPrintController@stockAudit')->name('reports.stock_audit_pdf');
+
     /*
     |--------------------------------------------------------------------------
     | Logout por GET (compatibilidade com o layout atual)
