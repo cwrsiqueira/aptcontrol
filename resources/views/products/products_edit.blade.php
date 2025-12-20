@@ -32,13 +32,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="stock">Estoque inicial:</label>
-                        <input class="form-control @error('stock') is-invalid @enderror quant-format" type="text"
-                            name="stock" placeholder="Sem estoque inicial" id="stock"
-                            value="{{ old('stock') ?? $product->current_stock }}">
-                    </div>
-
-                    <div class="form-group">
                         <label for="forecast">Previsão diária de produção:</label>
                         <input class="form-control @error('forecast') is-invalid @enderror quant-format" type="text"
                             name="forecast" placeholder="Previsão média diária" id="forecast"
@@ -51,13 +44,4 @@
             </div>
         </div>
     </main>
-@endsection
-@section('js')
-    <script src="{{ asset('js/jquery.min.js') }}"></script>
-    <script src="{{ asset('js/jquery.mask.min.js') }}"></script>
-    <script>
-        $('.quant-format').mask('000.000.000', {
-            reverse: true
-        });
-    </script>
 @endsection

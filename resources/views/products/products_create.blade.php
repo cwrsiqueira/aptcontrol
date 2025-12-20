@@ -31,12 +31,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="stock">Estoque Inicial:</label>
-                        <input class="form-control @error('stock') is-invalid @enderror quant-format" type="text"
-                            name="stock" placeholder="Sem estoque inicial" id="stock" value="{{ old('stock') }}">
-                    </div>
-
-                    <div class="form-group">
                         <label for="forecast">Previsão Média Diária de Produção:</label>
                         <input class="form-control @error('forecast') is-invalid @enderror quant-format" type="text"
                             name="forecast" placeholder="Previsão média diária" id="forecast"

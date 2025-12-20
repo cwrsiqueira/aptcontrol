@@ -8,7 +8,8 @@
             <h2 class="mb-0">Relatórios</h2>
             <div>
                 {{-- limpa os filtros (sem query string) --}}
-                <a class="btn btn-sm btn-outline-secondary" href="{{ route('reports.index') }}">Limpar filtros</a>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ route('reports.delivery_form') }}">Limpar filtros</a>
+                <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">Voltar</a>
             </div>
         </div>
 

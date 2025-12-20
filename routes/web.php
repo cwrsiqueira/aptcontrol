@@ -17,7 +17,6 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 | Autenticação
 |--------------------------------------------------------------------------
-| Auth::routes() já registra /login, /register, /logout (POST) etc.
 */
 Auth::routes();
 
@@ -70,20 +69,19 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     | Relatórios
     |--------------------------------------------------------------------------
-    | /reports agora deve ser HUB (lista de relatórios)
-    | Mantive o relatório antigo em /report/delivery (como você já usa)
     */
-    // HUB
-    Route::get('reports', 'ReportController@index')->name('reports.index');
+    Route::get('reports', 'ReportController@index')->name('reports.index'); // HUB
+    Route::get('reports/delivery', 'ReportController@deliveryForm')->name('reports.delivery_form'); // form antigo
+    Route::get('report/delivery', 'ReportController@reportDelivery')->name('report_delivery'); // resultado antigo
+    Route::get('reports/stock-audit', 'StockAuditController@index')->name('reports.stock_audit'); // auditoria
 
-    // Form do relatório antigo
-    Route::get('reports/delivery', 'ReportController@deliveryForm')->name('reports.delivery_form');
-
-    // Resultado do relatório (o seu método que já existe)
-    Route::get('report/delivery', 'ReportController@reportDelivery')->name('report_delivery');
-
-    // Auditoria
-    Route::get('reports/stock-audit', 'StockAuditController@index')->name('reports.stock_audit');
+    /*
+    |--------------------------------------------------------------------------
+    | Relatórios (PDF)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('report/delivery/pdf', 'ReportPrintController@delivery')->name('report_delivery_pdf');
+    Route::get('reports/stock-audit/pdf', 'ReportPrintController@stockAudit')->name('reports.stock_audit_pdf');
 
     /*
     |--------------------------------------------------------------------------
@@ -120,7 +118,6 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     | AJAXCONTROLLERS (mantidos como estão)
     |--------------------------------------------------------------------------
-    | Obs.: alguns alteram dados via GET — mantido por compatibilidade.
     */
     Route::get('edit_complete_order', 'AjaxController@edit_complete_order')->name('edit_complete_order');
     Route::get('day_delivery_calc', 'AjaxController@day_delivery_calc')->name('day_delivery_calc');
@@ -148,20 +145,15 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Impressão
+    | Impressão (Pedidos)
     |--------------------------------------------------------------------------
     */
     Route::get('orders/{order}/print', 'OrderPrintController@show')->name('orders.print');
-
-    Route::get('report/delivery/pdf', 'ReportPrintController@delivery')->name('report_delivery_pdf');
-    Route::get('reports/stock-audit/pdf', 'ReportPrintController@stockAudit')->name('reports.stock_audit_pdf');
 
     /*
     |--------------------------------------------------------------------------
     | Logout por GET (compatibilidade com o layout atual)
     |--------------------------------------------------------------------------
-    | Seu layout chama route('logout') via GET.
-    | Isso sobrescreve o logout POST do Auth::routes() no uso do helper route().
     */
     Route::get('logout', function () {
         Auth::logout();

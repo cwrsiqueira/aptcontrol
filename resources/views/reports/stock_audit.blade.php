@@ -15,7 +15,6 @@
                 Gerar PDF
             </a>
             <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">Voltar</a>
-
         </div>
 
         @if ($errors->any())

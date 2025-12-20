@@ -11,51 +11,83 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v2.2.0',
-            'updated_at' => '12/11/2025',
+            'version'    => 'v2.3.0',
+            'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
-                'Implementa botão IMPRIMIR na tela de pedidos',
+                'Módulo de estoque por produto com histórico e auditoria',
+                'Remoção de edição direta de estoque no cadastro/edição de produtos',
+                'Auditoria diária de estoque (estoque × entregas × previsão)',
+                'Hub de relatórios com relatório de entregas e auditoria',
+                'Exportação CSV e impressão em PDF (pedidos, entregas e auditoria)',
+                'CRUD de permissões com controle por slug',
+                'Dashboard focado no operacional (atrasadas, hoje, pendentes, amanhã)',
             ],
         ];
     }
+
     public function index()
     {
-        $today = Carbon::today()->toDateString();
+        $today    = Carbon::today();
+        $tomorrow = Carbon::tomorrow();
 
-        // Contagens simples, diretas:
-        $pendentes  = DB::table('orders')->where('complete_order', 0)->count();
-        $concluidas = DB::table('orders')->where('complete_order', 1)->count();
-        $canceladas = DB::table('orders')->where('complete_order', 2)->count();
+        /*
+        |--------------------------------------------------------------------------
+        | Pendentes (pedidos em aberto)
+        |--------------------------------------------------------------------------
+        */
+        $pendentes = DB::table('orders')
+            ->where('complete_order', 0)
+            ->count();
 
-        // Atrasadas: orders com complete_order == 0 e ALGUM order_products.delivery_date < hoje
+        /*
+        |--------------------------------------------------------------------------
+        | Atrasadas
+        | Pedido em aberto que tenha PELO MENOS um item com delivery_date < hoje
+        |--------------------------------------------------------------------------
+        */
         $atrasadas = DB::table('orders as o')
             ->join('order_products as op', 'op.order_id', '=', 'o.order_number')
             ->where('o.complete_order', 0)
-            ->whereDate('op.delivery_date', '<', $today)
-            ->distinct()                      // importante: distinct global
-            ->count('o.order_number');        // conta orders únicas
-
-        // Para hoje: orders com complete_order == 0 e ALGUM order_products.delivery_date == hoje
-        $hoje = DB::table('orders as o')
-            ->join('order_products as op', 'op.order_id', '=', 'o.order_number')
-            ->where('o.complete_order', 0)
-            ->whereDate('op.delivery_date', '=', $today)
+            ->whereDate('op.delivery_date', '<', $today->toDateString())
             ->distinct()
             ->count('o.order_number');
 
-        // (Opcional) bloco manual de versão/atualizações
-        $systemInfo = $this->systemInfo();
+        /*
+        |--------------------------------------------------------------------------
+        | Para hoje
+        | Pedido em aberto que tenha PELO MENOS um item com delivery_date = hoje
+        |--------------------------------------------------------------------------
+        */
+        $hoje = DB::table('orders as o')
+            ->join('order_products as op', 'op.order_id', '=', 'o.order_number')
+            ->where('o.complete_order', 0)
+            ->whereDate('op.delivery_date', '=', $today->toDateString())
+            ->distinct()
+            ->count('o.order_number');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Para amanhã
+        | Pedido em aberto que tenha PELO MENOS um item com delivery_date = amanhã
+        |--------------------------------------------------------------------------
+        */
+        $amanha = DB::table('orders as o')
+            ->join('order_products as op', 'op.order_id', '=', 'o.order_number')
+            ->where('o.complete_order', 0)
+            ->whereDate('op.delivery_date', '=', $tomorrow->toDateString())
+            ->distinct()
+            ->count('o.order_number');
+
+        $systemInfo = $this->systemInfo();
         $user_permissions = Helper::get_permissions();
 
         return view('dashboard', [
             'user_permissions' => $user_permissions,
             'cards' => [
-                'atrasadas'  => $atrasadas,
-                'hoje'       => $hoje,
-                'pendentes'  => $pendentes,
-                'concluidas' => $concluidas,
-                'canceladas' => $canceladas,
+                'atrasadas' => $atrasadas,
+                'hoje'      => $hoje,
+                'amanha'    => $amanha,
+                'pendentes' => $pendentes,
             ],
             'systemInfo' => $systemInfo,
         ]);
