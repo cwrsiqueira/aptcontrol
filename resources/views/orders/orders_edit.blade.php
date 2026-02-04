@@ -103,6 +103,36 @@
                             </div>
                         </div>
                     </div>
+
+                    <div id="endereco" class="mb-3">
+
+                        <h4>Endereço de Entrega</h4>
+
+                        <div class="row">
+                            <div class="col-sm">
+                                <div class="form-group">
+                                    <label for="endereco">Endereço:</label>
+                                    <input class="form-control @error('endereco') is-invalid @enderror" type="text"
+                                        name="endereco" id="endereco" value="{{ old('endereco') ?? $order->endereco }}">
+                                </div>
+                            </div>
+                            <div class="col-sm">
+                                <div class="form-group">
+                                    <label for="bairro">Bairro:</label>
+                                    <input class="form-control @error('bairro') is-invalid @enderror" type="text"
+                                        name="bairro" id="bairro" value="{{ old('bairro') ?? $order->bairro }}">
+                                </div>
+                            </div>
+                            <div class="col-sm">
+                                <div class="form-group">
+                                    <label for="zona">Zona/Setor:</label>
+                                    <input class="form-control @error('zona') is-invalid @enderror" type="text"
+                                        name="zona" id="zona" value="{{ old('zona') ?? $order->zona }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button class="btn btn-primary">Salvar</button>
                     <a class="btn btn-light" href="{{ route('orders.index') }}">Cancelar</a>
                 </form>

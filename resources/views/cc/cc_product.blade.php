@@ -164,6 +164,13 @@
                                         <span class="badge {{ $isCif ? 'badge-dark' : 'badge-info' }}">
                                             {{ Str::ucfirst($item->order->withdraw) }} ({{ $isCif ? 'CIF' : 'FOB' }})
                                         </span>
+                                        <div
+                                            class="@if ($item->order->withdraw !== 'entregar') d-none @else d-flex @endif flex-column">
+                                            <span class="text-muted">Bairro:</span>
+                                            {{ Str::ucfirst($item->order->bairro) ?? ' - ' }}
+                                            <span class="text-muted">Zona:</span>
+                                            {{ Str::ucfirst($item->order->zona) ?? ' - ' }}
+                                        </div>
                                     </td>
                                     {{-- AÇÕES --}}
                                     <td class="nao-imprimir">

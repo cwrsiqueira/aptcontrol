@@ -122,6 +122,9 @@ class OrderController extends Controller
             "client_name",
             "order_number",
             "withdraw",
+            "endereco",
+            "bairro",
+            "zona",
             "seller_name",
         ]);
 
@@ -130,16 +133,26 @@ class OrderController extends Controller
         Validator::make(
             $data,
             [
-                "order_date" => ['required'],
-                "client_name" => ['required'],
+                "order_date"   => ['required'],
+                "client_name"  => ['required'],
                 "order_number" => ['required', 'unique:orders'],
-                'withdraw' => ['required'],
-                'seller_name' => ['required'],
+                'withdraw'     => ['required'],
+                'seller_name'  => ['required'],
+
+                'endereco' => ['required_if:withdraw,entregar'],
+                'bairro'   => ['required_if:withdraw,entregar'],
+                'zona'     => ['required_if:withdraw,entregar'],
             ],
-            [],
+            [
+                'required_if' => 'O campo :attribute é obrigatório quando o campo Entrega for Entregar na obra (CIF).',
+            ],
             [
                 'client_name' => 'Cliente',
                 'seller_name' => 'Vendedor',
+                'withdraw'    => 'Entrega',
+                'endereco'    => 'Endereço',
+                'bairro'      => 'Bairro',
+                'zona'        => 'Zona',
             ]
         )->validate();
 
@@ -152,6 +165,9 @@ class OrderController extends Controller
         $order->order_number = $data['order_number'];
         $order->payment = 'Aberto';
         $order->withdraw = $data['withdraw'];
+        $order->endereco = $data['endereco'];
+        $order->bairro = $data['bairro'];
+        $order->zona = $data['zona'];
         $order->seller_id = $seller->id;
         $order->save();
 
@@ -232,6 +248,9 @@ class OrderController extends Controller
             "client_name",
             "seller_name",
             "withdraw",
+            "endereco",
+            "bairro",
+            "zona",
             "payment",
         ]);
 
@@ -242,11 +261,21 @@ class OrderController extends Controller
                 "client_name" => ['required'],
                 'seller_name' => ['required'],
                 'withdraw' => ['required'],
+
+                'endereco' => ['required_if:withdraw,entregar'],
+                'bairro'   => ['required_if:withdraw,entregar'],
+                'zona'     => ['required_if:withdraw,entregar'],
             ],
-            [],
+            [
+                'required_if' => 'O campo :attribute é obrigatório quando o campo Entrega for Entregar na obra (CIF).',
+            ],
             [
                 'client_name' => 'Cliente',
-                'seller_name' => 'Vendedor'
+                'seller_name' => 'Vendedor',
+                'withdraw'    => 'Entrega',
+                'endereco'    => 'Endereço',
+                'bairro'      => 'Bairro',
+                'zona'        => 'Zona',
             ]
         )->validate();
 
@@ -257,6 +286,9 @@ class OrderController extends Controller
         $order->client_id = $client->id;
         $order->order_date = $data['order_date'];
         $order->withdraw = $data['withdraw'];
+        $order->endereco = $data['endereco'];
+        $order->bairro = $data['bairro'];
+        $order->zona = $data['zona'];
         $order->payment = $data['payment'];
         $order->seller_id = $seller->id;
         $order->save();

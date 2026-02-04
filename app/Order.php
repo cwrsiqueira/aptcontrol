@@ -17,6 +17,9 @@ class Order extends Model
         'order_date',
         'order_number',
         'withdraw',
+        'endereco',
+        'bairro',
+        'zona',
         'complete_order',
         'seller_id',
     ];

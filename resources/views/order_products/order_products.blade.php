@@ -96,6 +96,13 @@
                         <div class="col-md mb-1">
                             <span class="muted-label">Cliente</span>
                             <div class="text-body font-weight-bold">{{ optional($order->client)->name }}</div>
+                            @if ($order->withdraw === 'entregar')
+                                <span class="muted-label">Endereço de entrega</span>
+                                <div class="text-body"><span class="text-muted">Endereço:</span> {{ $order->endereco }} -
+                                    <span class="text-muted">Bairro:</span> {{ $order->bairro }} -
+                                    <span class="text-muted">Zona:</span> {{ $order->zona }}
+                                </div>
+                            @endif
                         </div>
                         <div class="col-md mb-1">
                             <span class="muted-label">Vendedor</span>
