@@ -133,7 +133,7 @@
                         @endif
                         <hr>
 
-                        @if (Auth::user()->email == 'admin@ceramica.test')
+                        @if (Auth::user()->confirmed_user == 9)
                             <li class="nav-item">
                                 <h6 class="nav-link">Acesso Desenvolvedor</h6>
                             </li>
