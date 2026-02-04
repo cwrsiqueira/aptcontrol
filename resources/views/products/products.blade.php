@@ -47,9 +47,11 @@
             </div>
             <div class="col-sm-3 d-flex justify-content-end">
                 @if (in_array('products.create', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-primary w-80" href="{{ route('products.create') }}">Cadastrar Produto</a>
+                    <a class="btn btn-primary w-80" href="{{ route('products.create') }}" title="Cadastrar produto"><i
+                            class="fas fa-plus"></i></a>
                 @else
-                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Produto</button>
+                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso"><i
+                            class="fas fa-plus"></i></button>
                 @endif
             </div>
         </div>
@@ -64,6 +66,7 @@
                             <th>Estoque Atualizado</th>
                             <th>Produção estimada diária</th>
                             <th>Falta entregar</th>
+                            <th>Produzir</th>
                             <th>Próxima entrega</th>
                             <th>Ações</th>
                         </tr>
@@ -85,43 +88,48 @@
                                 <td>{{ $item->current_stock ? number_format($item->current_stock, 0, '', '.') : 0 }}</td>
                                 <td>{{ number_format($item->daily_production_forecast, 0, '', '.') }}</td>
                                 <td>{{ number_format($item->quant_total, 0, '', '.') }}</td>
+                                <td>{{ number_format($item->quant_total - $item->current_stock <= 0 ? 0 : $item->quant_total - $item->current_stock, 0, '', '.') }}
+                                </td>
                                 <td>{{ $item->delivery_in ? \Carbon\Carbon::parse($item->delivery_in)->format('d/m/Y') : '--/--/----' }}
                                 </td>
                                 <td>
                                     @if (in_array('products.stock', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-secondary"
-                                            href="{{ route('products.stocks.index', $item->id) }}">Estoque</a>
+                                        <a class="btn btn-sm btn-outline-secondary" title="Estoque"
+                                            href="{{ route('products.stocks.index', $item->id) }}"><i
+                                                class="fas fa-boxes"></i></a>
                                     @else
                                         <button class="btn btn-sm btn-outline-secondary" disabled
-                                            title="Solicitar Acesso">Estoque</button>
+                                            title="Solicitar Acesso"><i class="fas fa-boxes"></i></button>
                                     @endif
+
                                     @if (in_array('products.cc', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-warning"
-                                            href="{{ route('cc_product', $item->id) }}">Ver entregas</a>
+                                        <a class="btn btn-sm btn-outline-success" title="Ver entregas"
+                                            href="{{ route('cc_product', $item->id) }}"><i class="fas fa-truck"></i></a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-warning" disabled title="Solicitar Acesso">Ver
-                                            entregas</button>
+                                        <button class="btn btn-sm btn-outline-success" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-truck"></i></button>
                                     @endif
 
                                     @if (in_array('products.update', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-primary"
-                                            href="{{ route('products.edit', $item) }}">Editar</a>
+                                        <a class="btn btn-sm btn-outline-primary" title="Editar"
+                                            href="{{ route('products.edit', $item) }}"><i class="fas fa-edit"></i></a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-primary" disabled
-                                            title="Solicitar Acesso">Editar</button>
+                                        <button class="btn btn-sm btn-outline-primary" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-edit"></i></button>
                                     @endif
 
                                     @if (in_array('products.delete', $user_permissions) || Auth::user()->is_admin)
                                         <form action="{{ route('products.destroy', $item->id) }}" method="post"
                                             style="display:inline-block"
-                                            onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                                            onsubmit="return confirm('Tem certeza que deseja excluir?');" title="Excluir">
                                             @csrf
                                             @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            <button class="btn btn-sm btn-outline-danger"><i
+                                                    class="fas fa-trash-alt"></i></button>
                                         </form>
                                     @else
-                                        <button class="btn btn-sm btn-outline-danger" disabled
-                                            title="Solicitar Acesso">Excluir</button>
+                                        <button class="btn btn-sm btn-outline-danger" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-trash-alt"></i></button>
                                     @endif
                                 </td>
                             </tr>

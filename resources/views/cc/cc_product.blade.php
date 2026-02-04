@@ -127,14 +127,10 @@
                                                     @endforeach
                                                 </div>
 
-                                                {{-- Botão PDF menor --}}
-                                                <div>
-                                                    <a href="{{ route('cc.carga_zona_pdf', $zona) }}"
-                                                        class="btn btn-xs btn-outline-danger px-2 py-0"
-                                                        style="font-size: 11px;" target="_blank">
-                                                        <i class="fa fa-file-pdf"></i>
-                                                    </a>
-                                                </div>
+                                                <a href="{{ route('cc.carga_zona_pdf', [$zona, $product->id]) }}"
+                                                    class="btn btn-xs btn-outline-danger" target="_blank">
+                                                    <i class="fa fa-file-pdf"></i>
+                                                </a>
                                             </div>
                                         @endforeach
                                     </div>
@@ -262,16 +258,22 @@
                                                 title="Marcar fixar data"><i
                                                     class="icon fas fa-calendar-day"></i></button>
 
-                                            <form method="POST" action="{{ route('cc.toggle_carga') }}"
-                                                style="display:inline;">
-                                                @csrf
-                                                <input type="hidden" name="order_product_id"
-                                                    value="{{ $item->id }}">
-                                                <button
-                                                    class="btn btn-sm {{ $item->marcado_carga ? 'btn-secondary' : 'btn-outline-secondary' }}">
-                                                    <i class="fa fa-truck"></i>
-                                                </button>
-                                            </form>
+                                            @if ($item->order->withdraw === 'entregar')
+                                                <form method="POST" action="{{ route('cc.toggle_carga') }}"
+                                                    style="display:inline;">
+                                                    @csrf
+                                                    <input type="hidden" name="order_product_id"
+                                                        value="{{ $item->id }}">
+                                                    <button
+                                                        class="btn btn-sm {{ $item->marcado_carga ? 'btn-secondary' : 'btn-outline-secondary' }}">
+                                                        <i class="fa fa-truck"></i>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-secondary"
+                                                    title="Só é possível marcar carga para pedidos CIF" disabled><i
+                                                        class="icon fas fa-truck"></i></button>
+                                            @endif
                                         @else
                                             <button
                                                 class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning"
@@ -289,7 +291,7 @@
                                                     class="icon fas fa-calendar-day"></i></button>
 
                                             <button
-                                                class="btn btn-sm btn{{ $item->load_order == 1 ? '' : '-outline' }}-secondary"
+                                                class="btn btn-sm btn{{ $item->marcado_carga == 1 ? '' : '-outline' }}-secondary"
                                                 title="Solicitar acesso" disabled><i
                                                     class="icon fas fa-truck"></i></button>
                                         @endif
@@ -388,6 +390,21 @@
                     // console.error('Erro AJAX:', xhr.status, xhr.responseText);
                 });
             })
+        });
+    </script>
+    <script>
+        // salva a posição antes de enviar qualquer form
+        document.addEventListener('submit', function() {
+            sessionStorage.setItem('scrollY', window.scrollY);
+        });
+
+        // restaura a posição após reload
+        document.addEventListener('DOMContentLoaded', function() {
+            const y = sessionStorage.getItem('scrollY');
+            if (y !== null) {
+                window.scrollTo(0, parseInt(y, 10));
+                sessionStorage.removeItem('scrollY');
+            }
         });
     </script>
 @endsection

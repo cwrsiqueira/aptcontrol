@@ -270,6 +270,7 @@ class ProductController extends Controller
 
         $rows = $sub
             ->orderBy('orders.zona')
+            ->orderBy('orders.bairro')
             ->orderBy('base.delivery_date')
             ->orderBy('base.id')
             ->get();
@@ -326,6 +327,7 @@ class ProductController extends Controller
             ])
             ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
             ->where('order_products.marcado_carga', 1)
+            ->where('order_products.product_id', $id)
             ->where('orders.withdraw', 'entregar')
             ->where('orders.complete_order', 0)
             ->get()
@@ -426,7 +428,7 @@ class ProductController extends Controller
         return redirect()->back();
     }
 
-    public function cargaZonaPdf($zona)
+    public function cargaZonaPdf($zona, $productId)
     {
         $user_permissions = Helper::get_permissions();
 
@@ -439,6 +441,7 @@ class ProductController extends Controller
             ->join('products', 'products.id', '=', 'order_products.product_id')
             ->leftJoin('clients', 'clients.id', '=', 'orders.client_id')
             ->where('order_products.marcado_carga', 1)
+            ->where('order_products.product_id', $productId)
             ->where('orders.withdraw', 'entregar')
             ->where('orders.complete_order', 0)
             ->where('orders.zona', $zona)
@@ -496,8 +499,11 @@ class ProductController extends Controller
             }
         }
 
+        $product = Product::findOrFail($productId);
+
         $pdf = PDF::loadView('cc.carga_zona_pdf', [
             'zona' => $zona,
+            'product' => $product,
             'items' => $items,
             'totalProdutos' => $totalProdutos,
             'resumoPaletes' => $resumoPaletes,

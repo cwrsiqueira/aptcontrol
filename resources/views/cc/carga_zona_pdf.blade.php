@@ -36,7 +36,8 @@
 <body>
 
     <h2>CARGA – ZONA {{ strtoupper($zona) }}</h2>
-    <h4>Gerado em: {{ $data }}</h4>
+    <h4>PRODUTO: {{ $product->name }}</h4>
+    <h5>Gerado em: {{ $data }}</h5>
 
     <p>
         <strong>Total de produtos:</strong>
@@ -58,7 +59,6 @@
                 <th>Pedido</th>
                 <th>Cliente</th>
                 <th>Telefone</th>
-                <th>Produto</th>
                 <th>Quant</th>
                 <th>Paletes</th>
                 <th>Endereço</th>
@@ -71,7 +71,6 @@
                     <td>{{ $i->order_number }}</td>
                     <td>{{ $i->client_name }}</td>
                     <td>{{ $i->client_phone }}</td>
-                    <td>{{ $i->product_name }}</td>
                     <td>{{ (int) $i->quant }}</td>
                     <td>{{ implode(', ', $i->paletes) }}</td>
                     <td>{{ $i->endereco }}</td>

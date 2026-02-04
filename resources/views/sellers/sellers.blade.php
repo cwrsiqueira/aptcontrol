@@ -47,9 +47,11 @@
 
             <div class="col-sm-3 d-flex justify-content-end">
                 @if (in_array('sellers.create', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-primary w-80" href="{{ route('sellers.create') }}">Cadastrar Vendedor</a>
+                    <a class="btn btn-primary w-80" href="{{ route('sellers.create') }}" title="Cadastrar Vendedor"><i
+                            class="fas fa-plus"></i></a>
                 @else
-                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Vendedor</button>
+                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso"><i
+                            class="fas fa-plus"></i></button>
                 @endif
             </div>
         </div>
@@ -87,10 +89,11 @@
 
                                     @if (in_array('sellers.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary"
-                                            href="{{ route('sellers.edit', $seller->id) }}">Editar</a>
+                                            href="{{ route('sellers.edit', $seller->id) }}" title="Editar"><i
+                                                class="fas fa-edit"></i></a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-primary" disabled
-                                            title="Solicitar Acesso">Editar</button>
+                                        <button class="btn btn-sm btn-outline-primary" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-edit"></i></button>
                                     @endif
 
                                     @if (in_array('sellers.delete', $user_permissions) || Auth::user()->is_admin)
@@ -99,11 +102,12 @@
                                             onsubmit="return confirm('Tem certeza que deseja excluir?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Excluir"><i
+                                                    class="fas fa-trash-alt"></i></button>
                                         </form>
                                     @else
-                                        <button class="btn btn-sm btn-outline-danger" disabled
-                                            title="Solicitar Acesso">Excluir</button>
+                                        <button class="btn btn-sm btn-outline-danger" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-trash-alt"></i></button>
                                     @endif
                                 </td>
                             </tr>

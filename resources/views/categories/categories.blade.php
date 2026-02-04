@@ -37,9 +37,11 @@
             <div class="col-sm-3">
                 <div class="mb-3 text-right">
                     @if (in_array('categories.create', $user_permissions) || Auth::user()->is_admin)
-                        <a class="btn btn-primary w-80" href="{{ route('categories.create') }}">Cadastrar Categoria</a>
+                        <a class="btn btn-primary w-80" href="{{ route('categories.create') }}"
+                            title="Cadastrar categoria"><i class="fas fa-plus"></i></a>
                     @else
-                        <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Categoria</button>
+                        <button class="btn btn-primary w-80" disabled title="Solicitar Acesso"><i
+                                class="fas fa-plus"></i></button>
                     @endif
                 </div>
             </div>
@@ -64,26 +66,29 @@
 
                                     @if (in_array('categories.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary"
-                                            href="{{ route('categories.edit', $item) }}">Editar</a>
+                                            href="{{ route('categories.edit', $item) }}" title="Editar"><i
+                                                class="fas fa-edit"></i></a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-primary" disabled
-                                            title="Solicitar Acesso">Editar</button>
+                                        <button class="btn btn-sm btn-outline-primary" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-edit"></i></button>
                                     @endif
 
                                     @if ($item->name === 'Padrão')
                                         <button class="btn btn-sm btn-outline-danger" disabled
-                                            title="A categoria Padrão não pode ser excluída!">Excluir</button>
+                                            title="A categoria Padrão não pode ser excluída!"><i
+                                                class="fas fa-ban"></i></button>
                                     @elseif(in_array('categories.delete', $user_permissions) || Auth::user()->is_admin)
                                         <form action="{{ route('categories.destroy', $item) }}" method="post"
                                             style="display:inline-block"
                                             onsubmit="return confirm('Tem certeza que deseja excluir?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Excluir"><i
+                                                    class="fas fa-trash-alt"></i></button>
                                         </form>
                                     @else
-                                        <button class="btn btn-sm btn-outline-danger" disabled
-                                            title="Solicitar Acesso">Excluir</button>
+                                        <button class="btn btn-sm btn-outline-danger" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-trash-alt"></i></button>
                                     @endif
                                 </td>
                             </tr>

@@ -58,9 +58,11 @@
             </div>
             <div class="col-sm-3 d-flex justify-content-end">
                 @if (in_array('orders.create', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-primary w-80" href="{{ route('orders.create') }}">Cadastrar Pedido</a>
+                    <a class="btn btn-primary w-80" href="{{ route('orders.create') }}" title="Cadastrar Pedido"><i
+                            class="fas fa-plus"></i></a>
                 @else
-                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar Pedido</button>
+                    <button class="btn btn-primary w-80" disabled title="Solicitar Acesso"><i
+                            class="fas fa-plus"></i></button>
                 @endif
             </div>
         </div>
@@ -120,21 +122,22 @@
                                     <td>
                                         <div class="d-flex flex-column flex-sm-row">
 
-                                            @if (in_array('menu-pedidos', $user_permissions) || Auth::user()->is_admin)
-                                                <a class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm"
-                                                    href="{{ route('order_products.index', ['order' => $item]) }}">Ver
-                                                    pedido</a>
+                                            @if (in_array('orders.view', $user_permissions) || Auth::user()->is_admin)
+                                                <a class="btn btn-sm btn-outline-success mr-1 mb-1 fs-sm"
+                                                    href="{{ route('order_products.index', ['order' => $item]) }}"
+                                                    title="Ver pedido"><i class="fas fa-eye"></i></a>
                                             @else
-                                                <button class="btn btn-sm btn-outline-warning mr-1 mb-1 fs-sm" disabled
-                                                    title="Solicitar Acesso">Ver pedido</button>
+                                                <button class="btn btn-sm btn-outline-success mr-1 mb-1 fs-sm" disabled
+                                                    title="Solicitar Acesso"><i class="fas fa-eye"></i></button>
                                             @endif
 
                                             @if (in_array('orders.update', $user_permissions) || Auth::user()->is_admin)
                                                 <a class="btn btn-sm btn-outline-primary mr-1 mb-1 fs-sm"
-                                                    href="{{ route('orders.edit', $item) }}">Editar</a>
+                                                    href="{{ route('orders.edit', $item) }}" title="Editar"><i
+                                                        class="fas fa-edit"></i></a>
                                             @else
                                                 <button class="btn btn-sm btn-outline-primary mr-1 mb-1 fs-sm" disabled
-                                                    title="Solicitar Acesso">Editar</button>
+                                                    title="Solicitar Acesso"><i class="fas fa-edit"></i></button>
                                             @endif
 
                                             @if (in_array('orders.delete', $user_permissions) || Auth::user()->is_admin)
@@ -143,12 +146,12 @@
                                                     onsubmit="return confirm('Tem certeza que deseja excluir?');">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button
-                                                        class="btn btn-sm btn-outline-danger mr-1 mb-1 fs-sm">Excluir</button>
+                                                    <button class="btn btn-sm btn-outline-danger mr-1 mb-1 fs-sm"
+                                                        title="Excluir"><i class="fas fa-trash-alt"></i></button>
                                                 </form>
                                             @else
                                                 <button class="btn btn-sm btn-outline-danger mr-1 mb-1 fs-sm" disabled
-                                                    title="Solicitar Acesso">Excluir</button>
+                                                    title="Solicitar Acesso"><i class="fas fa-trash-alt"></i></button>
                                             @endif
                                         </div>
                                     </td>

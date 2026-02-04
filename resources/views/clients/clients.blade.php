@@ -51,19 +51,20 @@
                 <div class="row">
                     <div class="col-sm-12 text-right mb-2">
                         @if (in_array('clients.create', $user_permissions) || Auth::user()->is_admin)
-                            <a class="btn btn-primary w-80" href="{{ route('clients.create') }}">Cadastrar Cliente</a>
+                            <a class="btn btn-primary w-80" href="{{ route('clients.create') }}"
+                                title="Cadastrar cliente"><i class="fas fa-plus"></i></a>
                         @else
-                            <button class="btn btn-primary w-80" disabled title="Solicitar Acesso">Cadastrar
-                                Cliente</button>
+                            <button class="btn btn-primary w-80" disabled title="Solicitar Acesso"><i
+                                    class="fas fa-plus"></i></button>
                         @endif
                     </div>
                     <div class="col-sm-12 text-right">
                         @if (in_array('menu-categorias', $user_permissions) || Auth::user()->is_admin)
-                            <a class="btn btn-secondary w-80" href="{{ route('categories.index') }}">Categorias de
-                                clientes</a>
+                            <a class="btn btn-secondary w-80" href="{{ route('categories.index') }}"
+                                title="Categorias de clientes"><i class="fas fa-list"></i></a>
                         @else
-                            <button class="btn btn-secondary w-80" disabled title="Solicitar Acesso">Categorias de
-                                clientes</button>
+                            <button class="btn btn-secondary w-80" disabled title="Solicitar Acesso"><i
+                                    class="fas fa-list"></i></button>
                         @endif
                     </div>
                 </div>
@@ -101,11 +102,11 @@
                                     @endif --}}
 
                                     @if (in_array('clients.update', $user_permissions) || Auth::user()->is_admin)
-                                        <a class="btn btn-sm btn-outline-primary"
-                                            href="{{ route('clients.edit', $item) }}">Editar</a>
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ route('clients.edit', $item) }}"
+                                            title="Editar"><i class="fas fa-edit"></i></a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-primary" disabled
-                                            title="Solicitar Acesso">Editar</button>
+                                        <button class="btn btn-sm btn-outline-primary" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-edit"></i></button>
                                     @endif
 
                                     @if (in_array('clients.delete', $user_permissions) || Auth::user()->is_admin)
@@ -114,11 +115,12 @@
                                             onsubmit="return confirm('Tem certeza que deseja excluir?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Excluir"><i
+                                                    class="fas fa-trash-alt"></i></button>
                                         </form>
                                     @else
-                                        <button class="btn btn-sm btn-outline-danger" disabled
-                                            title="Solicitar Acesso">Excluir</button>
+                                        <button class="btn btn-sm btn-outline-danger" disabled title="Solicitar Acesso"><i
+                                                class="fas fa-trash-alt"></i></button>
                                     @endif
                                 </td>
                             </tr>

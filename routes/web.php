@@ -108,7 +108,10 @@ Route::middleware('auth')->group(function () {
     Route::get('sellers/cc_sellers/{id}', 'SellerController@cc_seller')->name('cc_seller');
 
     Route::post('cc/toggle-carga', 'ProductController@toggleCarga')->name('cc.toggle_carga');
-    Route::get('cc/carga/zona/{zona}/pdf', 'ProductController@cargaZonaPdf')->name('cc.carga_zona_pdf');
+    Route::get(
+        'cc/carga/zona/{zona}/produto/{product}',
+        'ProductController@cargaZonaPdf'
+    )->name('cc.carga_zona_pdf');
 
     Route::get('orders/{order}/update-status', 'OrderController@updateStatus')->name('order.update_status');
 
