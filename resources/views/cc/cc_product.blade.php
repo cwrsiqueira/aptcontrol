@@ -54,34 +54,100 @@
 
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6 mb-2">
-                                    <label class="mb-0 d-flex align-items-center btn btn-sm btn-warning">
-                                        <input class="mr-2" type="checkbox" name="por_favorito[]" value="1"
-                                            @if (!empty($_GET['por_favorito']) && in_array(1, $_GET['por_favorito'])) checked @endif>
-                                        <span class="text-truncate" title="Aguardando antecipação">A - Aguardando
-                                            antecipação</span>
-                                        <span
-                                            class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[1] ?? 0, 0, '', '.') }}</span>
-                                    </label>
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <label class="mb-0 d-flex align-items-center btn btn-sm btn-success">
-                                        <input class="mr-2" type="checkbox" name="por_favorito[]" value="2"
-                                            @if (!empty($_GET['por_favorito']) && in_array(2, $_GET['por_favorito'])) checked @endif>
-                                        <span class="text-truncate" title="Liberados para entrega">L - Liberados para
-                                            entrega</span>
-                                        <span
-                                            class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[2] ?? 0, 0, '', '.') }}</span>
-                                    </label>
-                                </div>
+                                <label class="btn btn-sm btn-warning w-100 text-left">
+                                    <input class="mr-2" type="checkbox" name="por_favorito[]" value="1"
+                                        @if (!empty($_GET['por_favorito']) && in_array(1, $_GET['por_favorito'])) checked @endif onclick="this.form.submit()">
+                                    <span class="" title="Aguardando antecipação">A - Aguardando
+                                        antecipação</span>
+                                    <span
+                                        class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[1] ?? 0, 0, '', '.') }}</span>
+                                </label>
+                                <label class="btn btn-sm btn-success w-100 text-left">
+                                    <input class="mr-2" type="checkbox" name="por_favorito[]" value="2"
+                                        @if (!empty($_GET['por_favorito']) && in_array(2, $_GET['por_favorito'])) checked @endif onclick="this.form.submit()">
+                                    <span class="" title="Liberados para entrega">L - Liberados para
+                                        entrega</span>
+                                    <span
+                                        class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[2] ?? 0, 0, '', '.') }}</span>
+                                </label>
                             </div>
-                            <hr>
+                            {{-- <hr>
 
                             <div class="d-flex align-items-center">
                                 <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
                                 <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search"
                                     class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
+                            </div> --}}
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {{-- MONTAR CARGAS --}}
+            <div class="col-lg">
+                <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
+                    <div class="card card-lift mb-3">
+                        <div class="card-header">
+                            <strong>Montar cargas</strong>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md mb-2">
+                                    <label class="btn btn-sm btn-secondary w-100 text-left">
+                                        <input class="mr-2" type="checkbox" name="entregar" value="1"
+                                            @if (!empty($_GET['entregar']) && $_GET['entregar'] == 1) checked @endif onclick="this.form.submit()">
+                                        <span class="text-truncate" title="Pedidos para entrega">Entregar (CIF)</span>
+                                        {{-- <span
+                                            class="ml-2 badge badge-light">{{ number_format($quant_por_entregar[1] ?? 0, 0, '', '.') }}</span> --}}
+                                    </label>
+                                </div>
                             </div>
+
+                            @if ($cargas_montadas->count())
+                                <div class="card mb-3 shadow-sm">
+                                    <div class="card-header">
+                                        <strong>Cargas montadas</strong>
+                                    </div>
+
+                                    <div class="card-body py-2">
+                                        @foreach ($cargas_montadas as $zona => $info)
+                                            <div
+                                                class="d-flex align-items-center justify-content-between
+                            border-bottom py-1">
+
+                                                {{-- Linha única com todas as infos --}}
+                                                <div class="small">
+                                                    <strong class="text-uppercase">{{ $zona }}</strong> —
+                                                    {{ number_format($info['produtos'], 0, ',', '.') }} produtos =
+                                                    @foreach ($info['paletes'] as $cap => $qt)
+                                                        {{ $qt }}x{{ $cap }}@if (!$loop->last)
+                                                            ,
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+
+                                                {{-- Botão PDF menor --}}
+                                                <div>
+                                                    <a href="{{ route('cc.carga_zona_pdf', $zona) }}"
+                                                        class="btn btn-xs btn-outline-danger px-2 py-0"
+                                                        style="font-size: 11px;" target="_blank">
+                                                        <i class="fa fa-file-pdf"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- <hr>
+
+                            <div class="d-flex align-items-center">
+                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
+                                <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search"
+                                    class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
+                            </div> --}}
                         </div>
                     </div>
                 </form>
@@ -193,11 +259,24 @@
                                                 class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger btn-fav"
                                                 data-id="{{ $item->id }}"
                                                 data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
-                                                title="Marcar fixar data"><i class="icon fas fa-calendar-day"></i></button>
+                                                title="Marcar fixar data"><i
+                                                    class="icon fas fa-calendar-day"></i></button>
+
+                                            <form method="POST" action="{{ route('cc.toggle_carga') }}"
+                                                style="display:inline;">
+                                                @csrf
+                                                <input type="hidden" name="order_product_id"
+                                                    value="{{ $item->id }}">
+                                                <button
+                                                    class="btn btn-sm {{ $item->marcado_carga ? 'btn-secondary' : 'btn-outline-secondary' }}">
+                                                    <i class="fa fa-truck"></i>
+                                                </button>
+                                            </form>
                                         @else
                                             <button
                                                 class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning"
-                                                title="Solicitar acesso" disabled><i class="icon fas fa-clock"></i></button>
+                                                title="Solicitar acesso" disabled><i
+                                                    class="icon fas fa-clock"></i></button>
 
                                             <button
                                                 class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success"
@@ -208,11 +287,12 @@
                                                 class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger"
                                                 title="Solicitar acesso" disabled><i
                                                     class="icon fas fa-calendar-day"></i></button>
-                                        @endif
 
-                                        <button class="btn btn-sm btn-outline-secondary" disabled
-                                            data-id="{{ $item->id }}" data-url="url" title="Adicionar observação"><i
-                                                class="icon fas fa-comment-dots"></i></button>
+                                            <button
+                                                class="btn btn-sm btn{{ $item->load_order == 1 ? '' : '-outline' }}-secondary"
+                                                title="Solicitar acesso" disabled><i
+                                                    class="icon fas fa-truck"></i></button>
+                                        @endif
                                     </td>
                                 </tr>
                             @endif

@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Helpers\Helper;
 use App\Order_product;
 use App\Product;
+use Barryvdh\DomPDF\PDF as DomPDFPDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf as PDF; // barryvdh/laravel-dompdf
 
 class ProductController extends Controller
 {
@@ -230,6 +232,7 @@ class ProductController extends Controller
         }
 
         $checks = (array) $request->input('por_favorito', []); // 1 = A, 2 = L
+        $entregar = (int) $request->input('entregar', 0);
 
         $baseQuery = Order_product::select([
             'order_products.id',
@@ -253,14 +256,23 @@ class ProductController extends Controller
 
         $sub = DB::query()->fromSub($baseQuery, 'base')
             ->join('orders', 'orders.order_number', '=', 'base.order_id')
-            ->where('orders.complete_order', 0)
-            ->select('base.*');
+            ->where('orders.complete_order', 0);
+
+        if ($entregar === 1) {
+            $sub->where('orders.withdraw', 'entregar');
+        }
+
+        $sub->select('base.*');
 
         if (!empty($checks)) {
             $sub->whereIn('base.checkmark', $checks);
         }
 
-        $rows = $sub->orderBy('base.delivery_date')->orderBy('base.id')->get();
+        $rows = $sub
+            ->orderBy('orders.zona')
+            ->orderBy('base.delivery_date')
+            ->orderBy('base.id')
+            ->get();
 
         $ids = $rows->pluck('id')->all();
         $models = Order_product::with('order', 'product', 'order.client', 'order.seller')
@@ -306,6 +318,48 @@ class ProductController extends Controller
             $data[$key]['carga'] = $paletes;
         }
 
+        $montarCargas = Order_product::query()
+            ->select([
+                'order_products.carga',
+                'order_products.quant',
+                'orders.zona',
+            ])
+            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
+            ->where('order_products.marcado_carga', 1)
+            ->where('orders.withdraw', 'entregar')
+            ->where('orders.complete_order', 0)
+            ->get()
+            ->groupBy('zona')
+            ->map(function ($items) {
+
+                $totalProdutos = 0;
+                $paletes = [];
+
+                foreach ($items as $item) {
+                    $totalProdutos += (int) $item->quant;
+
+                    $carga = json_decode($item->carga, true) ?? [];
+
+                    foreach ($carga as $k => $v) {
+                        $a = (int) $k;
+                        $b = (int) $v;
+
+                        if ($a <= 0 || $b <= 0) continue;
+
+                        // normaliza erro humano
+                        $p = min($a, $b);
+                        $cap = max($a, $b);
+
+                        $paletes[$cap] = ($paletes[$cap] ?? 0) + $p;
+                    }
+                }
+
+                return [
+                    'produtos' => $totalProdutos,
+                    'paletes' => $paletes,
+                ];
+            });
+
         return view('cc.cc_product', [
             'data' => $data,
             'product' => Product::find($id),
@@ -315,6 +369,8 @@ class ProductController extends Controller
             'user_permissions' => $user_permissions,
             'quant_por_favorito' => $sum_by_check,
             'checks_filter' => $checks,
+            'entregar_filter' => $entregar,
+            'cargas_montadas' => $montarCargas,
         ]);
     }
 
@@ -350,5 +406,105 @@ class ProductController extends Controller
             'action' => $action,
             'value' => $value,
         ]);
+    }
+
+    public function toggleCarga(Request $request)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            return redirect()->back()->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
+        $id = (int) $request->input('order_product_id');
+
+        $op = Order_product::findOrFail($id);
+
+        $op->marcado_carga = $op->marcado_carga ? 0 : 1;
+        $op->save();
+
+        return redirect()->back();
+    }
+
+    public function cargaZonaPdf($zona)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            abort(403);
+        }
+
+        $items = Order_product::query()
+            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
+            ->join('products', 'products.id', '=', 'order_products.product_id')
+            ->leftJoin('clients', 'clients.id', '=', 'orders.client_id')
+            ->where('order_products.marcado_carga', 1)
+            ->where('orders.withdraw', 'entregar')
+            ->where('orders.complete_order', 0)
+            ->where('orders.zona', $zona)
+            ->orderBy('orders.bairro')
+            ->orderBy('orders.endereco')
+            ->orderBy('orders.order_number')
+            ->select([
+                'orders.order_number',
+                'clients.name as client_name',
+                'clients.contact as client_phone',
+                'orders.endereco',
+                'orders.bairro',
+                'orders.zona',
+                'orders.order_date',
+                'order_products.quant',
+                'order_products.carga',
+                'products.name as product_name',
+            ])
+            ->get()
+            ->map(function ($item) {
+                $paletes = [];
+
+                $carga = json_decode($item->carga, true) ?? [];
+
+                foreach ($carga as $k => $v) {
+                    $a = (int) $k;
+                    $b = (int) $v;
+                    if ($a <= 0 || $b <= 0) continue;
+
+                    $p = min($a, $b);
+                    $cap = max($a, $b);
+
+                    $paletes[] = "{$p}x{$cap}";
+                }
+
+                $item->paletes = $paletes;
+
+                return $item;
+            });
+
+        $totalProdutos = 0;
+        $resumoPaletes = [];
+
+        foreach ($items as $item) {
+            $totalProdutos += (int) $item->quant;
+
+            foreach ($item->paletes as $p) {
+                // formato "16x325"
+                [$qt, $cap] = explode('x', $p);
+
+                $qt = (int) $qt;
+                $cap = (int) $cap;
+
+                $resumoPaletes[$cap] = ($resumoPaletes[$cap] ?? 0) + $qt;
+            }
+        }
+
+        $pdf = PDF::loadView('cc.carga_zona_pdf', [
+            'zona' => $zona,
+            'items' => $items,
+            'totalProdutos' => $totalProdutos,
+            'resumoPaletes' => $resumoPaletes,
+            'data' => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        // return $pdf->download("carga_zona_{$zona}.pdf");
+        return $pdf->stream("carga_zona_{$zona}.pdf");
     }
 }
