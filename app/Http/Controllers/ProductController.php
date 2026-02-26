@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helper;
+use App\Load;
+use App\LoadItem;
 use App\Order_product;
 use App\Product;
+use App\Truck;
+use App\Zone;
 use Barryvdh\DomPDF\PDF as DomPDFPDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -305,6 +309,12 @@ class ProductController extends Controller
 
         $delivery_in = Helper::day_delivery_calc($id);
 
+        $orderProductIds = $data->pluck('id')->all();
+        $loadItemsPorOp = LoadItem::whereIn('order_product_id', $orderProductIds)
+            ->selectRaw('order_product_id, SUM(qtd_paletes) as total')
+            ->groupBy('order_product_id')
+            ->pluck('total', 'order_product_id');
+
         foreach ($data as $key => $item) {
             $carga = json_decode($item->carga, true);
             $paletes = ['tipo' => [], 'quant' => []];
@@ -317,50 +327,18 @@ class ProductController extends Controller
             }
 
             $data[$key]['carga'] = $paletes;
+            $totalPaletesItem = Helper::cargaTotalPaletes($paletes);
+            $data[$key]['paletes_em_carga'] = (int) ($loadItemsPorOp[$item->id] ?? 0);
+            $data[$key]['paletes_total'] = $totalPaletesItem;
+            $data[$key]['em_carga'] = ($loadItemsPorOp[$item->id] ?? 0) > 0;
         }
 
-        $montarCargas = Order_product::query()
-            ->select([
-                'order_products.carga',
-                'order_products.quant',
-                'orders.zona',
-            ])
-            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
-            ->where('order_products.marcado_carga', 1)
-            ->where('order_products.product_id', $id)
-            ->where('orders.withdraw', 'entregar')
-            ->where('orders.complete_order', 0)
+        $cargasPorCaminhao = Load::with(['truck', 'items.zone', 'items.orderProduct.order.client', 'items.orderProduct.product'])
+            ->whereHas('items')
+            ->orderBy('truck_id')
+            ->orderBy('id')
             ->get()
-            ->groupBy('zona')
-            ->map(function ($items) {
-
-                $totalProdutos = 0;
-                $paletes = [];
-
-                foreach ($items as $item) {
-                    $totalProdutos += (int) $item->quant;
-
-                    $carga = json_decode($item->carga, true) ?? [];
-
-                    foreach ($carga as $k => $v) {
-                        $a = (int) $k;
-                        $b = (int) $v;
-
-                        if ($a <= 0 || $b <= 0) continue;
-
-                        // normaliza erro humano
-                        $p = min($a, $b);
-                        $cap = max($a, $b);
-
-                        $paletes[$cap] = ($paletes[$cap] ?? 0) + $p;
-                    }
-                }
-
-                return [
-                    'produtos' => $totalProdutos,
-                    'paletes' => $paletes,
-                ];
-            });
+            ->groupBy('truck_id');
 
         return view('cc.cc_product', [
             'data' => $data,
@@ -372,7 +350,9 @@ class ProductController extends Controller
             'quant_por_favorito' => $sum_by_check,
             'checks_filter' => $checks,
             'entregar_filter' => $entregar,
-            'cargas_montadas' => $montarCargas,
+            'cargas_por_caminhao' => $cargasPorCaminhao,
+            'trucks' => Truck::orderBy('responsavel')->get(),
+            'zones' => Zone::with('bairros')->orderBy('nome')->get(),
         ]);
     }
 
@@ -428,7 +408,95 @@ class ProductController extends Controller
         return redirect()->back();
     }
 
-    public function cargaZonaPdf($zona, $productId)
+    public function addToLoad(Request $request)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            return response()->json(['ok' => false, 'message' => 'Solicite acesso ao administrador!'], 403);
+        }
+
+        $request->validate([
+            'order_product_id' => 'required|exists:order_products,id',
+            'truck_id' => 'required|exists:trucks,id',
+            'motorista' => 'nullable|string|max:150',
+            'zone_id' => 'nullable|exists:zones,id',
+            'zona_nome' => 'nullable|string|max:100',
+            'qtd_paletes' => 'required|integer|min:1',
+        ]);
+
+        $op = Order_product::with('order')->findOrFail($request->order_product_id);
+
+        if ($op->order->withdraw !== 'entregar') {
+            return response()->json(['ok' => false, 'message' => 'Só é possível adicionar à carga pedidos CIF.'], 422);
+        }
+
+        $totalPaletes = Helper::cargaTotalPaletes($op->carga);
+        if ($totalPaletes <= 0) {
+            return response()->json(['ok' => false, 'message' => 'Todos os paletes já estão em carga ou não existem paletes cadastrados para o pedido.'], 422);
+        }
+
+        $qtd = (int) $request->qtd_paletes;
+        $jaEmCargas = LoadItem::where('order_product_id', $op->id)->sum('qtd_paletes');
+        $disponivel = $totalPaletes - $jaEmCargas;
+
+        if ($qtd > $disponivel) {
+            return response()->json(['ok' => false, 'message' => "Quantidade de paletes deve ser no máximo {$disponivel}."], 422);
+        }
+
+        $truck = Truck::findOrFail($request->truck_id);
+        $capacidade = $truck->capacidade_paletes;
+
+        $zoneId = $request->zone_id ?: null;
+        $zonaNome = $request->zona_nome ?: null;
+        if (!$zoneId && !$zonaNome) {
+            $zonaNome = $op->order->zona ?: 'SEM ZONA';
+        }
+        if ($zoneId) {
+            $zonaNome = null;
+        }
+
+        $qtdRestante = $qtd;
+        while ($qtdRestante > 0) {
+            $load = Load::query()
+                ->where('truck_id', $truck->id)
+                ->whereRaw('(SELECT COALESCE(SUM(qtd_paletes), 0) FROM load_items WHERE load_items.load_id = loads.id) < ?', [$capacidade])
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$load) {
+                $load = Load::create([
+                    'truck_id' => $truck->id,
+                    'motorista' => $request->input('motorista'),
+                    'status' => 'montagem',
+                ]);
+            } elseif ($request->filled('motorista')) {
+                // Sempre atualiza o motorista ao adicionar à carga existente (evita manter motorista de sessão anterior)
+                $load->update(['motorista' => $request->input('motorista')]);
+            }
+
+            $totalNoLoad = $load->items()->sum('qtd_paletes');
+            $espaco = $capacidade - $totalNoLoad;
+            $adicionar = min($qtdRestante, $espaco);
+
+            LoadItem::create([
+                'load_id' => $load->id,
+                'order_product_id' => $op->id,
+                'qtd_paletes' => $adicionar,
+                'zone_id' => $zoneId,
+                'zona_nome' => $zonaNome,
+                'bairro' => $op->order->bairro,
+            ]);
+
+            $qtdRestante -= $adicionar;
+        }
+
+        Helper::saveLog(Auth::user()->id, 'Adicionar à carga', $op->id, $op->order_id, 'Entregas por produto');
+
+        return response()->json(['ok' => true, 'message' => 'Adicionado à carga com sucesso!']);
+    }
+
+    public function cargaZonaPdf($zona)
     {
         $user_permissions = Helper::get_permissions();
 
@@ -441,7 +509,6 @@ class ProductController extends Controller
             ->join('products', 'products.id', '=', 'order_products.product_id')
             ->leftJoin('clients', 'clients.id', '=', 'orders.client_id')
             ->where('order_products.marcado_carga', 1)
-            ->where('order_products.product_id', $productId)
             ->where('orders.withdraw', 'entregar')
             ->where('orders.complete_order', 0)
             ->where('orders.zona', $zona)
@@ -478,39 +545,178 @@ class ProductController extends Controller
                 }
 
                 $item->paletes = $paletes;
-
                 return $item;
             });
 
+        $resumoProdutos = [];
         $totalProdutos = 0;
-        $resumoPaletes = [];
+        $totalPaletes = 0;
 
         foreach ($items as $item) {
+            $produto = $item->product_name;
+
+            if (!isset($resumoProdutos[$produto])) {
+                $resumoProdutos[$produto] = [
+                    'produtos' => 0,
+                    'paletes' => [],
+                ];
+            }
+
+            $resumoProdutos[$produto]['produtos'] += (int) $item->quant;
             $totalProdutos += (int) $item->quant;
 
             foreach ($item->paletes as $p) {
-                // formato "16x325"
                 [$qt, $cap] = explode('x', $p);
-
                 $qt = (int) $qt;
                 $cap = (int) $cap;
 
-                $resumoPaletes[$cap] = ($resumoPaletes[$cap] ?? 0) + $qt;
+                $resumoProdutos[$produto]['paletes'][$cap] =
+                    ($resumoProdutos[$produto]['paletes'][$cap] ?? 0) + $qt;
+
+                $totalPaletes += $qt;
             }
         }
 
-        $product = Product::findOrFail($productId);
-
         $pdf = PDF::loadView('cc.carga_zona_pdf', [
             'zona' => $zona,
-            'product' => $product,
             'items' => $items,
+            'resumoProdutos' => $resumoProdutos,
             'totalProdutos' => $totalProdutos,
-            'resumoPaletes' => $resumoPaletes,
+            'totalPaletes' => $totalPaletes,
             'data' => now()->format('d/m/Y H:i'),
         ])->setPaper('a4', 'portrait');
 
-        // return $pdf->download("carga_zona_{$zona}.pdf");
         return $pdf->stream("carga_zona_{$zona}.pdf");
+    }
+
+    public function cargaLoadPdf(Load $load)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            abort(403);
+        }
+
+        $load->load(['truck', 'items.zone', 'items.orderProduct.order.client', 'items.orderProduct.product']);
+
+        $items = $load->items->map(function ($li) {
+            $op = $li->orderProduct;
+            return (object) [
+                'order_number' => $op->order->order_number ?? '',
+                'client_name' => $op->order->client->name ?? '',
+                'client_phone' => $op->order->client->contact ?? '',
+                'endereco' => $op->order->endereco ?? '',
+                'bairro' => $op->order->bairro ?? $li->bairro,
+                'product_name' => $op->product->name ?? '',
+                'quant' => $op->quant ?? 0,
+                'qtd_paletes' => $li->qtd_paletes,
+                'zona' => $li->zone_id ? ($li->zone->nome ?? '') : ($li->zona_nome ?? 'SEM ZONA'),
+            ];
+        });
+
+        $resumoProdutos = [];
+        $totalProdutos = 0;
+        $totalPaletes = 0;
+
+        foreach ($load->items as $li) {
+            $produto = $li->orderProduct->product->name ?? '';
+            if (!isset($resumoProdutos[$produto])) {
+                $resumoProdutos[$produto] = ['produtos' => 0, 'paletes' => 0];
+            }
+            $resumoProdutos[$produto]['produtos'] += $li->orderProduct->quant ?? 0;
+            $resumoProdutos[$produto]['paletes'] += $li->qtd_paletes;
+            $totalProdutos += $li->orderProduct->quant ?? 0;
+            $totalPaletes += $li->qtd_paletes;
+        }
+
+        $itemsPorZona = $load->items->groupBy(fn ($li) => $li->zone_id ? ($li->zone->nome ?? '') : ($li->zona_nome ?? 'SEM ZONA'));
+
+        $pdf = PDF::loadView('cc.carga_load_pdf', [
+            'load' => $load,
+            'truck' => $load->truck,
+            'itemsPorZona' => $itemsPorZona,
+            'resumoProdutos' => $resumoProdutos,
+            'totalProdutos' => $totalProdutos,
+            'totalPaletes' => $totalPaletes,
+            'data' => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        $nomeArquivo = $load->motorista ?: $load->truck->responsavel;
+        return $pdf->stream("carga_" . \Illuminate\Support\Str::slug($nomeArquivo) . ".pdf");
+    }
+
+    public function limparCargaZona($zona)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            abort(403);
+        }
+
+        $ids = Order_product::query()
+            ->join('orders', 'orders.order_number', '=', 'order_products.order_id')
+            ->where('order_products.marcado_carga', 1)
+            ->where('orders.withdraw', 'entregar')
+            ->where('orders.complete_order', 0)
+            ->where('orders.zona', $zona)
+            ->pluck('order_products.id');
+
+        if ($ids->count()) {
+            Order_product::whereIn('id', $ids)
+                ->update(['marcado_carga' => 0]);
+        }
+
+        return redirect()->back()->with(
+            'success',
+            'Carga da zona ' . strtoupper($zona) . ' limpa com sucesso.'
+        );
+    }
+
+    public function limparCargaLoad(Load $load)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            abort(403);
+        }
+
+        $orderProductIds = $load->items->pluck('order_product_id')->unique();
+        $load->items()->delete();
+
+        foreach ($orderProductIds as $opId) {
+            $hasOtherLoadItems = LoadItem::where('order_product_id', $opId)->exists();
+            if (!$hasOtherLoadItems) {
+                Order_product::where('id', $opId)->update(['marcado_carga' => 0]);
+            }
+        }
+
+        $nomeCarga = $load->motorista ?: $load->truck->responsavel;
+        return redirect()->back()->with(
+            'success',
+            'Carga ' . $nomeCarga . ' limpa com sucesso.'
+        );
+    }
+
+    public function removeFromLoad(Load $load, Order_product $orderProduct)
+    {
+        $user_permissions = Helper::get_permissions();
+
+        if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
+            return response()->json(['ok' => false, 'message' => 'Solicite acesso ao administrador!'], 403);
+        }
+
+        $removidos = LoadItem::where('load_id', $load->id)
+            ->where('order_product_id', $orderProduct->id)
+            ->delete();
+
+        if ($removidos > 0) {
+            $hasOtherLoadItems = LoadItem::where('order_product_id', $orderProduct->id)->exists();
+            if (!$hasOtherLoadItems) {
+                $orderProduct->update(['marcado_carga' => 0]);
+            }
+            Helper::saveLog(Auth::user()->id, 'Remover da carga', $orderProduct->id, $orderProduct->order_id, 'Entregas por produto');
+        }
+
+        return redirect()->back()->with('success', 'Item removido da carga com sucesso.');
     }
 }

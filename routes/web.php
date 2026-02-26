@@ -67,6 +67,15 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Logística
+    |--------------------------------------------------------------------------
+    */
+    Route::get('logistica', 'LogisticaController@index')->name('logistica.index');
+    Route::resource('trucks', 'TruckController');
+    Route::resource('zones', 'ZoneController');
+
+    /*
+    |--------------------------------------------------------------------------
     | Relatórios
     |--------------------------------------------------------------------------
     */
@@ -108,10 +117,27 @@ Route::middleware('auth')->group(function () {
     Route::get('sellers/cc_sellers/{id}', 'SellerController@cc_seller')->name('cc_seller');
 
     Route::post('cc/toggle-carga', 'ProductController@toggleCarga')->name('cc.toggle_carga');
+    Route::post('cc/add-to-load', 'ProductController@addToLoad')->name('cc.add_to_load');
     Route::get(
-        'cc/carga/zona/{zona}/produto/{product}',
+        'cc/carga/zona/{zona}/pdf',
         'ProductController@cargaZonaPdf'
     )->name('cc.carga_zona_pdf');
+    Route::get(
+        'cc/carga/load/{load}/pdf',
+        'ProductController@cargaLoadPdf'
+    )->name('cc.carga_load_pdf');
+    Route::post(
+        'cc/carga/zona/{zona}/limpar',
+        'ProductController@limparCargaZona'
+    )->name('cc.carga_zona_limpar');
+    Route::post(
+        'cc/carga/load/{load}/limpar',
+        'ProductController@limparCargaLoad'
+    )->name('cc.carga_load_limpar');
+    Route::post(
+        'cc/carga/load/{load}/remover/{order_product}',
+        'ProductController@removeFromLoad'
+    )->name('cc.carga_load_remover');
 
     Route::get('orders/{order}/update-status', 'OrderController@updateStatus')->name('order.update_status');
 

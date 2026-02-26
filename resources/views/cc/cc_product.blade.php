@@ -71,27 +71,22 @@
                                         class="ml-2 badge badge-light">{{ number_format($quant_por_favorito[2] ?? 0, 0, '', '.') }}</span>
                                 </label>
                             </div>
-                            {{-- <hr>
-
-                            <div class="d-flex align-items-center">
-                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                                <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search"
-                                    class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                            </div> --}}
                         </div>
                     </div>
                 </form>
             </div>
+        </div>
 
-            {{-- MONTAR CARGAS --}}
-            <div class="col-lg">
-                <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
-                    <div class="card card-lift mb-3">
-                        <div class="card-header">
-                            <strong>Montar cargas</strong>
-                        </div>
+        {{-- MONTAR CARGAS (linha separada, largura total) --}}
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-lift mb-3">
+                    <div class="card-header">
+                        <strong>Montar cargas</strong>
+                    </div>
 
-                        <div class="card-body">
+                    <div class="card-body">
+                        <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
                             <div class="row">
                                 <div class="col-md mb-2">
                                     <label class="btn btn-sm btn-secondary w-100 text-left">
@@ -103,50 +98,81 @@
                                     </label>
                                 </div>
                             </div>
+                        </form>
 
-                            @if ($cargas_montadas->count())
+                        @if (($cargas_por_caminhao ?? collect())->count())
                                 <div class="card mb-3 shadow-sm">
                                     <div class="card-header">
-                                        <strong>Cargas montadas</strong>
+                                        <strong>Cargas por caminhão</strong>
                                     </div>
-
                                     <div class="card-body py-2">
-                                        @foreach ($cargas_montadas as $zona => $info)
-                                            <div
-                                                class="d-flex align-items-center justify-content-between
-                            border-bottom py-1">
-
-                                                {{-- Linha única com todas as infos --}}
-                                                <div class="small">
-                                                    <strong class="text-uppercase">{{ $zona }}</strong> —
-                                                    {{ number_format($info['produtos'], 0, ',', '.') }} produtos =
-                                                    @foreach ($info['paletes'] as $cap => $qt)
-                                                        {{ $qt }}x{{ $cap }}@if (!$loop->last)
-                                                            ,
-                                                        @endif
-                                                    @endforeach
+                                        @foreach ($cargas_por_caminhao as $truckId => $loads)
+                                            @php $truck = $loads->first()->truck; @endphp
+                                            <div class="border-bottom py-2">
+                                                <div class="fw-bold mb-1">
+                                                    <i class="fa fa-truck"></i> {{ $truck->modelo ?? 'Caminhão' }}
+                                                    @if ($truck->placa)
+                                                        <span class="text-muted">({{ $truck->placa }})</span>
+                                                    @endif
                                                 </div>
-
-                                                <a href="{{ route('cc.carga_zona_pdf', [$zona, $product->id]) }}"
-                                                    class="btn btn-xs btn-outline-danger" target="_blank">
-                                                    <i class="fa fa-file-pdf"></i>
-                                                </a>
+                                                @foreach ($loads as $cargaIdx => $load)
+                                                    @php
+                                                        $totalPalLoad = $load->items->sum('qtd_paletes');
+                                                        $capacidade = $load->truck->capacidade_paletes ?? 0;
+                                                        $badgePaletes = $totalPalLoad . '/' . $capacidade;
+                                                        $badgeCor = $totalPalLoad <= 0 ? 'success' : ($totalPalLoad >= $capacidade ? 'danger' : 'warning');
+                                                        $itensPorZona = $load->items->groupBy(fn ($i) => $i->zone_id ? ($i->zone->nome ?? '') : ($i->zona_nome ?? 'SEM ZONA'));
+                                                    @endphp
+                                                    <div class="ms-3 mb-2">
+                                                        <span class="badge badge-info">Carga {{ $cargaIdx + 1 }}</span>
+                                                        @if ($load->motorista)
+                                                            <span class="text-muted small">Motorista: {{ $load->motorista }}</span>
+                                                        @endif
+                                                        <span class="badge badge-{{ $badgeCor }} ml-1" title="{{ $badgePaletes }} paletes ({{ $totalPalLoad <= 0 ? 'vazio' : ($totalPalLoad >= $capacidade ? 'cheio' : 'em andamento') }})">{{ $badgePaletes }} pal.</span>
+                                                        <a href="{{ route('cc.carga_load_pdf', ['load' => $load->id]) }}"
+                                                            class="btn btn-sm btn-outline-danger ml-1" target="_blank"
+                                                            title="Gerar PDF"><i class="fa fa-file-pdf"></i></a>
+                                                        <form method="POST" action="{{ route('cc.carga_load_limpar', ['load' => $load]) }}"
+                                                            class="d-inline ml-1"
+                                                            onsubmit="return confirm('Limpar esta carga?');">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Limpar carga"><i class="fa fa-trash"></i></button>
+                                                        </form>
+                                                        <div class="small mt-1">
+                                                            @foreach ($itensPorZona as $zonaNome => $itensZona)
+                                                                <div class="mb-1">
+                                                                    <strong>Zona {{ strtoupper($zonaNome ?: 'SEM ZONA') }}:</strong>
+                                                                    @foreach ($itensZona->groupBy('order_product_id') as $opId => $itens)
+                                                                        @php
+                                                                            $first = $itens->first();
+                                                                            $op = $first->orderProduct;
+                                                                            $prodNome = $op->product->name ?? 'Sem produto';
+                                                                            $somaPal = $itens->sum('qtd_paletes');
+                                                                            $somaProd = $itens->sum(fn ($i) => $i->orderProduct->quant ?? 0);
+                                                                        @endphp
+                                                                        <span class="d-inline-flex align-items-center">
+                                                                            {{ $prodNome }} ({{ number_format($somaProd, 0, ',', '.') }} prod. / {{ $somaPal }} pal.)
+                                                                            <form method="POST" action="{{ route('cc.carga_load_remover', ['load' => $load, 'order_product' => $op->id]) }}"
+                                                                                class="d-inline ml-1" onsubmit="return confirm('Remover este pedido da carga?');">
+                                                                                @csrf
+                                                                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remover da carga"><i class="fa fa-times-circle"></i></button>
+                                                                            </form>
+                                                                        </span>
+                                                                        @if (!$loop->last) | @endif
+                                                                    @endforeach
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         @endforeach
                                     </div>
                                 </div>
                             @endif
 
-                            {{-- <hr>
-
-                            <div class="d-flex align-items-center">
-                                <input type="submit" value="Filtrar" id="search" class="btn btn-primary btn-sm">
-                                <a href="{{ route('cc_product', ['id' => $product->id]) }}" id="clean_search"
-                                    class="btn btn-outline-secondary btn-sm ml-2">Limpar Filtro</a>
-                            </div> --}}
                         </div>
                     </div>
-                </form>
             </div>
         </div>
 
@@ -200,7 +226,7 @@
                                     <td class="text-right">
                                         {{ number_format($item->saldo > $item->quant ? $item->quant : $item->saldo, 0, '', '.') }}
                                     </td>
-                                    {{-- CARGA --}}
+                                    {{-- CARGA / PALETES --}}
                                     <td>
                                         <ul>
                                             @for ($i = 0; $i < 3; $i++)
@@ -210,6 +236,16 @@
                                                 @endif
                                             @endfor
                                         </ul>
+                                        @if (($item->paletes_total ?? 0) > 0 && $item->order->withdraw === 'entregar')
+                                            @php
+                                                $usado = $item->paletes_em_carga ?? 0;
+                                                $total = $item->paletes_total ?? 0;
+                                                $restante = $total - $usado;
+                                            @endphp
+                                            <span class="badge badge-{{ $restante <= 0 ? 'success' : ($usado > 0 ? 'warning' : 'light') }}" title="Paletes em carga">
+                                                {{ $usado }} de {{ $total }} em carga
+                                            </span>
+                                        @endif
                                     </td>
                                     {{-- VENDEDOR --}}
                                     <td>{{ $item->order->seller->name ?? ' - ' }}</td>
@@ -259,16 +295,20 @@
                                                     class="icon fas fa-calendar-day"></i></button>
 
                                             @if ($item->order->withdraw === 'entregar')
-                                                <form method="POST" action="{{ route('cc.toggle_carga') }}"
-                                                    style="display:inline;">
-                                                    @csrf
-                                                    <input type="hidden" name="order_product_id"
-                                                        value="{{ $item->id }}">
-                                                    <button
-                                                        class="btn btn-sm {{ $item->marcado_carga ? 'btn-secondary' : 'btn-outline-secondary' }}">
-                                                        <i class="fa fa-truck"></i>
-                                                    </button>
-                                                </form>
+                                                @php
+                                                    $totalPaletesItem = $item->paletes_total ?? \App\Helpers\Helper::cargaTotalPaletes($item->carga);
+                                                    $paletesEmCarga = $item->paletes_em_carga ?? 0;
+                                                    $podeAdicionar = $paletesEmCarga < $totalPaletesItem;
+                                                    $paletesDisponivel = $totalPaletesItem - $paletesEmCarga;
+                                                @endphp
+                                                <button type="button" class="btn btn-sm {{ $item->em_carga ? 'btn-secondary' : 'btn-outline-secondary' }} btn-add-carga {{ !$podeAdicionar ? 'disabled' : '' }}"
+                                                    title="{{ $podeAdicionar ? 'Adicionar à Carga' : 'Todos os paletes já estão em carga' }}"
+                                                    data-order-product-id="{{ $item->id }}"
+                                                    data-max-paletes="{{ $paletesDisponivel }}"
+                                                    data-bairro="{{ $item->order->bairro ?? '' }}"
+                                                    data-zona="{{ $item->order->zona ?? '' }}">
+                                                    <i class="fa fa-truck"></i>
+                                                </button>
                                             @else
                                                 <button class="btn btn-sm btn-outline-secondary"
                                                     title="Só é possível marcar carga para pedidos CIF" disabled><i
@@ -292,7 +332,7 @@
 
                                             <button
                                                 class="btn btn-sm btn{{ $item->marcado_carga == 1 ? '' : '-outline' }}-secondary"
-                                                title="Solicitar acesso" disabled><i
+                                                title="Adicionar à Carga" disabled><i
                                                     class="icon fas fa-truck"></i></button>
                                         @endif
                                     </td>
@@ -303,6 +343,60 @@
                 </table>
             </div>
             {{-- <div class="card-footer">{{ $data->links() }}</div> --}}
+        </div>
+
+        {{-- Modal Adicionar à Carga --}}
+        <div class="modal fade" id="modalAddCarga" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Adicionar à Carga</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <form id="formAddCarga">
+                        @csrf
+                        <div class="modal-body">
+                            <input type="hidden" name="order_product_id" id="addCargaOrderProductId">
+                            <div class="form-group">
+                                <label for="addCargaTruck">Caminhão *</label>
+                                <select class="form-control" name="truck_id" id="addCargaTruck" required>
+                                    <option value="">Selecione...</option>
+                                    @foreach ($trucks ?? [] as $t)
+                                        <option value="{{ $t->id }}">{{ $t->modelo ?? 'Caminhão' }}{{ $t->placa ? ' - ' . $t->placa : '' }} ({{ $t->capacidade_paletes }} paletes)</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="addCargaMotorista">Motorista</label>
+                                <input type="text" class="form-control" name="motorista" id="addCargaMotorista"
+                                    maxlength="150" placeholder="Motorista que fará a entrega">
+                            </div>
+                            <div class="form-group">
+                                <label for="addCargaZone">Zona</label>
+                                <select class="form-control" name="zone_id" id="addCargaZone">
+                                    <option value="">Selecione ou use zona do pedido</option>
+                                    @foreach ($zones ?? [] as $z)
+                                        @php
+                                            $bairrosStr = $z->bairros->pluck('bairro_nome')->implode(', ');
+                                        @endphp
+                                        <option value="{{ $z->id }}">{{ $bairrosStr ? $bairrosStr . ' — ' : '' }}{{ $z->nome }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="zona_nome" id="addCargaZonaNome">
+                            </div>
+                            <div class="form-group">
+                                <label for="addCargaQtd">Quantidade de paletes *</label>
+                                <input type="number" class="form-control" name="qtd_paletes" id="addCargaQtd" min="1" required>
+                                <small class="form-text text-muted">Máximo: <span id="addCargaMaxPaletes">0</span></small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <hr>
@@ -340,6 +434,10 @@
 
         .mouse-help {
             cursor: help;
+        }
+
+        #addCargaZone {
+            font-size: 0.875rem;
         }
     </style>
 @endsection
@@ -394,8 +492,10 @@
     </script>
     <script>
         // salva a posição antes de enviar qualquer form
-        document.addEventListener('submit', function() {
-            sessionStorage.setItem('scrollY', window.scrollY);
+        document.addEventListener('submit', function(e) {
+            if (e.target.id !== 'formAddCarga') {
+                sessionStorage.setItem('scrollY', window.scrollY);
+            }
         });
 
         // restaura a posição após reload
@@ -405,6 +505,44 @@
                 window.scrollTo(0, parseInt(y, 10));
                 sessionStorage.removeItem('scrollY');
             }
+        });
+
+        // Modal Adicionar à Carga
+        $('.btn-add-carga').on('click', function() {
+            const id = $(this).data('order-product-id');
+            const max = parseInt($(this).data('max-paletes'), 10) || 0;
+            const zona = $(this).data('zona') || '';
+            if (max <= 0) {
+                alert('Todos os paletes já estão em carga ou não existem paletes cadastrados para o pedido.');
+                return;
+            }
+            $('#addCargaOrderProductId').val(id);
+            $('#addCargaMaxPaletes').text(max);
+            $('#addCargaQtd').attr('max', max).val(max);
+            $('#addCargaZonaNome').val(zona);
+            $('#addCargaZone').val('');
+            $('#modalAddCarga').modal('show');
+        });
+
+        $('#formAddCarga').on('submit', function(e) {
+            e.preventDefault();
+            const zoneId = $('#addCargaZone').val();
+            if (!zoneId) {
+                $('#addCargaZonaNome').val($('#addCargaZonaNome').val() || 'SEM ZONA');
+            } else {
+                $('#addCargaZonaNome').val('');
+            }
+            $.post('{{ route("cc.add_to_load") }}', $(this).serialize(), function(resp) {
+                if (resp && resp.ok) {
+                    $('#modalAddCarga').modal('hide');
+                    window.location.reload();
+                } else {
+                    alert(resp.message || 'Erro ao adicionar à carga.');
+                }
+            }, 'json').fail(function(xhr) {
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Erro no servidor.';
+                alert(msg);
+            });
         });
     </script>
 @endsection

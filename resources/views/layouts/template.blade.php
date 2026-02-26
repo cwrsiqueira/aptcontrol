@@ -100,6 +100,14 @@
                                 Relatórios
                             </a>
                         </li>
+
+                        <li class="nav-item" @if (in_array('menu-logistica', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                            <a class="nav-link @if (Request::is(['logistica', 'trucks', 'trucks/*', 'zones', 'zones/*'])) active @endif"
+                                href="{{ route('logistica.index') }}">
+                                <span data-feather="truck"></span>
+                                Logística
+                            </a>
+                        </li>
                         <hr>
 
                         <li class="nav-item">

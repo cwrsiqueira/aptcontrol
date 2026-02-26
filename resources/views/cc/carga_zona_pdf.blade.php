@@ -20,15 +20,19 @@
         td {
             border: 1px solid #000;
             padding: 4px;
+            vertical-align: top;
         }
 
         th {
             background: #eee;
         }
 
-        h2,
-        h4 {
-            margin: 0;
+        h2 {
+            margin-bottom: 5px;
+        }
+
+        .sub {
+            font-size: 10px;
         }
     </style>
 </head>
@@ -36,45 +40,55 @@
 <body>
 
     <h2>CARGA – ZONA {{ strtoupper($zona) }}</h2>
-    <h4>PRODUTO: {{ $product->name }}</h4>
-    <h5>Gerado em: {{ $data }}</h5>
+    <p>Gerado em: {{ $data }}</p>
 
     <p>
-        <strong>Total de produtos:</strong>
-        {{ number_format($totalProdutos, 0, ',', '.') }}
+        <strong>Resumo da carga ({{ $totalPaletes }} paletes)</strong><br>
+        Total de produtos: {{ number_format($totalProdutos, 0, ',', '.') }}
     </p>
 
-    <p>
-        <strong>Paletes:</strong>
-        @foreach ($resumoPaletes as $cap => $qt)
-            {{ $qt }}x{{ $cap }}@if (!$loop->last)
-                ,
-            @endif
-        @endforeach
-    </p>
+    @foreach ($resumoProdutos as $produto => $dados)
+        <p class="sub">
+            - {{ $produto }}:
+            {{ number_format($dados['produtos'], 0, ',', '.') }} produtos |
+            @foreach ($dados['paletes'] as $cap => $qt)
+                {{ $qt }}x{{ $cap }}@if (!$loop->last)
+                    ,
+                @endif
+            @endforeach
+        </p>
+    @endforeach
 
     <table>
         <thead>
             <tr>
-                <th>Pedido</th>
-                <th>Cliente</th>
-                <th>Telefone</th>
-                <th>Quant</th>
-                <th>Paletes</th>
-                <th>Endereço</th>
-                <th>Bairro</th>
+                <th style="width:90px;">Pedido</th>
+                <th>Produto</th>
+                <th style="width:80px;">Quant</th>
+                <th style="width:120px;">Paletes</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($items as $i)
+                {{-- Linha principal --}}
                 <tr>
                     <td>{{ $i->order_number }}</td>
-                    <td>{{ $i->client_name }}</td>
-                    <td>{{ $i->client_phone }}</td>
+                    <td>{{ $i->product_name }}</td>
                     <td>{{ (int) $i->quant }}</td>
                     <td>{{ implode(', ', $i->paletes) }}</td>
-                    <td>{{ $i->endereco }}</td>
-                    <td>{{ $i->bairro }}</td>
+                </tr>
+
+                {{-- Linha secundária (endereçamento / contato) --}}
+                <tr>
+                    <td colspan="4" class="sub">
+                        <strong>Cliente:</strong> {{ $i->client_name }}
+                        @if ($i->client_phone)
+                            | <strong>Tel:</strong> {{ $i->client_phone }}
+                        @endif
+                        <br>
+                        <strong>Endereço:</strong> {{ $i->endereco }}
+                        | <strong>Bairro:</strong> {{ $i->bairro }}
+                    </td>
                 </tr>
             @endforeach
         </tbody>

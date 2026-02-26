@@ -128,4 +128,44 @@ class Helper
             'delivery_in' => $delivery_in
         );
     }
+
+    /**
+     * Parse order_product.carga (JSON ou array) e retorna total de paletes.
+     * Usa min/max para corrigir erros de digitação (ex: 500:1 em vez de 1:500).
+     *
+     * @param string|array|null $carga JSON string, array ['tipo'=>[], 'quant'=>[]] ou array {cap=>qt}
+     */
+    public static function cargaTotalPaletes(string|array|null $carga): int
+    {
+        if ($carga === null) {
+            return 0;
+        }
+        if (is_string($carga)) {
+            $carga = json_decode($carga, true);
+        }
+        if (!$carga || !is_array($carga)) {
+            return 0;
+        }
+        $total = 0;
+        if (isset($carga['tipo']) && isset($carga['quant'])) {
+            foreach ($carga['tipo'] as $i => $tipo) {
+                $a = (int) $tipo;
+                $b = (int) ($carga['quant'][$i] ?? 0);
+                if ($a <= 0 || $b <= 0) {
+                    continue;
+                }
+                $total += min($a, $b);
+            }
+        } else {
+            foreach ($carga as $k => $v) {
+                $a = (int) $k;
+                $b = (int) $v;
+                if ($a <= 0 || $b <= 0) {
+                    continue;
+                }
+                $total += min($a, $b);
+            }
+        }
+        return $total;
+    }
 }

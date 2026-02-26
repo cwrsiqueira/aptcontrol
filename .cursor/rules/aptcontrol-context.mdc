@@ -1,0 +1,78 @@
+---
+description: Contexto do projeto APTControl - sistema de gestão de pedidos e entregas
+alwaysApply: true
+---
+
+# APTControl - Contexto do Projeto
+
+Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e controle de entregas.
+
+## Stack
+- Laravel 12, PHP 8.2, SQLite
+- Bootstrap 4, jQuery, Vue 2
+- Português em todo o sistema
+
+## Estrutura
+- Models em app/ (Product, Order, Order_product, Client, Seller, etc.)
+- Helper: App\Helpers\Helper (get_permissions, day_delivery_calc, saveLog, cargaTotalPaletes)
+- Permissões: slugs em permission_items, checagem via Helper::get_permissions() ou Auth::user()->is_admin
+
+## Convenções
+- Order usa order_number (string) como chave lógica
+- Rotas CC: cc_product, cc_client, cc_order, cc_seller, cc/toggle-carga
+- AjaxController para operações dinâmicas
+
+---
+
+## Módulo de Cargas (Logística)
+
+### Models
+- **Truck**: responsavel (responsável pela manutenção), capacidade_paletes, modelo, placa, obs
+- **Load**: truck_id, motorista (quem faz a entrega), status, data_montagem
+- **LoadItem**: load_id, order_product_id, qtd_paletes, zone_id, zona_nome, bairro
+- **Zone**: nome, obs; relacionamento bairros (ZoneBairro)
+- **ZoneBairro**: zone_id, bairro_nome
+
+### Regras de negócio
+- Caminhão tem **responsável** (manutenção), não motorista fixo
+- Motorista é informado **por carga** no modal ao adicionar
+- Ao adicionar à carga: se quantidade > capacidade, cria múltiplas cargas automaticamente
+- Motorista é sempre atualizado ao adicionar em carga existente (evita manter motorista de sessão anterior)
+- Capacidade do caminhão é respeitada; cargas são divididas automaticamente
+
+### Página principal: Produtos > Ver Entregas
+- **Rota**: `/products/cc_products/{id}` (cc_product)
+- **View**: resources/views/cc/cc_product.blade.php
+- **Controller**: ProductController::cc_product, addToLoad, removeFromLoad, cargaLoadPdf, limparCargaLoad
+
+### Funcionalidades
+- **Marcação visual**: badge "X de Y em carga" na coluna Paletes (verde/amarelo/vermelho)
+- **Botão adicionar**: desabilitado quando todos paletes já em carga
+- **Badges de carga**: X/Y pal. (ex: 11/15) com cores: verde (0), amarelo (parcial), vermelho (cheio)
+- **Remover item**: rota cc.carga_load_remover - remove um pedido específico da carga
+- **Layout**: card "Montar cargas" em linha separada (col-12)
+- **Select zonas**: bairros na frente do nome da zona, fonte menor
+
+### Rotas CC
+- cc.add_to_load (POST)
+- cc.carga_load_pdf (GET)
+- cc.carga_load_limpar (POST)
+- cc.carga_load_remover (POST) - remove LoadItems de um order_product
+
+### PDF
+- carga_load_pdf.blade.php: motorista, caminhão, placa, capacidade
+- Endereço: Cliente, Tel, Endereço, Bairro, Zona — "não cadastrado" quando vazio
+
+---
+
+## Versão (última sessão)
+
+**v1.0.0** — 26/02/2026
+
+- Truck: motorista → responsável (manutenção)
+- Load: campo motorista (quem faz a entrega)
+- Cargas: montagem, enumeração (Carga 1, 2, 3 por caminhão)
+- Badges: X/Y paletes com cores
+- Remover item específico da carga
+- Modal: motorista, zonas com bairros
+- PDF: zona, caminhão antes da placa, "não cadastrado"
