@@ -182,13 +182,4 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('orders/{order}/print', 'OrderPrintController@show')->name('orders.print');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Logout por GET (compatibilidade com o layout atual)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('logout', function () {
-        Auth::logout();
-        return redirect()->route('home');
-    })->name('logout');
 });
