@@ -281,11 +281,11 @@ class ReportController extends Controller
                     }
                 } else { // delivery
                     if ($iniObj && $finObj) {
-                        $del->whereBetween(DB::raw('date(order_products.created_at)'), [$iniObj, $finObj]);
+                        $del->whereBetween(DB::raw('date(order_products.delivery_date)'), [$iniObj, $finObj]);
                     } elseif ($iniObj) {
-                        $del->where(DB::raw('date(order_products.created_at)'), '>=', $iniObj);
+                        $del->where(DB::raw('date(order_products.delivery_date)'), '>=', $iniObj);
                     } elseif ($finObj) {
-                        $del->where(DB::raw('date(order_products.created_at)'), '<=', $finObj);
+                        $del->where(DB::raw('date(order_products.delivery_date)'), '<=', $finObj);
                     }
                 }
             }

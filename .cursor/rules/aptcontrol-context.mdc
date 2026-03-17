@@ -44,6 +44,7 @@ Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e con
 - **Rota**: `/products/cc_products/{id}` (cc_product)
 - **View**: resources/views/cc/cc_product.blade.php
 - **Controller**: ProductController::cc_product, addToLoad, removeFromLoad, cargaLoadPdf, limparCargaLoad
+- **Ordenação**: delivery_date ASC, zona, bairro, id (próximas entregas primeiro)
 
 ### Funcionalidades
 - **Marcação visual**: badge "X de Y em carga" na coluna Paletes (verde/amarelo/vermelho)
@@ -65,14 +66,19 @@ Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e con
 
 ---
 
-## Versão (última sessão)
+## Deploy
+- **Script**: `./deploy.sh` na raiz (backup, down, pull, composer, migrate, cache, up)
+- **Primeira vez**: rodar comandos manualmente; depois `chmod +x deploy.sh` e usar o script
+- **Backup**: `database/*.backup*` ignorado no Git (database/.gitignore)
 
-**v1.0.0** — 26/02/2026
+---
 
-- Truck: motorista → responsável (manutenção)
-- Load: campo motorista (quem faz a entrega)
-- Cargas: montagem, enumeração (Carga 1, 2, 3 por caminhão)
-- Badges: X/Y paletes com cores
-- Remover item específico da carga
-- Modal: motorista, zonas com bairros
-- PDF: zona, caminhão antes da placa, "não cadastrado"
+## Versão atual
+
+**v1.0.4** — 17/03/2026
+
+- v1.0.0: Módulo cargas (Truck, Load, LoadItem, Zone), badges X/Y, remover item, PDF
+- v1.0.1: database/.gitignore — ignorar *.backup
+- v1.0.2: deploy.sh para deploy seguro
+- v1.0.3: Corrigir rota logout duplicada (route:cache) — template usa form POST
+- v1.0.4: cc_product ordenar por delivery_date ASC; ReportController/ReportPrintController realizadas usar delivery_date no filtro

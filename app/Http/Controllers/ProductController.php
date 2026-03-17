@@ -273,9 +273,9 @@ class ProductController extends Controller
         }
 
         $rows = $sub
+            ->orderBy('base.delivery_date', 'asc')
             ->orderBy('orders.zona')
             ->orderBy('orders.bairro')
-            ->orderBy('base.delivery_date')
             ->orderBy('base.id')
             ->get();
 

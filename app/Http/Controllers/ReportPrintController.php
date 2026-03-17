@@ -157,10 +157,9 @@ class ReportPrintController extends Controller
                     elseif ($iniObj) $del->where(DB::raw('date(orders.order_date)'), '>=', $iniObj);
                     elseif ($finObj) $del->where(DB::raw('date(orders.order_date)'), '<=', $finObj);
                 } else {
-                    // seu relatório usa created_at nas realizadas
-                    if ($iniObj && $finObj) $del->whereBetween(DB::raw('date(order_products.created_at)'), [$iniObj, $finObj]);
-                    elseif ($iniObj) $del->where(DB::raw('date(order_products.created_at)'), '>=', $iniObj);
-                    elseif ($finObj) $del->where(DB::raw('date(order_products.created_at)'), '<=', $finObj);
+                    if ($iniObj && $finObj) $del->whereBetween(DB::raw('date(order_products.delivery_date)'), [$iniObj, $finObj]);
+                    elseif ($iniObj) $del->where(DB::raw('date(order_products.delivery_date)'), '>=', $iniObj);
+                    elseif ($finObj) $del->where(DB::raw('date(order_products.delivery_date)'), '<=', $finObj);
                 }
             }
 
