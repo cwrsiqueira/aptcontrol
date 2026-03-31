@@ -206,6 +206,42 @@ class ReportPrintController extends Controller
         return $pdf->stream('Relatorio-Entregas-' . now()->format('Ymd_His') . '.pdf');
     }
 
+    public function producaoPendentePdf()
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
+            abort(403);
+        }
+
+        $rows = Product::query()
+            ->orderBy('name')
+            ->get()
+            ->map(function (Product $p) {
+                $calc = Helper::day_delivery_calc($p->id);
+                $p->delivery_in = $calc['delivery_in'] ?? null;
+                $p->quant_total = (int) ($calc['quant_total'] ?? 0);
+                $stock = (int) ($p->current_stock ?? 0);
+                $p->produzir = max(0, $p->quant_total - $stock);
+
+                return $p;
+            })
+            ->filter(fn (Product $p) => $p->produzir > 0)
+            ->sortBy(function (Product $p) {
+                $d = $p->delivery_in;
+
+                return $d ? strtotime((string) $d) : PHP_INT_MAX;
+            })
+            ->values();
+
+        $pdf = Pdf::loadView('reports.producao_pendente_pdf', [
+            'rows' => $rows,
+            'total' => $rows->count(),
+            'geradoEm' => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Producao-Pendente-' . now()->format('Ymd_His') . '.pdf');
+    }
+
     public function stockAudit(Request $request)
     {
         $user_permissions = Helper::get_permissions();

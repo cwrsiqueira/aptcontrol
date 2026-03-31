@@ -6,7 +6,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Pedido #{{ $order->order_number }}</title>
+    <title>Romaneio de Transporte — Pedido #{{ $order->order_number }}</title>
     <style>
         * {
             box-sizing: border-box;
@@ -134,14 +134,14 @@
                                 <img src="{{ public_path('logo.png') }}" alt="Logo" style="height:48px;">
                             </td>
                             <td>
-                                <div class="brand">PSDControl — Controle de Entregas</div>
-                                <div class="small">Relatório / Nota de Pedido gerado pelo sistema</div>
+                                <div class="brand">Romaneio de Transporte</div>
+                                <div class="small">APTControl — documento gerado pelo sistema</div>
                             </td>
                         </tr>
                     </table>
                 </td>
                 <td style="width:35%;">
-                    <div class="doc-title">Pedido #{{ $order->order_number }}</div>
+                    <div class="doc-title">Romaneio — Pedido #{{ $order->order_number }}</div>
                     <div class="small" style="text-align:right;">Emissão: {{ date('d/m/Y') }}</div>
                 </td>
             </tr>
@@ -169,6 +169,25 @@
             <td class="label">Entrega</td>
             <td>{{ ucfirst(strtolower($order->withdraw)) }} ({{ $isCif ? 'CIF' : 'FOB' }})</td>
         </tr>
+        @if ($isCif)
+            <tr>
+                <td class="label">Endereço de entrega</td>
+                <td>{{ $order->endereco ? trim($order->endereco) : 'não cadastrado' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Bairro</td>
+                <td>{{ $order->bairro ? trim($order->bairro) : 'não cadastrado' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Zona</td>
+                <td>{{ $order->zona ? trim($order->zona) : 'não cadastrado' }}</td>
+            </tr>
+        @else
+            <tr>
+                <td class="label">Endereço de entrega</td>
+                <td class="muted">Não se aplica (retirada — FOB)</td>
+            </tr>
+        @endif
         <tr>
             <td class="label">Pagamento</td>
             <td>{{ $order->payment }}</td>

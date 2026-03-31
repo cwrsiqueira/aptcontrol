@@ -24,6 +24,19 @@ Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e con
 
 ---
 
+## Relatório Produção pendente
+- **Rota tela**: `GET /reports/producao-pendente` — `reports.producao_pendente` (menu Relatórios)
+- **Rota PDF**: `GET /reports/producao-pendente/pdf` — `reports.producao_pendente_pdf` (nova aba; ReportPrintController)
+- **Lógica**: produtos com `max(0, quant_total - estoque) > 0` via `Helper::day_delivery_calc`; ordenação por próxima entrega ASC.
+- **Views**: [resources/views/reports/producao_pendente.blade.php](resources/views/reports/producao_pendente.blade.php), [producao_pendente_pdf.blade.php](resources/views/reports/producao_pendente_pdf.blade.php)
+
+## PDF Pedido (detalhes do pedido)
+- **Rota**: `orders/{order}/print` — OrderPrintController
+- Título do documento: **Romaneio de Transporte**; inclui endereço de entrega (CIF: endereço, bairro, zona; FOB: não se aplica).
+- View: [resources/views/reports/order_pdf.blade.php](resources/views/reports/order_pdf.blade.php)
+
+---
+
 ## Módulo de Cargas (Logística)
 
 ### Models
@@ -67,18 +80,16 @@ Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e con
 ---
 
 ## Deploy
-- **Script**: `./deploy.sh` na raiz (backup, down, pull, composer, migrate, cache, up)
-- **Primeira vez**: rodar comandos manualmente; depois `chmod +x deploy.sh` e usar o script
+- **Script**: `./deploy.sh` na raiz (backup SQLite, down, git pull, composer, migrate, config:cache, **route:clear** + route:cache, view:cache, up)
+- **Primeira vez em Linux**: `chmod +x deploy.sh`
 - **Backup**: `database/*.backup*` ignorado no Git (database/.gitignore)
+- **Rota nova não aparece**: rodar `php artisan route:clear` (ou redeploy com script atualizado)
 
 ---
 
 ## Versão atual
 
-**v1.0.4** — 17/03/2026
+**v1.0.5** — 31/03/2026
 
-- v1.0.0: Módulo cargas (Truck, Load, LoadItem, Zone), badges X/Y, remover item, PDF
-- v1.0.1: database/.gitignore — ignorar *.backup
-- v1.0.2: deploy.sh para deploy seguro
-- v1.0.3: Corrigir rota logout duplicada (route:cache) — template usa form POST
-- v1.0.4: cc_product ordenar por delivery_date ASC; ReportController/ReportPrintController realizadas usar delivery_date no filtro
+- v1.0.4: cc_product ordenar por delivery_date ASC; relatório entregas realizadas filtrar por delivery_date
+- v1.0.5: Romaneio de Transporte no PDF do pedido + endereço CIF; relatório Produção pendente + PDF; deploy.sh com route:clear antes de route:cache; correção ortográfica fábrica (pedido)

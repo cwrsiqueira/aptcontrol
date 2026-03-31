@@ -61,7 +61,7 @@
                                 <label for="withdraw">Entrega:</label>
                                 <select name="withdraw" id="withdraw" class="form-control">
                                     <option @if (old('withdraw') == 'retirar') selected @endif value="retirar">Retirar na
-                                        fábica
+                                        fábrica
                                         (FOB)</option>
                                     <option @if (old('withdraw') == 'entregar') selected @endif value="entregar">Entregar na
                                         obra (CIF)

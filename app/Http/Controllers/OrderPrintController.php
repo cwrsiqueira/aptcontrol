@@ -48,7 +48,7 @@ class OrderPrintController extends Controller
         // A4, PB
         $pdf = Pdf::loadHTML($html)->setPaper('a4');
 
-        return $pdf->stream('Pedido-' . $order->order_number . '.pdf');
+        return $pdf->stream('Romaneio-Pedido-' . $order->order_number . '.pdf');
         // Para baixar direto: return $pdf->download(...);
     }
 }

@@ -16,6 +16,11 @@
                         Relatório de Entregas
                     </a>
 
+                    <a href="{{ route('reports.producao_pendente') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-industry mr-2"></i>
+                        Produção pendente (saldo a produzir)
+                    </a>
+
                     <a href="{{ route('reports.stock_audit') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-boxes mr-2"></i>
                         Auditoria de Estoque

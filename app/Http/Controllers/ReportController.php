@@ -26,6 +26,43 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Produtos com saldo a produzir (mesmas colunas da listagem de Produtos, sem paginação).
+     */
+    public function producaoPendente()
+    {
+        $user_permissions = Helper::get_permissions();
+        if (!in_array('menu-relatorios', $user_permissions) && !Auth::user()->is_admin) {
+            return redirect()->route('home')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+        }
+
+        $rows = Product::query()
+            ->orderBy('name')
+            ->get()
+            ->map(function (Product $p) {
+                $calc = Helper::day_delivery_calc($p->id);
+                $p->delivery_in = $calc['delivery_in'] ?? null;
+                $p->quant_total = (int) ($calc['quant_total'] ?? 0);
+                $stock = (int) ($p->current_stock ?? 0);
+                $p->produzir = max(0, $p->quant_total - $stock);
+
+                return $p;
+            })
+            ->filter(fn (Product $p) => $p->produzir > 0)
+            ->sortBy(function (Product $p) {
+                $d = $p->delivery_in;
+
+                return $d ? strtotime((string) $d) : PHP_INT_MAX;
+            })
+            ->values();
+
+        return view('reports.producao_pendente', [
+            'user_permissions' => $user_permissions,
+            'user' => Auth::user(),
+            'rows' => $rows,
+        ]);
+    }
+
     public function deliveryForm(Request $request)
     {
         $user_permissions = Helper::get_permissions();

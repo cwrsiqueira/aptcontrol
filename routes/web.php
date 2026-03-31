@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('reports', 'ReportController@index')->name('reports.index'); // HUB
+    Route::get('reports/producao-pendente', 'ReportController@producaoPendente')->name('reports.producao_pendente');
     Route::get('reports/delivery', 'ReportController@deliveryForm')->name('reports.delivery_form'); // form antigo
     Route::get('report/delivery', 'ReportController@reportDelivery')->name('report_delivery'); // resultado antigo
     Route::get('reports/stock-audit', 'StockAuditController@index')->name('reports.stock_audit'); // auditoria
@@ -90,6 +91,7 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('report/delivery/pdf', 'ReportPrintController@delivery')->name('report_delivery_pdf');
+    Route::get('reports/producao-pendente/pdf', 'ReportPrintController@producaoPendentePdf')->name('reports.producao_pendente_pdf');
     Route::get('reports/stock-audit/pdf', 'ReportPrintController@stockAudit')->name('reports.stock_audit_pdf');
 
     /*
