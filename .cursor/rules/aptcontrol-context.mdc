@@ -89,7 +89,7 @@ Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e con
 
 ## Versão atual
 
-**v1.0.5** — 31/03/2026 (exibida no **Dashboard**: `HomeController::systemInfo()` + view `dashboard.blade.php`)
+**v1.0.6** — 31/03/2026 (número e **texto do changelog no Dashboard** são só informativos para o cliente — sem jargão técnico; ver `HomeController::systemInfo()`)
 
-- v1.0.4: cc_product ordenar por delivery_date ASC; relatório entregas realizadas filtrar por delivery_date
-- v1.0.5: Romaneio de Transporte no PDF do pedido + endereço CIF; relatório Produção pendente + PDF; deploy.sh com route:clear antes de route:cache; correção ortográfica fábrica (pedido); dashboard atualizado com changelog
+- v1.0.4–1.0.5: ver histórico Git; logística, romaneio, produção pendente, deploy, relatórios
+- v1.0.6: Changelog do painel (Dashboard) redigido para o usuário final

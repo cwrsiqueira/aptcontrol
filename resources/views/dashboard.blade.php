@@ -120,8 +120,7 @@
                         <hr class="my-3">
 
                         <small class="text-muted d-block">
-                            O estoque é controlado pelo módulo de estoque por produto e pela auditoria. Deploy em produção:
-                            <code>./deploy.sh</code> (após <code>git push</code>).
+                            O estoque é atualizado pelos lançamentos no módulo de estoque de cada produto e acompanhado na auditoria de estoque.
                         </small>
                     </div>
                 </div>

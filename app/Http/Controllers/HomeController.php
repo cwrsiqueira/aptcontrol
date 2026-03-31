@@ -11,17 +11,15 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.5',
+            'version'    => 'v1.0.6',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
-                'Romaneio de Transporte no PDF do pedido (Detalhes do pedido), com endereço de entrega em pedidos CIF',
-                'Relatório Produção pendente no hub Relatórios (saldo a produzir) com geração de PDF em nova aba',
-                'Deploy: script deploy.sh com route:clear antes do route:cache (rotas novas após pull)',
-                'Listagem Entregas por produto ordenada por data de entrega (próximas primeiro) e filtro CIF consistente',
-                'Relatório de entregas “realizadas”: filtro por período usando data de entrega do item',
-                'Módulo de logística: caminhões (responsável/manutenção), zonas, cargas, motorista por carga, PDF e remover item da carga',
-                'Estoque por produto, auditoria de estoque, hub de relatórios (entregas + CSV), permissões por slug',
-                'Logout corrigido para permitir route:cache; backups SQLite (*.backup) ignorados no Git',
+                'Ao imprimir os itens de um pedido, o documento passou a se chamar Romaneio de Transporte e exibe endereço, bairro e zona quando a entrega é feita na obra do cliente.',
+                'Novo relatório Produção pendente no menu Relatórios: mostra só os produtos que ainda têm quantidade a produzir; dá para abrir um PDF na hora.',
+                'Na tela Entregas por produto, a lista segue a data de entrega — o que está mais próximo no calendário aparece primeiro.',
+                'No relatório de entregas, ao escolher entregas já realizadas e um período de datas, o filtro passa a bater certo com a data de entrega.',
+                'Logística: cadastro de caminhões e de zonas; montagem de cargas direto na tela de entregas por produto; motorista informado por carga; PDF da carga para o caminhão; dá para tirar só um pedido da carga sem apagar a carga inteira.',
+                'Estoque por produto com histórico de lançamentos; auditoria de estoque; relatório de entregas com opção de baixar planilha quando o sistema oferecer essa opção.',
             ],
         ];
     }
