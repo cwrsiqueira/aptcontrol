@@ -110,7 +110,7 @@
                         <p class="mb-1">
                             Versão:
                             <span class="font-weight-bold">
-                                {{ $systemInfo['version'] ?? 'v1.3.0' }}
+                                {{ $systemInfo['version'] ?? '—' }}
                             </span>
                         </p>
                         <small class="text-muted">
@@ -120,7 +120,8 @@
                         <hr class="my-3">
 
                         <small class="text-muted d-block">
-                            Obs.: o estoque agora é controlado exclusivamente pelo módulo de estoque (auditoria ativa).
+                            O estoque é controlado pelo módulo de estoque por produto e pela auditoria. Deploy em produção:
+                            <code>./deploy.sh</code> (após <code>git push</code>).
                         </small>
                     </div>
                 </div>
@@ -132,14 +133,10 @@
                         <strong>Últimas atualizações</strong>
                     </div>
                     <div class="card-body">
-                        <ul class="mb-0">
-                            <li>CRUD de Permissões (permission_items) com slug protegido para evitar quebra de acessos.</li>
-                            <li>Módulo de Estoque por produto (lançamentos + atualização automática do current_stock).</li>
-                            <li>Auditoria de estoque (estoque lançado × entregas × previsão diária).</li>
-                            <li>Hub de Relatórios (Relatório de Entregas + Auditoria) com exportação CSV.</li>
-                            <li>Impressão em PDF (Pedido, Relatório de Entregas e Auditoria de Estoque).</li>
-                            <li>Produtos agora listam primeiro quem tem saldo disponível e mostram previsão de entrega.</li>
-                            <li>Estoque removido do cadastro/edição de produto para manter histórico e auditoria.</li>
+                        <ul class="mb-0 pl-3">
+                            @foreach ($systemInfo['updates'] ?? [] as $linha)
+                                <li class="mb-2">{{ $linha }}</li>
+                            @endforeach
                         </ul>
                     </div>
                 </div>

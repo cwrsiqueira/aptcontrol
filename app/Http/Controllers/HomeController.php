@@ -11,16 +11,17 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v2.3.0',
+            'version'    => 'v1.0.5',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
-                'Módulo de estoque por produto com histórico e auditoria',
-                'Remoção de edição direta de estoque no cadastro/edição de produtos',
-                'Auditoria diária de estoque (estoque × entregas × previsão)',
-                'Hub de relatórios com relatório de entregas e auditoria',
-                'Exportação CSV e impressão em PDF (pedidos, entregas e auditoria)',
-                'CRUD de permissões com controle por slug',
-                'Dashboard focado no operacional (atrasadas, hoje, pendentes, amanhã)',
+                'Romaneio de Transporte no PDF do pedido (Detalhes do pedido), com endereço de entrega em pedidos CIF',
+                'Relatório Produção pendente no hub Relatórios (saldo a produzir) com geração de PDF em nova aba',
+                'Deploy: script deploy.sh com route:clear antes do route:cache (rotas novas após pull)',
+                'Listagem Entregas por produto ordenada por data de entrega (próximas primeiro) e filtro CIF consistente',
+                'Relatório de entregas “realizadas”: filtro por período usando data de entrega do item',
+                'Módulo de logística: caminhões (responsável/manutenção), zonas, cargas, motorista por carga, PDF e remover item da carga',
+                'Estoque por produto, auditoria de estoque, hub de relatórios (entregas + CSV), permissões por slug',
+                'Logout corrigido para permitir route:cache; backups SQLite (*.backup) ignorados no Git',
             ],
         ];
     }
