@@ -34,6 +34,9 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('/home', 'HomeController@index')->name('home');
 
+    Route::get('order_products/truck-availability', 'OrderProductController@truckAvailability')
+        ->name('order_products.truck_availability');
+
     /*
     |--------------------------------------------------------------------------
     | CRUDs principais (resources)

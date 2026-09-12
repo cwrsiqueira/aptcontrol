@@ -17,7 +17,7 @@
 
 <body>
 
-    <h2>CARGA – {{ strtoupper($load->motorista ?? $truck->responsavel) }}</h2>
+    <h2>CARGA – {{ strtoupper($load->motorista ?? $truck->responsavel) }} @includeIf('partials.change_marker')</h2>
     <p><strong>Caminhão:</strong> {{ $truck->modelo ?? '—' }} | <strong>Placa:</strong> {{ $truck->placa ?? '—' }} | <strong>Capacidade:</strong> {{ $truck->capacidade_paletes }} paletes</p>
     <p>Gerado em: {{ $data }}</p>
 
@@ -47,17 +47,24 @@
             </thead>
             <tbody>
                 @foreach ($itensZona as $li)
-                    @php $op = $li->orderProduct; @endphp
+                    @php
+                        $op = $li->orderProduct;
+                        $plan = $li->deliveryPlan;
+                    @endphp
                     <tr>
                         <td>{{ $op->order->order_number ?? '' }}</td>
                         <td>{{ $op->product->name ?? '' }}</td>
-                        <td>{{ (int) $op->quant }}</td>
+                        <td>{{ (int) (optional($plan)->quantity ?? $op->quant) }}</td>
                         <td>{{ $li->qtd_paletes }}</td>
                     </tr>
                     <tr>
                         <td colspan="4" class="sub">
                             <strong>Cliente:</strong> {{ $op->order->client->name ?? 'não cadastrado' }}
                             | <strong>Tel:</strong> {{ $op->order->client->contact ?? 'não cadastrado' }}
+                            @if ($plan)
+                                <br><strong>Entrega:</strong> {{ $plan->sequence }}
+                                | <strong>Data:</strong> {{ $plan->delivery_date->format('d/m/Y') }}
+                            @endif
                             <br>
                             <strong>Endereço:</strong> {{ $op->order->endereco ?? 'não cadastrado' }}
                             | <strong>Bairro:</strong> {{ $op->order->bairro ?? $li->bairro ?? 'não cadastrado' }}

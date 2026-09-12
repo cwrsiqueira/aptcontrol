@@ -27,6 +27,12 @@ class Order_product extends Model
         return $this->belongsTo(Order::class, 'order_id', 'order_number');
     }
 
+    public function deliveryPlans()
+    {
+        return $this->hasMany(OrderProductDeliveryPlan::class, 'order_product_id')
+            ->orderBy('sequence');
+    }
+
     // App\OrderProduct.php (Model)
     public function scopeWithSaldo($query)
     {

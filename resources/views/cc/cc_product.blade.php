@@ -6,7 +6,7 @@
     <main role="main" class="col-md ml-sm-auto col-lg pt-3 px-4">
         {{-- Cabeçalho / ações --}}
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
-            <h2 class="mb-0">Entregas por Produto</h2>
+            <h2 class="mb-0">Entregas por Produto @includeIf('partials.change_marker')</h2>
             <div class="btn-group">
                 <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">
                     < Produtos</a>
@@ -82,7 +82,7 @@
             <div class="col-12">
                 <div class="card card-lift mb-3">
                     <div class="card-header">
-                        <strong>Montar cargas</strong>
+                        <strong>Montar cargas @includeIf('partials.change_marker')</strong>
                     </div>
 
                     <div class="card-body">
@@ -125,6 +125,9 @@
                                                     @endphp
                                                     <div class="ms-3 mb-2">
                                                         <span class="badge badge-info">Carga {{ $cargaIdx + 1 }}</span>
+                                                        <span class="badge badge-light ml-1">
+                                                            {{ $load->data_montagem ? $load->data_montagem->format('d/m/Y') : 'Sem data' }}
+                                                        </span>
                                                         @if ($load->motorista)
                                                             <span class="text-muted small">Motorista: {{ $load->motorista }}</span>
                                                         @endif
@@ -142,19 +145,24 @@
                                                             @foreach ($itensPorZona as $zonaNome => $itensZona)
                                                                 <div class="mb-1">
                                                                     <strong>Zona {{ strtoupper($zonaNome ?: 'SEM ZONA') }}:</strong>
-                                                                    @foreach ($itensZona->groupBy('order_product_id') as $opId => $itens)
+                                                                    @foreach ($itensZona->groupBy(fn ($item) => $item->delivery_plan_id ?: 'produto-' . $item->order_product_id) as $itens)
                                                                         @php
                                                                             $first = $itens->first();
                                                                             $op = $first->orderProduct;
+                                                                            $plan = $first->deliveryPlan;
                                                                             $prodNome = $op->product->name ?? 'Sem produto';
                                                                             $somaPal = $itens->sum('qtd_paletes');
-                                                                            $somaProd = $itens->sum(fn ($i) => $i->orderProduct->quant ?? 0);
+                                                                            $somaProd = optional($plan)->quantity ?? $op->quant ?? 0;
                                                                         @endphp
                                                                         <span class="d-inline-flex align-items-center">
-                                                                            {{ $prodNome }} ({{ number_format($somaProd, 0, ',', '.') }} prod. / {{ $somaPal }} pal.)
+                                                                            {{ $prodNome }} — {{ $plan ? 'entrega ' . $plan->sequence : 'entrega' }}
+                                                                            ({{ number_format($somaProd, 0, ',', '.') }} prod. / {{ $somaPal }} pal.)
                                                                             <form method="POST" action="{{ route('cc.carga_load_remover', ['load' => $load, 'order_product' => $op->id]) }}"
                                                                                 class="d-inline ml-1" onsubmit="return confirm('Remover este pedido da carga?');">
                                                                                 @csrf
+                                                                                @if ($plan)
+                                                                                    <input type="hidden" name="delivery_plan_id" value="{{ $plan->id }}">
+                                                                                @endif
                                                                                 <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remover da carga"><i class="fa fa-times-circle"></i></button>
                                                                             </form>
                                                                         </span>
@@ -228,30 +236,39 @@
                                     </td>
                                     {{-- CARGA / PALETES --}}
                                     <td>
-                                        <ul>
-                                            @for ($i = 0; $i < 3; $i++)
-                                                @if (isset($item->carga['tipo'][$i]) && $item->carga['tipo'][$i] != '')
-                                                    <li>{{ $item->carga['tipo'][$i] ?? '' }} =
-                                                        {{ $item->carga['quant'][$i] ?? '' }}</li>
-                                                @endif
-                                            @endfor
-                                        </ul>
-                                        @if (($item->paletes_total ?? 0) > 0 && $item->order->withdraw === 'entregar')
+                                        @forelse ($item->deliveryPlans as $plan)
                                             @php
-                                                $usado = $item->paletes_em_carga ?? 0;
-                                                $total = $item->paletes_total ?? 0;
+                                                $cargaPlan = $plan->carga ?? [];
+                                                $usado = $plan->paletes_em_carga ?? 0;
+                                                $total = $plan->paletes_total ?? 0;
                                                 $restante = $total - $usado;
                                             @endphp
-                                            <span class="badge badge-{{ $restante <= 0 ? 'success' : ($usado > 0 ? 'warning' : 'light') }}" title="Paletes em carga">
-                                                {{ $usado }} de {{ $total }} em carga
-                                            </span>
-                                        @endif
+                                            <div class="mb-2">
+                                                <strong>Entrega {{ $plan->sequence }}</strong>
+                                                @foreach ($cargaPlan as $capacidade => $quantidadePaletes)
+                                                    <div class="small">{{ $quantidadePaletes }} pal. × {{ $capacidade }}</div>
+                                                @endforeach
+                                                @if ($total > 0 && $item->order->withdraw === 'entregar')
+                                                    <span class="badge badge-{{ $restante <= 0 ? 'success' : ($usado > 0 ? 'warning' : 'light') }}">
+                                                        {{ $usado }} de {{ $total }} em carga
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-light">Carga não informada</span>
+                                                @endif
+                                            </div>
+                                        @empty
+                                            <span class="text-muted">Sem planejamento</span>
+                                        @endforelse
                                     </td>
                                     {{-- VENDEDOR --}}
                                     <td>{{ $item->order->seller->name ?? ' - ' }}</td>
                                     {{-- DATA DA ENTREGA --}}
                                     <td class="text-right d-flex flex-column align-items-end">
-                                        {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                        @forelse ($item->deliveryPlans as $plan)
+                                            <span>Entrega {{ $plan->sequence }}: {{ $plan->delivery_date->format('d/m/Y') }}</span>
+                                        @empty
+                                            {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                        @endforelse
                                         <span
                                             class="btn btn-sm btn-danger p-0 px-1 @if (!$item->favorite_delivery) d-none @endif date-field">Data
                                             fixada</span>
@@ -295,20 +312,25 @@
                                                     class="icon fas fa-calendar-day"></i></button>
 
                                             @if ($item->order->withdraw === 'entregar')
-                                                @php
-                                                    $totalPaletesItem = $item->paletes_total ?? \App\Helpers\Helper::cargaTotalPaletes($item->carga);
-                                                    $paletesEmCarga = $item->paletes_em_carga ?? 0;
-                                                    $podeAdicionar = $paletesEmCarga < $totalPaletesItem;
-                                                    $paletesDisponivel = $totalPaletesItem - $paletesEmCarga;
-                                                @endphp
-                                                <button type="button" class="btn btn-sm {{ $item->em_carga ? 'btn-secondary' : 'btn-outline-secondary' }} btn-add-carga {{ !$podeAdicionar ? 'disabled' : '' }}"
-                                                    title="{{ $podeAdicionar ? 'Adicionar à Carga' : 'Todos os paletes já estão em carga' }}"
-                                                    data-order-product-id="{{ $item->id }}"
-                                                    data-max-paletes="{{ $paletesDisponivel }}"
-                                                    data-bairro="{{ $item->order->bairro ?? '' }}"
-                                                    data-zona="{{ $item->order->zona ?? '' }}">
-                                                    <i class="fa fa-truck"></i>
-                                                </button>
+                                                @foreach ($item->deliveryPlans as $plan)
+                                                    @php
+                                                        $totalPaletesItem = $plan->paletes_total ?? 0;
+                                                        $paletesEmCarga = $plan->paletes_em_carga ?? 0;
+                                                        $podeAdicionar = $paletesEmCarga < $totalPaletesItem;
+                                                        $paletesDisponivel = $totalPaletesItem - $paletesEmCarga;
+                                                    @endphp
+                                                    <button type="button"
+                                                        class="btn btn-sm mb-1 {{ $plan->em_carga ? 'btn-secondary' : 'btn-outline-secondary' }} btn-add-carga {{ !$podeAdicionar ? 'disabled' : '' }}"
+                                                        title="{{ $podeAdicionar ? 'Adicionar entrega ' . $plan->sequence . ' à carga' : 'Todos os paletes desta entrega já estão em carga' }}"
+                                                        data-order-product-id="{{ $item->id }}"
+                                                        data-delivery-plan-id="{{ $plan->id }}"
+                                                        data-delivery-sequence="{{ $plan->sequence }}"
+                                                        data-delivery-date="{{ $plan->delivery_date->format('d/m/Y') }}"
+                                                        data-max-paletes="{{ $paletesDisponivel }}"
+                                                        data-zona="{{ $item->order->zona ?? '' }}">
+                                                        <i class="fa fa-truck"></i> {{ $plan->sequence }}
+                                                    </button>
+                                                @endforeach
                                             @else
                                                 <button class="btn btn-sm btn-outline-secondary"
                                                     title="Só é possível marcar carga para pedidos CIF" disabled><i
@@ -350,13 +372,17 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Adicionar à Carga</h5>
+                        <h5 class="modal-title">Adicionar à Carga @includeIf('partials.change_marker')</h5>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
                     <form id="formAddCarga">
                         @csrf
                         <div class="modal-body">
                             <input type="hidden" name="order_product_id" id="addCargaOrderProductId">
+                            <input type="hidden" name="delivery_plan_id" id="addCargaDeliveryPlanId">
+                            <div class="alert alert-light py-2">
+                                Entrega <strong id="addCargaDeliverySequence"></strong> em <strong id="addCargaDeliveryDate"></strong>
+                            </div>
                             <div class="form-group">
                                 <label for="addCargaTruck">Caminhão *</label>
                                 <select class="form-control" name="truck_id" id="addCargaTruck" required>
@@ -510,6 +536,9 @@
         // Modal Adicionar à Carga
         $('.btn-add-carga').on('click', function() {
             const id = $(this).data('order-product-id');
+            const planId = $(this).data('delivery-plan-id');
+            const sequence = $(this).data('delivery-sequence');
+            const deliveryDate = $(this).data('delivery-date');
             const max = parseInt($(this).data('max-paletes'), 10) || 0;
             const zona = $(this).data('zona') || '';
             if (max <= 0) {
@@ -517,6 +546,9 @@
                 return;
             }
             $('#addCargaOrderProductId').val(id);
+            $('#addCargaDeliveryPlanId').val(planId);
+            $('#addCargaDeliverySequence').text(sequence);
+            $('#addCargaDeliveryDate').text(deliveryDate);
             $('#addCargaMaxPaletes').text(max);
             $('#addCargaQtd').attr('max', max).val(max);
             $('#addCargaZonaNome').val(zona);

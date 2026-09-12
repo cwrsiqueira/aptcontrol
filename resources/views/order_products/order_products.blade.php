@@ -26,7 +26,7 @@
 
         {{-- Título + Voltar (compacto) --}}
         <div class="d-flex justify-content-between align-items-center page-header mb-2">
-            <h2 class="page-title mb-0">Detalhes do Pedido</h2>
+            <h2 class="page-title mb-0">Detalhes do Pedido @includeIf('partials.change_marker')</h2>
             <a class="btn btn-sm btn-light" href="{{ route('orders.index', ['q' => $order->order_number]) }}">
                 < Pedidos</a>
         </div>
@@ -161,7 +161,28 @@
                                         <td class="text-right">
                                             {{ number_format($item->saldo < 0 ? 0 : $item->saldo, 0, '', '.') }}</td>
                                         <td class="text-right d-flex flex-column align-items-end">
-                                            {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                            @if ($item->deliveryPlans->count())
+                                                @if ($item->deliveryPlans->count() > 1)
+                                                    <span class="badge badge-info mt-1">
+                                                        {{ $item->deliveryPlans->count() }} entregas planejadas
+                                                    </span>
+                                                @endif
+                                                @foreach ($item->deliveryPlans->take(3) as $plan)
+                                                    <small class="text-muted">
+                                                        Entrega {{ $plan->sequence }}:
+                                                        {{ number_format($plan->quantity, 0, '', '.') }} em
+                                                        {{ $plan->delivery_date->format('d/m/Y') }}
+                                                        @if ($plan->total_paletes)
+                                                            · {{ $plan->total_paletes }} pal.
+                                                        @endif
+                                                    </small>
+                                                @endforeach
+                                                @if ($item->deliveryPlans->count() > 3)
+                                                    <small class="text-muted">+ {{ $item->deliveryPlans->count() - 3 }} entrega(s)</small>
+                                                @endif
+                                            @else
+                                                {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
+                                            @endif
                                             <span
                                                 class="badge badge-danger badge-client-name @if (!$item->favorite_delivery) d-none @endif"
                                                 style="width: fit-content;">Data

@@ -280,7 +280,7 @@ class ProductController extends Controller
             ->get();
 
         $ids = $rows->pluck('id')->all();
-        $models = Order_product::with('order', 'product', 'order.client', 'order.seller')
+        $models = Order_product::with('order', 'product', 'order.client', 'order.seller', 'deliveryPlans.loadItems')
             ->whereIn('id', $ids)->get()->keyBy('id');
 
         $data = collect($rows)->map(function ($r) use ($models) {
@@ -309,12 +309,6 @@ class ProductController extends Controller
 
         $delivery_in = Helper::day_delivery_calc($id);
 
-        $orderProductIds = $data->pluck('id')->all();
-        $loadItemsPorOp = LoadItem::whereIn('order_product_id', $orderProductIds)
-            ->selectRaw('order_product_id, SUM(qtd_paletes) as total')
-            ->groupBy('order_product_id')
-            ->pluck('total', 'order_product_id');
-
         foreach ($data as $key => $item) {
             $carga = json_decode($item->carga, true);
             $paletes = ['tipo' => [], 'quant' => []];
@@ -327,13 +321,14 @@ class ProductController extends Controller
             }
 
             $data[$key]['carga'] = $paletes;
-            $totalPaletesItem = Helper::cargaTotalPaletes($paletes);
-            $data[$key]['paletes_em_carga'] = (int) ($loadItemsPorOp[$item->id] ?? 0);
-            $data[$key]['paletes_total'] = $totalPaletesItem;
-            $data[$key]['em_carga'] = ($loadItemsPorOp[$item->id] ?? 0) > 0;
+            foreach ($item->deliveryPlans as $plan) {
+                $plan->paletes_em_carga = (int) $plan->loadItems->sum('qtd_paletes');
+                $plan->paletes_total = $plan->total_paletes;
+                $plan->em_carga = $plan->paletes_em_carga > 0;
+            }
         }
 
-        $cargasPorCaminhao = Load::with(['truck', 'items.zone', 'items.orderProduct.order.client', 'items.orderProduct.product'])
+        $cargasPorCaminhao = Load::with(['truck', 'items.zone', 'items.deliveryPlan', 'items.orderProduct.order.client', 'items.orderProduct.product'])
             ->whereHas('items')
             ->orderBy('truck_id')
             ->orderBy('id')
@@ -418,6 +413,7 @@ class ProductController extends Controller
 
         $request->validate([
             'order_product_id' => 'required|exists:order_products,id',
+            'delivery_plan_id' => 'required|exists:order_product_delivery_plans,id',
             'truck_id' => 'required|exists:trucks,id',
             'motorista' => 'nullable|string|max:150',
             'zone_id' => 'nullable|exists:zones,id',
@@ -426,18 +422,23 @@ class ProductController extends Controller
         ]);
 
         $op = Order_product::with('order')->findOrFail($request->order_product_id);
+        $plan = $op->deliveryPlans()->find($request->delivery_plan_id);
+
+        if (!$plan) {
+            return response()->json(['ok' => false, 'message' => 'A entrega informada não pertence a este produto.'], 422);
+        }
 
         if ($op->order->withdraw !== 'entregar') {
             return response()->json(['ok' => false, 'message' => 'Só é possível adicionar à carga pedidos CIF.'], 422);
         }
 
-        $totalPaletes = Helper::cargaTotalPaletes($op->carga);
+        $totalPaletes = $plan->total_paletes;
         if ($totalPaletes <= 0) {
             return response()->json(['ok' => false, 'message' => 'Todos os paletes já estão em carga ou não existem paletes cadastrados para o pedido.'], 422);
         }
 
         $qtd = (int) $request->qtd_paletes;
-        $jaEmCargas = LoadItem::where('order_product_id', $op->id)->sum('qtd_paletes');
+        $jaEmCargas = LoadItem::where('delivery_plan_id', $plan->id)->sum('qtd_paletes');
         $disponivel = $totalPaletes - $jaEmCargas;
 
         if ($qtd > $disponivel) {
@@ -445,7 +446,10 @@ class ProductController extends Controller
         }
 
         $truck = Truck::findOrFail($request->truck_id);
-        $capacidade = $truck->capacidade_paletes;
+        $capacidade = (int) $truck->capacidade_paletes;
+        if ($capacidade <= 0) {
+            return response()->json(['ok' => false, 'message' => 'O caminhão selecionado não possui capacidade de paletes válida.'], 422);
+        }
 
         $zoneId = $request->zone_id ?: null;
         $zonaNome = $request->zona_nome ?: null;
@@ -456,40 +460,46 @@ class ProductController extends Controller
             $zonaNome = null;
         }
 
-        $qtdRestante = $qtd;
-        while ($qtdRestante > 0) {
-            $load = Load::query()
-                ->where('truck_id', $truck->id)
-                ->whereRaw('(SELECT COALESCE(SUM(qtd_paletes), 0) FROM load_items WHERE load_items.load_id = loads.id) < ?', [$capacidade])
-                ->orderByDesc('id')
-                ->first();
+        DB::transaction(function () use ($request, $op, $plan, $truck, $capacidade, $zoneId, $zonaNome, $qtd) {
+            $qtdRestante = $qtd;
+            while ($qtdRestante > 0) {
+                $load = Load::query()
+                    ->where('truck_id', $truck->id)
+                    ->where('status', 'montagem')
+                    ->whereDate('data_montagem', $plan->delivery_date->toDateString())
+                    ->whereRaw('(SELECT COALESCE(SUM(qtd_paletes), 0) FROM load_items WHERE load_items.load_id = loads.id) < ?', [$capacidade])
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->first();
 
-            if (!$load) {
-                $load = Load::create([
-                    'truck_id' => $truck->id,
-                    'motorista' => $request->input('motorista'),
-                    'status' => 'montagem',
+                if (!$load) {
+                    $load = Load::create([
+                        'truck_id' => $truck->id,
+                        'motorista' => $request->input('motorista'),
+                        'status' => 'montagem',
+                        'data_montagem' => $plan->delivery_date->toDateString(),
+                    ]);
+                } elseif ($request->filled('motorista')) {
+                    $load->update(['motorista' => $request->input('motorista')]);
+                }
+
+                $espaco = $capacidade - $load->items()->sum('qtd_paletes');
+                $adicionar = min($qtdRestante, $espaco);
+
+                $loadItem = LoadItem::firstOrNew([
+                    'load_id' => $load->id,
+                    'order_product_id' => $op->id,
+                    'delivery_plan_id' => $plan->id,
+                    'zone_id' => $zoneId,
+                    'zona_nome' => $zonaNome,
                 ]);
-            } elseif ($request->filled('motorista')) {
-                // Sempre atualiza o motorista ao adicionar à carga existente (evita manter motorista de sessão anterior)
-                $load->update(['motorista' => $request->input('motorista')]);
+                $loadItem->qtd_paletes = (int) $loadItem->qtd_paletes + $adicionar;
+                $loadItem->bairro = $op->order->bairro;
+                $loadItem->save();
+
+                $qtdRestante -= $adicionar;
             }
-
-            $totalNoLoad = $load->items()->sum('qtd_paletes');
-            $espaco = $capacidade - $totalNoLoad;
-            $adicionar = min($qtdRestante, $espaco);
-
-            LoadItem::create([
-                'load_id' => $load->id,
-                'order_product_id' => $op->id,
-                'qtd_paletes' => $adicionar,
-                'zone_id' => $zoneId,
-                'zona_nome' => $zonaNome,
-                'bairro' => $op->order->bairro,
-            ]);
-
-            $qtdRestante -= $adicionar;
-        }
+        });
 
         Helper::saveLog(Auth::user()->id, 'Adicionar à carga', $op->id, $op->order_id, 'Entregas por produto');
 
@@ -597,7 +607,7 @@ class ProductController extends Controller
             abort(403);
         }
 
-        $load->load(['truck', 'items.zone', 'items.orderProduct.order.client', 'items.orderProduct.product']);
+        $load->load(['truck', 'items.zone', 'items.deliveryPlan', 'items.orderProduct.order.client', 'items.orderProduct.product']);
 
         $items = $load->items->map(function ($li) {
             $op = $li->orderProduct;
@@ -608,7 +618,8 @@ class ProductController extends Controller
                 'endereco' => $op->order->endereco ?? '',
                 'bairro' => $op->order->bairro ?? $li->bairro,
                 'product_name' => $op->product->name ?? '',
-                'quant' => $op->quant ?? 0,
+                'quant' => optional($li->deliveryPlan)->quantity ?? $op->quant ?? 0,
+                'delivery_date' => $li->deliveryPlan ? $li->deliveryPlan->delivery_date->format('d/m/Y') : null,
                 'qtd_paletes' => $li->qtd_paletes,
                 'zona' => $li->zone_id ? ($li->zone->nome ?? '') : ($li->zona_nome ?? 'SEM ZONA'),
             ];
@@ -618,15 +629,21 @@ class ProductController extends Controller
         $totalProdutos = 0;
         $totalPaletes = 0;
 
-        foreach ($load->items as $li) {
+        $itemsAgrupados = $load->items->groupBy(function ($item) {
+            return $item->delivery_plan_id ?: 'item-' . $item->id;
+        });
+
+        foreach ($itemsAgrupados as $group) {
+            $li = $group->first();
             $produto = $li->orderProduct->product->name ?? '';
             if (!isset($resumoProdutos[$produto])) {
                 $resumoProdutos[$produto] = ['produtos' => 0, 'paletes' => 0];
             }
-            $resumoProdutos[$produto]['produtos'] += $li->orderProduct->quant ?? 0;
-            $resumoProdutos[$produto]['paletes'] += $li->qtd_paletes;
-            $totalProdutos += $li->orderProduct->quant ?? 0;
-            $totalPaletes += $li->qtd_paletes;
+            $quantidade = optional($li->deliveryPlan)->quantity ?? $li->orderProduct->quant ?? 0;
+            $resumoProdutos[$produto]['produtos'] += $quantidade;
+            $resumoProdutos[$produto]['paletes'] += $group->sum('qtd_paletes');
+            $totalProdutos += $quantidade;
+            $totalPaletes += $group->sum('qtd_paletes');
         }
 
         $itemsPorZona = $load->items->groupBy(fn ($li) => $li->zone_id ? ($li->zone->nome ?? '') : ($li->zona_nome ?? 'SEM ZONA'));
@@ -697,7 +714,7 @@ class ProductController extends Controller
         );
     }
 
-    public function removeFromLoad(Load $load, Order_product $orderProduct)
+    public function removeFromLoad(Request $request, Load $load, Order_product $orderProduct)
     {
         $user_permissions = Helper::get_permissions();
 
@@ -705,9 +722,18 @@ class ProductController extends Controller
             return response()->json(['ok' => false, 'message' => 'Solicite acesso ao administrador!'], 403);
         }
 
-        $removidos = LoadItem::where('load_id', $load->id)
-            ->where('order_product_id', $orderProduct->id)
-            ->delete();
+        $request->validate([
+            'delivery_plan_id' => 'nullable|exists:order_product_delivery_plans,id',
+        ]);
+
+        $query = LoadItem::where('load_id', $load->id)
+            ->where('order_product_id', $orderProduct->id);
+
+        if ($request->filled('delivery_plan_id')) {
+            $query->where('delivery_plan_id', $request->delivery_plan_id);
+        }
+
+        $removidos = $query->delete();
 
         if ($removidos > 0) {
             $hasOtherLoadItems = LoadItem::where('order_product_id', $orderProduct->id)->exists();

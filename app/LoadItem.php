@@ -11,6 +11,7 @@ class LoadItem extends Model
     protected $fillable = [
         'load_id',
         'order_product_id',
+        'delivery_plan_id',
         'qtd_paletes',
         'zone_id',
         'zona_nome',
@@ -34,6 +35,11 @@ class LoadItem extends Model
     public function orderProduct()
     {
         return $this->belongsTo(Order_product::class, 'order_product_id');
+    }
+
+    public function deliveryPlan()
+    {
+        return $this->belongsTo(OrderProductDeliveryPlan::class, 'delivery_plan_id');
     }
 
     public function getZonaExibicaoAttribute(): string
