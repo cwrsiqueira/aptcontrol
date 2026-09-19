@@ -8,6 +8,7 @@ class CreateOrderProductDeliveryPlansTable extends Migration
 {
     public function up()
     {
+        // Cria o planejamento das entregas por produto.
         Schema::create('order_product_delivery_plans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_product_id')->constrained('order_products')->onDelete('cascade'); //identifica qual produto do pedido pertence a essa entrega.

@@ -34,6 +34,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('/home', 'HomeController@index')->name('home');
 
+    // Consulta a disponibilidade por data no planejamento.
     Route::get('order_products/truck-availability', 'OrderProductController@truckAvailability')
         ->name('order_products.truck_availability');
 

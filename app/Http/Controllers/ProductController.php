@@ -321,6 +321,7 @@ class ProductController extends Controller
             }
 
             $data[$key]['carga'] = $paletes;
+            // Calcula os paletes usados em cada entrega.
             foreach ($item->deliveryPlans as $plan) {
                 $plan->paletes_em_carga = (int) $plan->loadItems->sum('qtd_paletes');
                 $plan->paletes_total = $plan->total_paletes;
@@ -422,6 +423,7 @@ class ProductController extends Controller
         ]);
 
         $op = Order_product::with('order')->findOrFail($request->order_product_id);
+        // Confirma que a entrega pertence ao produto informado.
         $plan = $op->deliveryPlans()->find($request->delivery_plan_id);
 
         if (!$plan) {
@@ -460,6 +462,7 @@ class ProductController extends Controller
             $zonaNome = null;
         }
 
+        // Distribui os paletes em cargas da mesma data.
         DB::transaction(function () use ($request, $op, $plan, $truck, $capacidade, $zoneId, $zonaNome, $qtd) {
             $qtdRestante = $qtd;
             while ($qtdRestante > 0) {
@@ -629,6 +632,7 @@ class ProductController extends Controller
         $totalProdutos = 0;
         $totalPaletes = 0;
 
+        // Agrupa o resumo por entrega planejada.
         $itemsAgrupados = $load->items->groupBy(function ($item) {
             return $item->delivery_plan_id ?: 'item-' . $item->id;
         });
@@ -726,6 +730,7 @@ class ProductController extends Controller
             'delivery_plan_id' => 'nullable|exists:order_product_delivery_plans,id',
         ]);
 
+        // Remove somente a entrega escolhida da carga.
         $query = LoadItem::where('load_id', $load->id)
             ->where('order_product_id', $orderProduct->id);
 

@@ -46,6 +46,7 @@
                 </tr>
             </thead>
             <tbody>
+                {{-- Mostra quantidade e data da entrega carregada. --}}
                 @foreach ($itensZona as $li)
                     @php
                         $op = $li->orderProduct;

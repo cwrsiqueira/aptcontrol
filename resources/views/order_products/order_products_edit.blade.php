@@ -68,6 +68,7 @@
                         </div>
                     </div>
 
+                    {{-- Permite ajustar cada entrega planejada. --}}
                     @include('order_products._delivery_plan_editor')
 
                     <button class="btn btn-primary">Salvar</button>

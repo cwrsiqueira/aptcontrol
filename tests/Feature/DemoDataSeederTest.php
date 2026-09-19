@@ -14,6 +14,7 @@ class DemoDataSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Confere os relacionamentos criados pela demonstração.
     public function test_populates_a_consistent_demonstration_database(): void
     {
         $this->seed(DemoDatabaseSeeder::class);

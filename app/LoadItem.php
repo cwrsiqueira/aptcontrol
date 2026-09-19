@@ -37,6 +37,7 @@ class LoadItem extends Model
         return $this->belongsTo(Order_product::class, 'order_product_id');
     }
 
+    // Identifica a entrega que originou este item.
     public function deliveryPlan()
     {
         return $this->belongsTo(OrderProductDeliveryPlan::class, 'delivery_plan_id');

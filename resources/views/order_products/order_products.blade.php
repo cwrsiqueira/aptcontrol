@@ -160,6 +160,7 @@
                                         <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                         <td class="text-right">
                                             {{ number_format($item->saldo < 0 ? 0 : $item->saldo, 0, '', '.') }}</td>
+                                        {{-- Resume as entregas planejadas do produto. --}}
                                         <td class="text-right d-flex flex-column align-items-end">
                                             @if ($item->deliveryPlans->count())
                                                 @if ($item->deliveryPlans->count() > 1)

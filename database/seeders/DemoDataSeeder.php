@@ -20,6 +20,7 @@ class DemoDataSeeder extends Seeder
 {
     public function run()
     {
+        // Cria uma base completa para demonstração.
         DB::transaction(function () {
             $categories = $this->categories();
             $sellers = $this->sellers();
@@ -142,6 +143,7 @@ class DemoDataSeeder extends Seeder
 
     private function orders(array $clients, array $sellers, array $products, array $zones, array $trucks): void
     {
+        // Monta pedidos com entregas e paletes variados.
         $orders = [
             [
                 'number' => 'PED-DEMO-1001', 'client' => 'Construtora Horizonte', 'seller' => 'Mariana Costa',

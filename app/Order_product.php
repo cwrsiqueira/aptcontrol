@@ -27,6 +27,7 @@ class Order_product extends Model
         return $this->belongsTo(Order::class, 'order_id', 'order_number');
     }
 
+    // Lista as entregas na ordem planejada.
     public function deliveryPlans()
     {
         return $this->hasMany(OrderProductDeliveryPlan::class, 'order_product_id')
