@@ -23,8 +23,9 @@
                 <form action="{{ route('order_products.store', ['order' => $order]) }}" method="post" novalidate>
                     @csrf
 
-                    <div class="row">
-                        <div class="col-md-6">
+                    {{-- Reúne os dados principais antes do planejamento. --}}
+                    <div class="row align-items-end">
+                        <div class="col-lg-5 col-md-12">
                             <div class="form-group">
                                 <label for="product_name">Produto <small>(Digite um novo nome para cadastrar)</small>:</label>
                                 <input type="search" class="form-control @error('product_name') is-invalid @enderror"
@@ -37,7 +38,7 @@
                                 </datalist>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-lg-2 col-md-4">
                             <div class="form-group">
                                 <label for="quant">Quantidade</label>
                                 <input type="text" name="quant" id="quant"
@@ -45,7 +46,15 @@
                                     placeholder="Quantidade" value="{{ old('quant') }}">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-lg-2 col-md-4">
+                            <div class="form-group">
+                                <label for="pallet_capacity">Capacidade do palete</label>
+                                <input type="number" name="pallet_capacity" id="pallet_capacity" min="1" required
+                                    class="form-control @error('pallet_capacity') is-invalid @enderror"
+                                    placeholder="Ex.: 520" value="{{ old('pallet_capacity') }}">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4">
                             <div class="form-group">
                                 <label for="delivery_date">Previsão mínima de entrega</label>
                                 <input type="date" name="delivery_date" id="delivery_date"
@@ -55,7 +64,8 @@
                         </div>
                     </div>
 
-                    @include('order_products._delivery_plan_editor')
+                    {{-- Exibe o planejamento simplificado do cadastro. --}}
+                    @include('order_products._delivery_plan_create_editor')
 
                     <button class="btn btn-primary" id="btn-salvar">Salvar</button>
                     <a class="btn btn-light" href="{{ route('order_products.index', ['order' => $order]) }}">Cancelar</a>
@@ -80,6 +90,7 @@
         const saveButton = document.querySelector('#btn-salvar');
         let submitting = false;
 
+        // Atualiza a primeira data conforme produto e quantidade.
         function updateMinimumDeliveryDate() {
             if (!product.value || !quant.value) return $.Deferred().resolve().promise();
 

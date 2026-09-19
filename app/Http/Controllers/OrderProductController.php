@@ -8,9 +8,7 @@ use App\Seller;
 use App\Order_product;
 use App\OrderProductDeliveryPlan;
 use App\Product;
-use App\Load;
 use App\LoadItem;
-use App\Truck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -105,6 +103,7 @@ class OrderProductController extends Controller
         $data = $request->only([
             "product_name",
             "quant",
+            "pallet_capacity",
             "delivery_date",
             "order",
             "delivery_plan",
@@ -117,18 +116,29 @@ class OrderProductController extends Controller
             [
                 "product_name" => ['required'],
                 "quant" => ['required'],
+                "pallet_capacity" => ['required', 'integer', 'min:1'],
                 "delivery_date" => ['required'],
             ],
             [],
             [
                 'product_name' => 'Produto',
+                'pallet_capacity' => 'Capacidade do palete',
                 'delivery_date' => 'Data de entrega',
             ]
         )->validate();
 
+        // Calcula os paletes pela capacidade informada no cadastro.
         $quantity = (int) preg_replace('/\D+/', '', $data['quant']);
+        $palletCapacity = (int) $data['pallet_capacity'];
         $minimumDeliveryDate = $data['delivery_date'];
-        $deliveryPlan = $this->validateDeliveryPlan($data['delivery_plan'] ?? [], $quantity, $minimumDeliveryDate);
+        $deliveryPlanInput = array_map(function ($item) use ($palletCapacity) {
+            $deliveryQuantity = (int) ($item['quantity'] ?? 0);
+            $item['palete_tipo'] = [$palletCapacity];
+            $item['palete_quant'] = [$deliveryQuantity > 0 ? (int) ceil($deliveryQuantity / $palletCapacity) : 0];
+
+            return $item;
+        }, $data['delivery_plan'] ?? []);
+        $deliveryPlan = $this->validateDeliveryPlan($deliveryPlanInput, $quantity, $minimumDeliveryDate);
         $carga = json_encode($this->aggregatePalletLoads($deliveryPlan));
 
         $product = Product::firstOrCreate(['name' => trim($data['product_name'])], ['daily_production_forecast' => 0]);
@@ -142,6 +152,7 @@ class OrderProductController extends Controller
             return redirect()->route('order_products.index', ['order' => $order->id])->withErrors($message);
         }
 
+        // Salva o produto e suas entregas na mesma operação.
         $order_product = DB::transaction(function () use ($order, $product, $quantity, $deliveryPlan, $data, $carga) {
             $orderProduct = new Order_product();
             $orderProduct->order_id = $order->order_number;
@@ -169,29 +180,22 @@ class OrderProductController extends Controller
         return redirect()->route('order_products.index', ['order' => $order])->with('success', 'Salvo com sucesso!');
     }
 
+    // Consulta as entregas previstas para a data.
     public function truckAvailability(Request $request)
     {
         $data = $request->validate([
             'date' => ['required', 'date'],
         ]);
 
-        $total = Truck::count();
-        $occupied = Load::whereDate('data_montagem', $data['date'])
-            ->distinct()
-            ->count('truck_id');
         $planned = OrderProductDeliveryPlan::whereDate('delivery_date', $data['date'])
             ->whereHas('orderProduct.order', function ($query) {
                 $query->where('withdraw', 'entregar')
                     ->where('complete_order', 0);
             })
             ->count();
-        $committed = min($total, max($occupied, $planned));
 
         return response()->json([
-            'total' => $total,
-            'occupied' => $occupied,
             'planned' => $planned,
-            'available' => max(0, $total - $committed),
         ]);
     }
 
@@ -248,6 +252,7 @@ class OrderProductController extends Controller
             ];
         })->values()->all();
 
+        // Usa os dados antigos quando ainda não existe planejamento.
         if (empty($deliveryPlan)) {
             $deliveryPlan[] = [
                 'quantity' => (int) $order_product->quant,
@@ -315,6 +320,7 @@ class OrderProductController extends Controller
                 $data['delivery_date']
             );
 
+            // Protege entregas que já foram adicionadas a uma carga.
             $existingIds = $order_product->deliveryPlans()->pluck('id');
             $requestedIds = collect($deliveryPlan)->pluck('id')->filter()->map(fn ($id) => (int) $id);
             $invalidIds = $requestedIds->diff($existingIds);
@@ -524,6 +530,7 @@ class OrderProductController extends Controller
         return redirect()->route('order_products.delivery', $order_product->id)->with('success', 'Salvo com sucesso!');
     }
 
+    // Valida quantidades, datas e paletes de cada entrega.
     private function validateDeliveryPlan(array $deliveryPlan, int $quantity, string $minimumDeliveryDate): array
     {
         $deliveryPlan = array_values($deliveryPlan);
@@ -606,6 +613,7 @@ class OrderProductController extends Controller
         return $carga;
     }
 
+    // Mantém o total antigo de paletes para compatibilidade.
     private function aggregatePalletLoads(array $deliveryPlan): array
     {
         $total = [];

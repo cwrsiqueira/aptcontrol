@@ -100,6 +100,7 @@
                             </div>
                         </form>
 
+                        {{-- Separa as cargas por caminhão e data. --}}
                         @if (($cargas_por_caminhao ?? collect())->count())
                                 <div class="card mb-3 shadow-sm">
                                     <div class="card-header">
@@ -195,7 +196,7 @@
                             <th>Cliente</th>
                             <th>Categoria</th>
                             <th class="text-right">Saldo</th>
-                            <th>Paletes</th>
+                            <th>Paletes @includeIf('partials.change_marker')</th>
                             <th>Vendedor</th>
                             <th>Data Entrega</th>
                             <th>Tipo Entrega</th>
@@ -236,29 +237,53 @@
                                     </td>
                                     {{-- CARGA / PALETES --}}
                                     <td>
-                                        @forelse ($item->deliveryPlans as $plan)
-                                            @php
-                                                $cargaPlan = $plan->carga ?? [];
-                                                $usado = $plan->paletes_em_carga ?? 0;
-                                                $total = $plan->paletes_total ?? 0;
-                                                $restante = $total - $usado;
-                                            @endphp
+                                        {{-- Usa a carga antiga quando não há composição nova. --}}
+                                        @php
+                                            $hasPlannedPallets = $item->deliveryPlans->contains(function ($plan) {
+                                                return collect($plan->carga ?? [])->contains(function ($quantity) {
+                                                    return (int) $quantity > 0;
+                                                });
+                                            });
+                                            $legacyPalletTypes = $item->carga['tipo'] ?? [];
+                                            $legacyPalletQuantities = $item->carga['quant'] ?? [];
+                                        @endphp
+
+                                        @if ($hasPlannedPallets)
+                                            @foreach ($item->deliveryPlans as $plan)
+                                                @php
+                                                    $cargaPlan = $plan->carga ?? [];
+                                                @endphp
+                                                <div class="mb-2">
+                                                    <strong>Entrega {{ $plan->sequence }}</strong>
+                                                    @foreach ($cargaPlan as $capacidade => $quantidadePaletes)
+                                                        <div class="small">{{ $quantidadePaletes }} pal. × {{ $capacidade }}</div>
+                                                    @endforeach
+                                                    {{--
+                                                        Indicador de paletes alocados, mantido para uso futuro.
+                                                        @php
+                                                            $usado = $plan->paletes_em_carga ?? 0;
+                                                            $total = $plan->paletes_total ?? 0;
+                                                            $restante = $total - $usado;
+                                                        @endphp
+                                                        @if ($total > 0 && $item->order->withdraw === 'entregar')
+                                                            <span class="badge badge-{{ $restante <= 0 ? 'success' : ($usado > 0 ? 'warning' : 'light') }}">
+                                                                {{ $usado }} de {{ $total }} em carga
+                                                            </span>
+                                                        @endif
+                                                    --}}
+                                                </div>
+                                            @endforeach
+                                        @elseif (count($legacyPalletTypes))
                                             <div class="mb-2">
-                                                <strong>Entrega {{ $plan->sequence }}</strong>
-                                                @foreach ($cargaPlan as $capacidade => $quantidadePaletes)
-                                                    <div class="small">{{ $quantidadePaletes }} pal. × {{ $capacidade }}</div>
+                                                @foreach ($legacyPalletTypes as $index => $capacity)
+                                                    @if (($legacyPalletQuantities[$index] ?? 0) > 0)
+                                                        <div class="small">{{ $legacyPalletQuantities[$index] }} pal. × {{ $capacity }}</div>
+                                                    @endif
                                                 @endforeach
-                                                @if ($total > 0 && $item->order->withdraw === 'entregar')
-                                                    <span class="badge badge-{{ $restante <= 0 ? 'success' : ($usado > 0 ? 'warning' : 'light') }}">
-                                                        {{ $usado }} de {{ $total }} em carga
-                                                    </span>
-                                                @else
-                                                    <span class="badge badge-light">Carga não informada</span>
-                                                @endif
                                             </div>
-                                        @empty
-                                            <span class="text-muted">Sem planejamento</span>
-                                        @endforelse
+                                        @else
+                                            <span class="text-muted">Carga não informada</span>
+                                        @endif
                                     </td>
                                     {{-- VENDEDOR --}}
                                     <td>{{ $item->order->seller->name ?? ' - ' }}</td>
@@ -311,6 +336,7 @@
                                                 title="Marcar fixar data"><i
                                                     class="icon fas fa-calendar-day"></i></button>
 
+                                            {{-- Adiciona uma entrega específica à carga. --}}
                                             @if ($item->order->withdraw === 'entregar')
                                                 @foreach ($item->deliveryPlans as $plan)
                                                     @php

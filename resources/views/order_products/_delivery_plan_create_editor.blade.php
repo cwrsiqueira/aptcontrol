@@ -1,17 +1,17 @@
-{{-- Mantém a composição detalhada na edição. --}}
+{{-- Calcula o fracionamento com uma capacidade de palete. --}}
 @php
-    $initialDeliveryPlan = old('delivery_plan', $deliveryPlan ?? []);
+    $initialDeliveryPlan = old('delivery_plan', []);
 @endphp
 
-<div class="card bg-light border mt-3 mb-3" data-delivery-plan-editor
+<div class="card bg-light border mt-2 mb-3" data-delivery-plan-editor
     data-initial-plan="{{ base64_encode(json_encode($initialDeliveryPlan)) }}"
     data-is-cif="{{ strtolower($order->withdraw) === 'entregar' ? '1' : '0' }}"
     data-schedule-url="{{ route('order_products.truck_availability') }}">
     <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
-            <div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div class="mr-3">
                 <h6 class="mb-1">Fracionamento e carga por entrega @includeIf('partials.change_marker')</h6>
-                <small class="text-muted">As entregas têm quantidades iguais, datas diferentes e composição de carga própria.</small>
+                <small class="text-muted">Escolha a forma de entrega. As quantidades e os paletes serão calculados automaticamente.</small>
             </div>
             <div class="form-group mb-0 mt-2 mt-sm-0 delivery-count-field">
                 <label for="delivery_count" class="mb-1">Forma de entrega</label>
@@ -20,7 +20,7 @@
         </div>
 
         <div id="delivery_plan_empty" class="alert alert-secondary mb-0">
-            Informe a quantidade do produto para montar o planejamento.
+            Informe a quantidade e a capacidade do palete para montar o planejamento.
         </div>
         <div id="delivery_plan_rows" class="d-none"></div>
     </div>
@@ -31,7 +31,7 @@
         .delivery-count-field { min-width: 240px; }
         .delivery-schedule { white-space: normal; line-height: 1.35; }
         .delivery-load-card { border-left: 3px solid #007bff; }
-        .delivery-load-summary .form-control { min-width: 105px; }
+        .delivery-calculated-value { font-weight: 600; background: #fff; }
         .delivery-date-calendar { position: relative; }
         .delivery-date-calendar .delivery-plan-date-picker {
             position: absolute;
@@ -49,6 +49,7 @@
         (function() {
             const editor = document.querySelector('[data-delivery-plan-editor]');
             const quant = document.querySelector('#quant');
+            const palletCapacity = document.querySelector('#pallet_capacity');
             const deliveryDate = document.querySelector('#delivery_date');
             const deliveryCount = document.querySelector('#delivery_count');
             const rowsContainer = document.querySelector('#delivery_plan_rows');
@@ -98,6 +99,7 @@
                 return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
 
+            // Lista apenas divisões com quantidades inteiras.
             function divisors(total) {
                 const values = [];
                 for (let count = 1; count <= Math.sqrt(total); count++) {
@@ -112,49 +114,16 @@
             function currentPlan() {
                 return Array.from(rowsContainer.querySelectorAll('.delivery-load-card')).map(card => ({
                     id: Number(card.querySelector('.delivery-plan-id')?.value) || null,
-                    date: card.querySelector('.delivery-plan-date')?.value || '',
-                    quantity: Number(card.dataset.quantity) || 0,
-                    palete_tipo: Array.from(card.querySelectorAll('.delivery-pallet-type')).map(field => field.value),
-                    palete_quant: Array.from(card.querySelectorAll('.delivery-pallet-count')).map(field => field.value)
+                    date: card.querySelector('.delivery-plan-date')?.value || ''
                 }));
             }
 
-            function hasPalletComposition(plan) {
-                return (plan.palete_tipo || []).some((type, index) =>
-                    Number(type) > 0 && Number(plan.palete_quant?.[index]) > 0
-                );
-            }
-
-            // Mantém somente a composição salva ou informada pelo usuário.
-            function preparePalletPlan(saved) {
-                return {
-                    ...saved,
-                    compositionStatus: hasPalletComposition(saved) ? 'saved' : 'empty'
-                };
-            }
-
-            function compositionBadge(status) {
-                if (status === 'empty') return '<span class="badge badge-warning delivery-pallet-status">Informe a composição</span>';
-                return '<span class="badge badge-light delivery-pallet-status">Composição salva</span>';
-            }
-
-            function palletRows(index, saved) {
-                let html = '';
-                for (let slot = 0; slot < 3; slot++) {
-                    const type = Number(saved.palete_tipo?.[slot]) || '';
-                    const count = Number(saved.palete_quant?.[slot]) || '';
-                    html += `<tr>
-                        <td><input type="number" min="1" name="delivery_plan[${index}][palete_tipo][${slot}]" class="form-control form-control-sm delivery-pallet-type" value="${type}"></td>
-                        <td><input type="number" min="1" name="delivery_plan[${index}][palete_quant][${slot}]" class="form-control form-control-sm delivery-pallet-count" value="${count}"></td>
-                        <td><input type="text" class="form-control form-control-sm delivery-pallet-row-total" value="0" readonly></td>
-                    </tr>`;
-                }
-                return html;
-            }
-
+            // Monta as entregas e calcula os paletes necessários.
             function render(count, savedPlan = []) {
                 const total = parseQuantity(quant.value);
+                const capacity = parseQuantity(palletCapacity.value);
                 const perDelivery = total / count;
+
                 if (!Number.isInteger(perDelivery) || perDelivery <= 0) {
                     rebuild(1, []);
                     return;
@@ -163,12 +132,24 @@
                 let previousDate = '';
                 let html = '';
                 for (let index = 0; index < count; index++) {
-                    const saved = preparePalletPlan(savedPlan[index] || {});
+                    const saved = savedPlan[index] || {};
                     const defaultDate = addDays(deliveryDate.value, index);
                     const minimumDate = index === 0 ? deliveryDate.value : addDays(previousDate, 1);
                     let date = /^\d{4}-\d{2}-\d{2}$/.test(saved.date || '') ? saved.date : defaultDate;
                     if (date < minimumDate) date = minimumDate;
                     previousDate = date;
+
+                    const palletCount = capacity > 0 ? Math.ceil(perDelivery / capacity) : 0;
+                    const loadTotal = palletCount * capacity;
+                    const availableCapacity = loadTotal - perDelivery;
+                    const palletLabel = capacity > 0
+                        ? `${palletCount.toLocaleString('pt-BR')} ${palletCount === 1 ? 'palete' : 'paletes'} de ${capacity.toLocaleString('pt-BR')}`
+                        : 'Informe a capacidade no topo';
+                    const capacityLabel = capacity > 0
+                        ? (availableCapacity > 0
+                            ? `Capacidade total: ${loadTotal.toLocaleString('pt-BR')} · Espaço livre: ${availableCapacity.toLocaleString('pt-BR')}`
+                            : `Capacidade total: ${loadTotal.toLocaleString('pt-BR')} · Carga exata`)
+                        : 'O cálculo será feito automaticamente.';
 
                     html += `<div class="card delivery-load-card mb-3" data-quantity="${perDelivery}">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center py-2">
@@ -177,13 +158,15 @@
                         </div>
                         <div class="card-body py-3">
                             ${saved.id ? `<input type="hidden" class="delivery-plan-id" name="delivery_plan[${index}][id]" value="${Number(saved.id)}">` : ''}
-                            <div class="row">
-                                <div class="col-md-3 form-group">
-                                    <label>Quantidade</label>
-                                    <input type="text" class="form-control" value="${perDelivery.toLocaleString('pt-BR')}" readonly>
-                                    <input type="hidden" name="delivery_plan[${index}][quantity]" value="${perDelivery}">
+                            <input type="hidden" name="delivery_plan[${index}][quantity]" value="${perDelivery}">
+                            <input type="hidden" name="delivery_plan[${index}][palete_tipo][0]" value="${capacity || ''}">
+                            <input type="hidden" name="delivery_plan[${index}][palete_quant][0]" value="${palletCount || ''}">
+                            <div class="row align-items-start">
+                                <div class="col-lg-3 col-md-4 form-group mb-md-0">
+                                    <label>Quantidade da entrega</label>
+                                    <input type="text" class="form-control delivery-calculated-value" value="${perDelivery.toLocaleString('pt-BR')}" readonly>
                                 </div>
-                                <div class="col-md-3 form-group">
+                                <div class="col-lg-3 col-md-4 form-group mb-md-0">
                                     <label>Data prevista</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control delivery-plan-date-text" value="${formatDate(date)}"
@@ -197,25 +180,11 @@
                                     <input type="hidden" name="delivery_plan[${index}][date]" class="delivery-plan-date"
                                         value="${date}" data-minimum-date="${minimumDate}">
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-1">
-                                        <label class="mb-0">Composição da carga @includeIf('partials.change_marker')</label>
-                                        <div>
-                                            ${compositionBadge(saved.compositionStatus)}
-                                        </div>
-                                    </div>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-borderless mb-1">
-                                            <thead><tr><th>Palete (capacidade)</th><th>Palete (quantidade)</th><th>Palete (total)</th></tr></thead>
-                                            <tbody>${palletRows(index, saved)}</tbody>
-                                        </table>
-                                    </div>
+                                <div class="col-lg-6 col-md-4 form-group mb-0">
+                                    <label>Paletes calculados</label>
+                                    <input type="text" class="form-control delivery-calculated-value" value="${palletLabel}" readonly>
+                                    <small class="form-text text-muted">${capacityLabel}</small>
                                 </div>
-                            </div>
-                            <div class="row delivery-load-summary">
-                                <div class="col-md-3 ml-md-auto"><label>Carga (total)</label><input type="text" class="form-control delivery-load-total" value="0" readonly></div>
-                                <div class="col-md-3"><label>Paletes (total)</label><input type="text" class="form-control delivery-pallet-total" value="0" readonly></div>
-                                <div class="col-md-3"><label>Carga (diferença)</label><input type="text" class="form-control delivery-load-difference" value="0" readonly></div>
                             </div>
                         </div>
                     </div>`;
@@ -225,8 +194,6 @@
                 rowsContainer.classList.remove('d-none');
                 emptyMessage.classList.add('d-none');
                 bindDateControls();
-                rowsContainer.querySelectorAll('.delivery-pallet-type, .delivery-pallet-count').forEach(field => field.addEventListener('input', markManualAdjustment));
-                rowsContainer.querySelectorAll('.delivery-load-card').forEach(calculateCard);
                 refreshSchedule();
             }
 
@@ -272,7 +239,7 @@
                 });
             }
 
-            // Reorganiza as próximas datas em sequência.
+            // Mantém uma data diferente para cada entrega.
             function recalculateDates(event) {
                 const fields = Array.from(rowsContainer.querySelectorAll('.delivery-plan-date'));
                 const changedIndex = fields.indexOf(event.currentTarget);
@@ -296,39 +263,6 @@
 
                 syncDateControls();
                 refreshSchedule();
-            }
-
-            function setCompositionStatus(card) {
-                const badge = card.querySelector('.delivery-pallet-status');
-                badge.className = 'badge badge-info delivery-pallet-status';
-                badge.textContent = 'Informado pelo usuário';
-            }
-
-            function markManualAdjustment(event) {
-                const card = event.currentTarget.closest('.delivery-load-card');
-                setCompositionStatus(card);
-                calculateCard(card);
-            }
-
-            function calculateCard(eventOrCard) {
-                const card = eventOrCard.currentTarget ? eventOrCard.currentTarget.closest('.delivery-load-card') : eventOrCard;
-                const types = card.querySelectorAll('.delivery-pallet-type');
-                const counts = card.querySelectorAll('.delivery-pallet-count');
-                const rowTotals = card.querySelectorAll('.delivery-pallet-row-total');
-                let loadTotal = 0;
-                let palletTotal = 0;
-                types.forEach((field, index) => {
-                    const type = Number(field.value) || 0;
-                    const count = Number(counts[index].value) || 0;
-                    const rowTotal = type * count;
-                    rowTotals[index].value = rowTotal.toLocaleString('pt-BR');
-                    loadTotal += rowTotal;
-                    palletTotal += count;
-                });
-                const quantity = Number(card.dataset.quantity) || 0;
-                card.querySelector('.delivery-load-total').value = loadTotal.toLocaleString('pt-BR');
-                card.querySelector('.delivery-pallet-total').value = palletTotal.toLocaleString('pt-BR');
-                card.querySelector('.delivery-load-difference').value = (quantity - loadTotal).toLocaleString('pt-BR');
             }
 
             // Informa as entregas já previstas para cada data.
@@ -356,17 +290,20 @@
                 const total = parseQuantity(quant.value);
                 const options = divisors(total);
                 deliveryCount.innerHTML = '';
+
                 if (!options.length) {
                     rowsContainer.classList.add('d-none');
                     emptyMessage.classList.remove('d-none');
                     return;
                 }
+
                 options.forEach(count => {
                     const option = document.createElement('option');
                     option.value = count;
                     option.textContent = `${count} ${count === 1 ? 'entrega' : 'entregas'} de ${(total / count).toLocaleString('pt-BR')}`;
                     deliveryCount.appendChild(option);
                 });
+
                 const selected = options.includes(Number(preferredCount)) ? Number(preferredCount) : 1;
                 deliveryCount.value = selected;
                 render(selected, savedPlan.length === selected ? savedPlan : []);
@@ -389,6 +326,9 @@
             });
             quant.addEventListener('blur', function() {
                 rebuild(Number(deliveryCount.value) || 1);
+            });
+            palletCapacity.addEventListener('input', function() {
+                render(Number(deliveryCount.value) || 1, currentPlan());
             });
 
             window.deliveryPlanEditor = { rebuild, setMinimumDate };

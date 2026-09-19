@@ -19,6 +19,8 @@ class OrderProductDeliveryPlanningTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Cobre cadastro, fracionamento e montagem das cargas.
+
     private User $user;
     private Order $order;
     private Product $product;
@@ -69,10 +71,11 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'order' => $this->order->id,
             'product_name' => $this->product->name,
             'quant' => '10',
+            'pallet_capacity' => 5,
             'delivery_date' => $firstDate,
             'delivery_plan' => [
-                ['quantity' => 5, 'date' => $secondDate, 'palete_tipo' => [5], 'palete_quant' => [1]],
-                ['quantity' => 5, 'date' => $thirdDate, 'palete_tipo' => [5], 'palete_quant' => [1]],
+                ['quantity' => 5, 'date' => $secondDate],
+                ['quantity' => 5, 'date' => $thirdDate],
             ],
         ]);
 
@@ -103,6 +106,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
                 'order' => $this->order->id,
                 'product_name' => $this->product->name,
                 'quant' => '10',
+                'pallet_capacity' => 5,
                 'delivery_date' => $date,
                 'delivery_plan' => [
                     ['quantity' => 4, 'date' => $date],
@@ -123,6 +127,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'order' => $this->order->id,
             'product_name' => $this->product->name,
             'quant' => '10',
+            'pallet_capacity' => 5,
             'delivery_date' => $date,
             'delivery_plan' => [
                 ['quantity' => 5, 'date' => $date],
@@ -135,7 +140,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertDatabaseCount('order_product_delivery_plans', 0);
     }
 
-    public function test_rejects_an_incomplete_pallet_pair(): void
+    public function test_requires_a_pallet_capacity(): void
     {
         $date = now()->addDay()->toDateString();
 
@@ -147,23 +152,40 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'delivery_plan' => [[
                 'quantity' => 10,
                 'date' => $date,
-                'palete_tipo' => [5],
-                'palete_quant' => [''],
             ]],
         ]);
 
-        $response->assertSessionHasErrors('delivery_plan.0.paletes');
+        $response->assertSessionHasErrors('pallet_capacity');
         $this->assertDatabaseCount('order_products', 0);
     }
 
-    public function test_reports_truck_availability_for_the_selected_date(): void
+    public function test_calculates_the_pallet_count_from_the_capacity(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'pallet_capacity' => 6,
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'quantity' => 10,
+                'date' => $date,
+                'palete_tipo' => [999],
+                'palete_quant' => [999],
+            ]],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('order_product_delivery_plans', [
+            'quantity' => 10,
+            'carga' => json_encode([6 => 2]),
+        ]);
+    }
+
+    public function test_reports_scheduled_deliveries_for_the_selected_date(): void
     {
         $date = now()->addDays(3)->toDateString();
-        $trucks = collect([
-            Truck::create(['responsavel' => 'A', 'capacidade_paletes' => 10]),
-            Truck::create(['responsavel' => 'B', 'capacidade_paletes' => 10]),
-            Truck::create(['responsavel' => 'C', 'capacidade_paletes' => 10]),
-        ]);
 
         $orderProduct = Order_product::create([
             'order_id' => $this->order->order_number,
@@ -175,21 +197,31 @@ class OrderProductDeliveryPlanningTest extends TestCase
             ['sequence' => 1, 'quantity' => 5, 'delivery_date' => $date],
             ['sequence' => 2, 'quantity' => 5, 'delivery_date' => $date],
         ]);
-        Load::create([
-            'truck_id' => $trucks->first()->id,
-            'status' => 'montagem',
-            'data_montagem' => $date . ' 08:00:00',
-        ]);
 
         $this->actingAs($this->user)
             ->getJson(route('order_products.truck_availability', ['date' => $date]))
             ->assertOk()
-            ->assertJson([
-                'total' => 3,
-                'occupied' => 1,
+            ->assertExactJson([
                 'planned' => 2,
-                'available' => 1,
             ]);
+    }
+
+    public function test_displays_legacy_pallets_when_the_item_has_no_delivery_plan(): void
+    {
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 780,
+            'delivery_date' => now()->addDay()->toDateString(),
+        ]);
+        $orderProduct->carga = json_encode([390 => 2]);
+        $orderProduct->save();
+
+        $this->actingAs($this->user)
+            ->get(route('cc_product', ['id' => $this->product->id]))
+            ->assertOk()
+            ->assertSee('2 pal. × 390')
+            ->assertDontSee('Cadastro anterior');
     }
 
     public function test_keeps_installments_equal_when_the_item_quantity_changes(): void
