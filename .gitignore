@@ -12,4 +12,3 @@ npm-debug.log
 yarn-error.log
 backup_*.tar.gz
 abastex/
-/database/migrations/2026_09_11_231000_add_delivery_plan_to_load_items.php
