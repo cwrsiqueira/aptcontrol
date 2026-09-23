@@ -11,7 +11,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
             <div>
                 <h6 class="mb-1">Fracionamento e carga por entrega @includeIf('partials.change_marker')</h6>
-                <small class="text-muted">As entregas têm quantidades iguais, datas diferentes e composição de carga própria.</small>
+                <small class="text-muted">As entregas têm quantidades iguais e as opções disponíveis não deixam espaço livre nos paletes.</small>
             </div>
             <div class="form-group mb-0 mt-2 mt-sm-0 delivery-count-field">
                 <label for="delivery_count" class="mb-1">Forma de entrega</label>
@@ -21,6 +21,9 @@
 
         <div id="delivery_plan_empty" class="alert alert-secondary mb-0">
             Informe a quantidade do produto para montar o planejamento.
+        </div>
+        <div id="delivery_plan_exact_warning" class="alert alert-warning d-none mb-3">
+            A configuração atual deixa espaço livre. Ajuste a composição para liberar as formas de entrega compatíveis.
         </div>
         <div id="delivery_plan_rows" class="d-none"></div>
     </div>
@@ -53,10 +56,12 @@
             const deliveryCount = document.querySelector('#delivery_count');
             const rowsContainer = document.querySelector('#delivery_plan_rows');
             const emptyMessage = document.querySelector('#delivery_plan_empty');
+            const exactWarning = document.querySelector('#delivery_plan_exact_warning');
             const initialPlan = JSON.parse(atob(editor.dataset.initialPlan || 'W10='));
             const isCif = editor.dataset.isCif === '1';
             const scheduleUrl = editor.dataset.scheduleUrl;
             const maxDeliveries = 100;
+            let knownPalletCapacities = palletCapacities(initialPlan);
 
             function parseQuantity(value) {
                 return Number(String(value || '').replace(/\D/g, '')) || 0;
@@ -98,13 +103,61 @@
                 return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
 
+            function palletCapacities(plan) {
+                return Array.from(new Set((plan || []).flatMap(item => item.palete_tipo || [])
+                    .map(Number)
+                    .filter(value => Number.isInteger(value) && value > 0)));
+            }
+
+            function greatestCommonDivisor(first, second) {
+                let a = Math.abs(first);
+                let b = Math.abs(second);
+                while (b) [a, b] = [b, a % b];
+                return a;
+            }
+
+            // Confirma se as capacidades conhecidas conseguem formar uma carga exata.
+            function canComposeExactly(total, capacities) {
+                if (!Number.isInteger(total) || total <= 0 || !capacities.length) return false;
+                if (capacities.length === 1) return total % capacities[0] === 0;
+
+                const divisor = capacities.reduce(greatestCommonDivisor);
+                if (total % divisor !== 0) return false;
+
+                const normalizedTotal = total / divisor;
+                const normalizedCapacities = capacities.map(value => value / divisor);
+                const base = Math.min(...normalizedCapacities);
+                const distances = Array(base).fill(Infinity);
+                distances[0] = 0;
+
+                for (let pass = 0; pass < base; pass++) {
+                    let changed = false;
+                    for (let remainder = 0; remainder < base; remainder++) {
+                        if (!Number.isFinite(distances[remainder])) continue;
+                        normalizedCapacities.forEach(capacity => {
+                            const next = (remainder + capacity) % base;
+                            const distance = distances[remainder] + capacity;
+                            if (distance < distances[next]) {
+                                distances[next] = distance;
+                                changed = true;
+                            }
+                        });
+                    }
+                    if (!changed) break;
+                }
+
+                return distances[normalizedTotal % base] <= normalizedTotal;
+            }
+
             function divisors(total) {
                 const values = [];
+                if (!knownPalletCapacities.length) return values;
+
                 for (let count = 1; count <= Math.sqrt(total); count++) {
                     if (total % count !== 0) continue;
-                    if (count <= maxDeliveries) values.push(count);
+                    if (count <= maxDeliveries && canComposeExactly(total / count, knownPalletCapacities)) values.push(count);
                     const pair = total / count;
-                    if (pair !== count && pair <= maxDeliveries) values.push(pair);
+                    if (pair !== count && pair <= maxDeliveries && canComposeExactly(total / pair, knownPalletCapacities)) values.push(pair);
                 }
                 return values.sort((a, b) => a - b);
             }
@@ -308,6 +361,8 @@
                 const card = event.currentTarget.closest('.delivery-load-card');
                 setCompositionStatus(card);
                 calculateCard(card);
+                knownPalletCapacities = palletCapacities(currentPlan());
+                refreshDeliveryOptions();
             }
 
             function calculateCard(eventOrCard) {
@@ -356,20 +411,75 @@
                 const total = parseQuantity(quant.value);
                 const options = divisors(total);
                 deliveryCount.innerHTML = '';
-                if (!options.length) {
+
+                if (!total) {
                     rowsContainer.classList.add('d-none');
                     emptyMessage.classList.remove('d-none');
+                    exactWarning.classList.add('d-none');
                     return;
                 }
+
                 options.forEach(count => {
                     const option = document.createElement('option');
                     option.value = count;
                     option.textContent = `${count} ${count === 1 ? 'entrega' : 'entregas'} de ${(total / count).toLocaleString('pt-BR')}`;
                     deliveryCount.appendChild(option);
                 });
-                const selected = options.includes(Number(preferredCount)) ? Number(preferredCount) : 1;
+
+                const preferred = Number(preferredCount);
+                if (!options.includes(preferred) && savedPlan.length) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = options.length ? 'Selecione uma forma sem sobra' : 'Nenhuma forma compatível';
+                    option.selected = true;
+                    option.disabled = true;
+                    deliveryCount.prepend(option);
+                    exactWarning.classList.remove('d-none');
+                    render(savedPlan.length, savedPlan);
+                    deliveryCount.value = '';
+                    return;
+                }
+
+                if (!options.length) {
+                    rowsContainer.classList.add('d-none');
+                    emptyMessage.textContent = 'Informe uma composição de paletes que complete a quantidade da entrega.';
+                    emptyMessage.classList.remove('d-none');
+                    exactWarning.classList.remove('d-none');
+                    return;
+                }
+
+                exactWarning.classList.add('d-none');
+                const selected = options.includes(preferred) ? preferred : options[0];
                 deliveryCount.value = selected;
                 render(selected, savedPlan.length === selected ? savedPlan : []);
+            }
+
+            function refreshDeliveryOptions() {
+                const total = parseQuantity(quant.value);
+                const currentCount = currentPlan().length;
+                const options = divisors(total);
+                deliveryCount.innerHTML = '';
+
+                options.forEach(count => {
+                    const option = document.createElement('option');
+                    option.value = count;
+                    option.textContent = `${count} ${count === 1 ? 'entrega' : 'entregas'} de ${(total / count).toLocaleString('pt-BR')}`;
+                    deliveryCount.appendChild(option);
+                });
+
+                if (options.includes(currentCount)) {
+                    deliveryCount.value = currentCount;
+                    exactWarning.classList.add('d-none');
+                    return;
+                }
+
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = options.length ? 'Selecione uma forma sem sobra' : 'Nenhuma forma compatível';
+                option.selected = true;
+                option.disabled = true;
+                deliveryCount.prepend(option);
+                exactWarning.classList.remove('d-none');
             }
 
             function setMinimumDate(date) {
@@ -381,7 +491,7 @@
                     while (used.has(item.date)) item.date = addDays(item.date, 1);
                     used.add(item.date);
                 });
-                render(Number(deliveryCount.value) || 1, plan);
+                render(Number(deliveryCount.value) || plan.length || 1, plan);
             }
 
             deliveryCount.addEventListener('change', function() {

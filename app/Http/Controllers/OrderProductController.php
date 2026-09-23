@@ -127,14 +127,21 @@ class OrderProductController extends Controller
             ]
         )->validate();
 
-        // Calcula os paletes pela capacidade informada no cadastro.
+        // Calcula somente paletes completos pela capacidade informada.
         $quantity = (int) preg_replace('/\D+/', '', $data['quant']);
         $palletCapacity = (int) $data['pallet_capacity'];
         $minimumDeliveryDate = $data['delivery_date'];
+
+        if ($quantity <= 0 || $quantity % $palletCapacity !== 0) {
+            return redirect()->back()->withInput()->withErrors([
+                'pallet_capacity' => 'A quantidade total deve preencher os paletes sem deixar espaço livre.',
+            ]);
+        }
+
         $deliveryPlanInput = array_map(function ($item) use ($palletCapacity) {
             $deliveryQuantity = (int) ($item['quantity'] ?? 0);
             $item['palete_tipo'] = [$palletCapacity];
-            $item['palete_quant'] = [$deliveryQuantity > 0 ? (int) ceil($deliveryQuantity / $palletCapacity) : 0];
+            $item['palete_quant'] = [$deliveryQuantity > 0 ? intdiv($deliveryQuantity, $palletCapacity) : 0];
 
             return $item;
         }, $data['delivery_plan'] ?? []);
@@ -573,6 +580,8 @@ class OrderProductController extends Controller
                 $types = $item['palete_tipo'] ?? [];
                 $counts = $item['palete_quant'] ?? [];
                 $slots = max(count($types), count($counts));
+                $loadTotal = 0;
+                $hasPallets = false;
 
                 for ($slot = 0; $slot < $slots; $slot++) {
                     $hasType = !empty($types[$slot]);
@@ -583,6 +592,18 @@ class OrderProductController extends Controller
                             'Informe a capacidade e a quantidade do palete.'
                         );
                     }
+
+                    if ($hasType && $hasCount) {
+                        $hasPallets = true;
+                        $loadTotal += (int) $types[$slot] * (int) $counts[$slot];
+                    }
+                }
+
+                if ($hasPallets && $loadTotal !== (int) ($item['quantity'] ?? 0)) {
+                    $validator->errors()->add(
+                        "delivery_plan.{$index}.paletes",
+                        'A composição dos paletes deve preencher exatamente a quantidade da entrega.'
+                    );
                 }
             }
         });

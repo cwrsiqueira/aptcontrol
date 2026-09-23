@@ -11,7 +11,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <div class="mr-3">
                 <h6 class="mb-1">Fracionamento e carga por entrega @includeIf('partials.change_marker')</h6>
-                <small class="text-muted">Escolha a forma de entrega. As quantidades e os paletes serão calculados automaticamente.</small>
+                <small class="text-muted">Serão exibidas somente formas de entrega que preencham os paletes sem espaço livre.</small>
             </div>
             <div class="form-group mb-0 mt-2 mt-sm-0 delivery-count-field">
                 <label for="delivery_count" class="mb-1">Forma de entrega</label>
@@ -99,14 +99,16 @@
                 return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
 
-            // Lista apenas divisões com quantidades inteiras.
-            function divisors(total) {
+            // Lista somente divisões que completam todos os paletes.
+            function divisors(total, capacity) {
                 const values = [];
+                if (total <= 0 || capacity <= 0 || total % capacity !== 0) return values;
+
                 for (let count = 1; count <= Math.sqrt(total); count++) {
                     if (total % count !== 0) continue;
-                    if (count <= maxDeliveries) values.push(count);
+                    if (count <= maxDeliveries && (total / count) % capacity === 0) values.push(count);
                     const pair = total / count;
-                    if (pair !== count && pair <= maxDeliveries) values.push(pair);
+                    if (pair !== count && pair <= maxDeliveries && (total / pair) % capacity === 0) values.push(pair);
                 }
                 return values.sort((a, b) => a - b);
             }
@@ -124,8 +126,10 @@
                 const capacity = parseQuantity(palletCapacity.value);
                 const perDelivery = total / count;
 
-                if (!Number.isInteger(perDelivery) || perDelivery <= 0) {
-                    rebuild(1, []);
+                if (!Number.isInteger(perDelivery) || perDelivery <= 0 || capacity <= 0 || perDelivery % capacity !== 0) {
+                    rowsContainer.classList.add('d-none');
+                    emptyMessage.textContent = 'A quantidade de cada entrega deve preencher os paletes sem deixar espaço livre.';
+                    emptyMessage.classList.remove('d-none');
                     return;
                 }
 
@@ -139,7 +143,7 @@
                     if (date < minimumDate) date = minimumDate;
                     previousDate = date;
 
-                    const palletCount = capacity > 0 ? Math.ceil(perDelivery / capacity) : 0;
+                    const palletCount = perDelivery / capacity;
                     const loadTotal = palletCount * capacity;
                     const availableCapacity = loadTotal - perDelivery;
                     const palletLabel = capacity > 0
@@ -288,11 +292,15 @@
 
             function rebuild(preferredCount, savedPlan = currentPlan()) {
                 const total = parseQuantity(quant.value);
-                const options = divisors(total);
+                const capacity = parseQuantity(palletCapacity.value);
+                const options = divisors(total, capacity);
                 deliveryCount.innerHTML = '';
 
                 if (!options.length) {
                     rowsContainer.classList.add('d-none');
+                    emptyMessage.textContent = total > 0 && capacity > 0
+                        ? 'A quantidade total deve ser múltipla da capacidade do palete.'
+                        : 'Informe a quantidade e a capacidade do palete para montar o planejamento.';
                     emptyMessage.classList.remove('d-none');
                     return;
                 }
@@ -304,7 +312,7 @@
                     deliveryCount.appendChild(option);
                 });
 
-                const selected = options.includes(Number(preferredCount)) ? Number(preferredCount) : 1;
+                const selected = options.includes(Number(preferredCount)) ? Number(preferredCount) : options[0];
                 deliveryCount.value = selected;
                 render(selected, savedPlan.length === selected ? savedPlan : []);
             }
@@ -328,7 +336,7 @@
                 rebuild(Number(deliveryCount.value) || 1);
             });
             palletCapacity.addEventListener('input', function() {
-                render(Number(deliveryCount.value) || 1, currentPlan());
+                rebuild(Number(deliveryCount.value) || 1, currentPlan());
             });
 
             window.deliveryPlanEditor = { rebuild, setMinimumDate };

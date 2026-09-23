@@ -166,11 +166,11 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
             'product_name' => $this->product->name,
-            'quant' => '10',
+            'quant' => '12',
             'pallet_capacity' => 6,
             'delivery_date' => $date,
             'delivery_plan' => [[
-                'quantity' => 10,
+                'quantity' => 12,
                 'date' => $date,
                 'palete_tipo' => [999],
                 'palete_quant' => [999],
@@ -178,9 +178,30 @@ class OrderProductDeliveryPlanningTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('order_product_delivery_plans', [
-            'quantity' => 10,
+            'quantity' => 12,
             'carga' => json_encode([6 => 2]),
         ]);
+    }
+
+    public function test_rejects_pallets_with_free_space(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $response = $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'pallet_capacity' => 6,
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'quantity' => 10,
+                'date' => $date,
+            ]],
+        ]);
+
+        $response->assertSessionHasErrors('pallet_capacity');
+        $this->assertDatabaseCount('order_products', 0);
+        $this->assertDatabaseCount('order_product_delivery_plans', 0);
     }
 
     public function test_reports_scheduled_deliveries_for_the_selected_date(): void
@@ -222,6 +243,41 @@ class OrderProductDeliveryPlanningTest extends TestCase
             ->assertOk()
             ->assertSee('2 pal. × 390')
             ->assertDontSee('Cadastro anterior');
+    }
+
+    public function test_displays_each_delivery_plan_in_its_own_table_row(): void
+    {
+        $firstDate = now()->addDay();
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 2080,
+            'delivery_date' => $firstDate->toDateString(),
+            'carga' => json_encode([520 => 4]),
+        ]);
+
+        $plans = collect(range(0, 3))->map(function ($offset) use ($orderProduct, $firstDate) {
+            return $orderProduct->deliveryPlans()->create([
+                'sequence' => $offset + 1,
+                'quantity' => 520,
+                'delivery_date' => $firstDate->copy()->addDays($offset)->toDateString(),
+                'carga' => [520 => 1],
+            ]);
+        });
+
+        $response = $this->actingAs($this->user)
+            ->get(route('cc_product', ['id' => $this->product->id]))
+            ->assertOk();
+
+        $html = $response->getContent();
+        $this->assertSame(4, substr_count($html, '<tr data-order-product-id="' . $orderProduct->id . '"'));
+        $this->assertSame(4, substr_count($html, '1 pal. × 520'));
+        $this->assertStringNotContainsString('<strong>Entrega', $html);
+
+        foreach ($plans as $plan) {
+            $this->assertStringContainsString('data-delivery-plan-id="' . $plan->id . '"', $html);
+            $this->assertStringContainsString($plan->delivery_date->format('d/m/Y'), $html);
+        }
     }
 
     public function test_keeps_installments_equal_when_the_item_quantity_changes(): void
@@ -286,6 +342,41 @@ class OrderProductDeliveryPlanningTest extends TestCase
             [5.0, 5.0],
             $orderProduct->deliveryPlans()->pluck('quantity')->map(fn ($value) => (float) $value)->all()
         );
+    }
+
+    public function test_rejects_free_space_when_editing_a_delivery_plan(): void
+    {
+        $date = now()->addDay()->toDateString();
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 10,
+            'delivery_date' => $date,
+            'carga' => json_encode([5 => 2]),
+        ]);
+        $plan = $orderProduct->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 10,
+            'delivery_date' => $date,
+            'carga' => [5 => 2],
+        ]);
+
+        $response = $this->actingAs($this->user)->put(route('order_products.update', $orderProduct), [
+            'order' => $this->order->id,
+            'order_id' => $this->order->id,
+            'quant' => '10',
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'id' => $plan->id,
+                'quantity' => 10,
+                'date' => $date,
+                'palete_tipo' => [6],
+                'palete_quant' => [2],
+            ]],
+        ]);
+
+        $response->assertSessionHasErrors('delivery_plan.0.paletes');
+        $this->assertSame(['5' => 2], $plan->fresh()->carga);
     }
 
     public function test_adds_only_the_selected_installment_to_a_load_on_its_delivery_date(): void
