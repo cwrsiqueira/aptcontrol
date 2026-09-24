@@ -1,3 +1,4 @@
+{{-- Lista e filtra os pedidos de compra. --}}
 @extends('layouts.template')
 
 @section('title', 'Compras')

@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Representa um item solicitado no pedido de compra.
 class PurchaseOrderItem extends Model
 {
     protected $fillable = [

@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
     | Compras
     |--------------------------------------------------------------------------
     */
+    // Controla as mudanças de etapa do pedido.
     Route::post('purchases/{purchaseOrder}/start-quotes', 'PurchaseOrderController@startQuotes')
         ->name('purchases.start_quotes');
     Route::post('purchases/{purchaseOrder}/submit-approval', 'PurchaseOrderController@submitApproval')
@@ -67,12 +68,15 @@ Route::middleware('auth')->group(function () {
     Route::post('purchases/{purchaseOrder}/finalize', 'PurchaseOrderController@finalize')
         ->name('purchases.finalize');
 
+    // Gerencia os orçamentos e seus arquivos privados.
     Route::post('purchases/{purchaseOrder}/quotes', 'PurchaseQuoteController@store')
         ->name('purchase_quotes.store');
     Route::put('purchases/{purchaseOrder}/quotes/{purchaseQuote}', 'PurchaseQuoteController@update')
         ->name('purchase_quotes.update');
     Route::delete('purchases/{purchaseOrder}/quotes/{purchaseQuote}', 'PurchaseQuoteController@destroy')
         ->name('purchase_quotes.destroy');
+    Route::get('purchases/{purchaseOrder}/quotes/{purchaseQuote}/attachment', 'PurchaseQuoteController@attachment')
+        ->name('purchase_quotes.attachment');
 
     Route::resource('purchases', 'PurchaseOrderController')
         ->parameters(['purchases' => 'purchaseOrder']);

@@ -8,7 +8,9 @@ use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
+// Gerencia o pedido de compra e suas etapas.
 class PurchaseOrderController extends Controller
 {
     public function __construct()
@@ -118,6 +120,7 @@ class PurchaseOrderController extends Controller
             'requester',
             'creator',
             'decisionUser',
+            'approvedQuote',
             'finalizedUser',
             'items',
             'quotes.creator',
@@ -266,11 +269,23 @@ class PurchaseOrderController extends Controller
         $data = $request->validate([
             'decision' => 'required|in:approved,rejected',
             'decision_note' => 'nullable|required_if:decision,rejected|string|max:2000',
+            // Garante que o orçamento escolhido pertence a este pedido.
+            'approved_quote_id' => [
+                'nullable',
+                'required_if:decision,approved',
+                'integer',
+                Rule::exists('purchase_quotes', 'id')->where(function ($query) use ($purchaseOrder) {
+                    $query->where('purchase_order_id', $purchaseOrder->id);
+                }),
+            ],
         ], [
             'decision_note.required_if' => 'Informe a justificativa da reprovação.',
+            'approved_quote_id.required_if' => 'Selecione o orçamento que será aprovado.',
+            'approved_quote_id.exists' => 'O orçamento selecionado não pertence a este pedido.',
         ], [
             'decision' => 'Decisão',
             'decision_note' => 'Observação da decisão',
+            'approved_quote_id' => 'Orçamento aprovado',
         ]);
 
         $purchaseOrder->update([
@@ -278,6 +293,9 @@ class PurchaseOrderController extends Controller
             'decided_by' => Auth::id(),
             'decided_at' => now(),
             'decision_note' => $data['decision_note'] ?? null,
+            'approved_quote_id' => $data['decision'] === PurchaseOrder::STATUS_APPROVED
+                ? $data['approved_quote_id']
+                : null,
         ]);
 
         $action = $data['decision'] === PurchaseOrder::STATUS_APPROVED ? 'Aprovação' : 'Reprovação';

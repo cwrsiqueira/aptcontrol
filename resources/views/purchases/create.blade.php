@@ -1,3 +1,4 @@
+{{-- Tela de cadastro do pedido e dos itens solicitados. --}}
 @extends('layouts.template')
 
 @section('title', 'Cadastrar Pedido de Compra')

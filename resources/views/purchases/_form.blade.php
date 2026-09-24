@@ -1,3 +1,4 @@
+{{-- Campos compartilhados pelo cadastro e pela edição. --}}
 @php
     $formItems = old('items');
     if ($formItems === null) {

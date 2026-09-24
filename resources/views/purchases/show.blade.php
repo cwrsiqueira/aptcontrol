@@ -1,3 +1,4 @@
+{{-- Exibe o pedido, os orçamentos e as ações de cada etapa. --}}
 @extends('layouts.template')
 
 @section('title', 'Pedido de Compra ' . $purchase->number)
@@ -186,7 +187,7 @@
 
             @if ($purchase->status === 'awaiting_quotes' && $canQuotes)
                 <div class="card-body border-bottom">
-                    <form action="{{ route('purchase_quotes.store', $purchase) }}" method="POST">
+                    <form action="{{ route('purchase_quotes.store', $purchase) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-row">
                             <div class="form-group col-md-4">
@@ -208,9 +209,18 @@
                                 <button type="submit" class="btn btn-primary btn-block">Adicionar</button>
                             </div>
                         </div>
-                        <div class="form-group mb-0">
+                        <div class="form-group">
                             <label for="quote_notes">Observações</label>
                             <textarea class="form-control" id="quote_notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="quote_attachment">Arquivo do orçamento</label>
+                            <input type="file" class="form-control-file @error('attachment') is-invalid @enderror"
+                                id="quote_attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                            @error('attachment')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">PDF, JPG ou PNG, com no máximo 10 MB.</small>
                         </div>
                     </form>
                 </div>
@@ -224,6 +234,7 @@
                             <th>Data</th>
                             <th class="text-right">Valor</th>
                             <th>Observações</th>
+                            <th>Arquivo</th>
                             @if ($purchase->status === 'awaiting_quotes' && $canQuotes)
                                 <th class="text-right">Ações</th>
                             @endif
@@ -236,6 +247,17 @@
                                 <td>{{ $quote->quote_date->format('d/m/Y') }}</td>
                                 <td class="text-right">R$ {{ number_format($quote->amount, 2, ',', '.') }}</td>
                                 <td>{{ $quote->notes ?: '—' }}</td>
+                                <td>
+                                    @if ($quote->attachment_path)
+                                        <a href="{{ route('purchase_quotes.attachment', [$purchase, $quote]) }}"
+                                            target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary"
+                                            title="{{ $quote->attachment_original_name }}">
+                                            <i class="fas fa-paperclip"></i> Abrir
+                                        </a>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
                                 @if ($purchase->status === 'awaiting_quotes' && $canQuotes)
                                     <td class="text-right text-nowrap">
                                         <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal"
@@ -251,7 +273,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Nenhum orçamento cadastrado.</td>
+                                <td colspan="{{ $purchase->status === 'awaiting_quotes' && $canQuotes ? 6 : 5 }}"
+                                    class="text-center text-muted py-4">Nenhum orçamento cadastrado.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -277,13 +300,30 @@
                 <div class="card-body">
                     <form action="{{ route('purchases.decision', $purchase) }}" method="POST">
                         @csrf
+                        {{-- A aprovação registra qual orçamento foi escolhido. --}}
+                        <div class="form-group">
+                            <label for="approved_quote_id">Orçamento aprovado *</label>
+                            <select class="form-control @error('approved_quote_id') is-invalid @enderror"
+                                id="approved_quote_id" name="approved_quote_id" required>
+                                <option value="">Selecione um orçamento</option>
+                                @foreach ($purchase->quotes as $quote)
+                                    <option value="{{ $quote->id }}" @if ((string) old('approved_quote_id') === (string) $quote->id) selected @endif>
+                                        {{ $quote->supplier_name }} — R$ {{ number_format($quote->amount, 2, ',', '.') }} — {{ $quote->quote_date->format('d/m/Y') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('approved_quote_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">Obrigatório somente para aprovar o pedido.</small>
+                        </div>
                         <div class="form-group">
                             <label for="decision_note">Observação</label>
                             <textarea class="form-control" id="decision_note" name="decision_note" rows="3" maxlength="2000"
                                 placeholder="Obrigatória em caso de reprovação">{{ old('decision_note') }}</textarea>
                         </div>
                         <button type="submit" name="decision" value="approved" class="btn btn-success">Aprovar</button>
-                        <button type="submit" name="decision" value="rejected" class="btn btn-danger">Reprovar</button>
+                        <button type="submit" name="decision" value="rejected" class="btn btn-danger" formnovalidate>Reprovar</button>
                     </form>
                 </div>
             </div>
@@ -302,6 +342,14 @@
                         <dd class="col-sm-9">{{ $purchase->decided_at->format('d/m/Y H:i') }}</dd>
                         <dt class="col-sm-3">Observação</dt>
                         <dd class="col-sm-9">{{ $purchase->decision_note ?: '—' }}</dd>
+                        @if ($purchase->approvedQuote)
+                            <dt class="col-sm-3">Orçamento aprovado</dt>
+                            <dd class="col-sm-9">
+                                {{ $purchase->approvedQuote->supplier_name }} —
+                                R$ {{ number_format($purchase->approvedQuote->amount, 2, ',', '.') }} —
+                                {{ $purchase->approvedQuote->quote_date->format('d/m/Y') }}
+                            </dd>
+                        @endif
                     </dl>
                 </div>
             </div>
@@ -333,7 +381,8 @@
             @foreach ($purchase->quotes as $quote)
                 <div class="modal fade" id="edit-quote-{{ $quote->id }}" tabindex="-1" role="dialog">
                     <div class="modal-dialog" role="document">
-                        <form action="{{ route('purchase_quotes.update', [$purchase, $quote]) }}" method="POST">
+                        <form action="{{ route('purchase_quotes.update', [$purchase, $quote]) }}" method="POST"
+                            enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
                             <div class="modal-content">
@@ -359,9 +408,30 @@
                                                 value="{{ $quote->quote_date->format('Y-m-d') }}">
                                         </div>
                                     </div>
-                                    <div class="form-group mb-0">
+                                    <div class="form-group">
                                         <label>Observações</label>
                                         <textarea class="form-control" name="notes" rows="3" maxlength="2000">{{ $quote->notes }}</textarea>
+                                    </div>
+                                    <div class="form-group mb-0">
+                                        <label>Arquivo do orçamento</label>
+                                        @if ($quote->attachment_path)
+                                            <div class="mb-2">
+                                                <a href="{{ route('purchase_quotes.attachment', [$purchase, $quote]) }}"
+                                                    target="_blank" rel="noopener">
+                                                    <i class="fas fa-paperclip"></i> {{ $quote->attachment_original_name }}
+                                                </a>
+                                            </div>
+                                        @endif
+                                        <input type="file" class="form-control-file" name="attachment"
+                                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                        <small class="form-text text-muted">PDF, JPG ou PNG, com no máximo 10 MB. Um novo arquivo substitui o atual.</small>
+                                        @if ($quote->attachment_path)
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" name="remove_attachment"
+                                                    value="1" id="remove-attachment-{{ $quote->id }}">
+                                                <label class="form-check-label" for="remove-attachment-{{ $quote->id }}">Remover arquivo atual</label>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="modal-footer">

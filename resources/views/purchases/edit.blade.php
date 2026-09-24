@@ -1,3 +1,4 @@
+{{-- Tela de alteração do pedido enquanto está em rascunho. --}}
 @extends('layouts.template')
 
 @section('title', 'Editar Pedido de Compra')

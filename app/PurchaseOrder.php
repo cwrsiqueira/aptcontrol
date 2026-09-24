@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
+// Representa o pedido e o andamento da compra.
 class PurchaseOrder extends Model
 {
     public const STATUS_DRAFT = 'draft';
@@ -23,6 +24,7 @@ class PurchaseOrder extends Model
         'decided_by',
         'decided_at',
         'decision_note',
+        'approved_quote_id',
         'finalized_by',
         'finalized_at',
     ];
@@ -46,6 +48,12 @@ class PurchaseOrder extends Model
     public function decisionUser()
     {
         return $this->belongsTo(User::class, 'decided_by');
+    }
+
+    // Orçamento escolhido durante a aprovação.
+    public function approvedQuote()
+    {
+        return $this->belongsTo(PurchaseQuote::class, 'approved_quote_id');
     }
 
     public function finalizedUser()

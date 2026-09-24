@@ -3,11 +3,14 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
+// Cadastra o menu e as ações permitidas no módulo de compras.
 class AddPurchasePermissions extends Migration
 {
     public function up()
     {
         $now = now();
+
+        // Usa os mesmos slugs verificados nos Controllers e nas telas.
         $permissions = [
             ['slug' => 'menu-compras', 'name' => 'Menu Compras', 'group_name' => 'Menus'],
             ['slug' => 'purchases.create', 'name' => 'Cadastrar Pedido de Compra', 'group_name' => 'Compras'],
@@ -20,6 +23,7 @@ class AddPurchasePermissions extends Migration
         ];
 
         foreach ($permissions as $permission) {
+            // Evita duplicar permissões já cadastradas.
             if (!DB::table('permission_items')->where('slug', $permission['slug'])->exists()) {
                 DB::table('permission_items')->insert($permission + [
                     'created_at' => $now,
@@ -42,6 +46,7 @@ class AddPurchasePermissions extends Migration
             'purchases.finalize',
         ];
 
+        // Remove primeiro os vínculos dos usuários e depois as permissões.
         DB::table('permission_links')->whereIn('slug_permission_item', $slugs)->delete();
         DB::table('permission_items')->whereIn('slug', $slugs)->delete();
     }

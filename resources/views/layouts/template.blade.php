@@ -94,6 +94,7 @@
                             </a>
                         </li>
 
+                        {{-- Exibe o módulo somente para usuários autorizados. --}}
                         <li class="nav-item" @if (in_array('menu-compras', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['purchases', 'purchases/*'])) active @endif"
                                 href="{{ route('purchases.index') }}">
