@@ -329,6 +329,38 @@ class ProductController extends Controller
             }
         }
 
+        // Exibe uma linha por entrega sem duplicar o produto no banco.
+        $data = $data->flatMap(function ($item) {
+            $saldoDisponivel = max(0, min((float) $item->saldo, (float) $item->quant));
+
+            if ($saldoDisponivel <= 0) {
+                return [];
+            }
+
+            if ($item->deliveryPlans->isEmpty()) {
+                $item->display_saldo = $saldoDisponivel;
+                $item->setRelation('displayPlan', null);
+
+                return [$item];
+            }
+
+            return $item->deliveryPlans->map(function ($plan) use ($item, &$saldoDisponivel) {
+                $saldoEntrega = min($saldoDisponivel, (float) $plan->quantity);
+                $saldoDisponivel = max(0, $saldoDisponivel - $saldoEntrega);
+
+                if ($saldoEntrega <= 0) {
+                    return null;
+                }
+
+                $row = clone $item;
+                $row->display_saldo = $saldoEntrega;
+                $row->setRelation('deliveryPlans', collect([$plan]));
+                $row->setRelation('displayPlan', $plan);
+
+                return $row;
+            })->filter();
+        })->values();
+
         $cargasPorCaminhao = Load::with(['truck', 'items.zone', 'items.deliveryPlan', 'items.orderProduct.order.client', 'items.orderProduct.product'])
             ->whereHas('items')
             ->orderBy('truck_id')

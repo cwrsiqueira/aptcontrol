@@ -55,6 +55,30 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Compras
+    |--------------------------------------------------------------------------
+    */
+    Route::post('purchases/{purchaseOrder}/start-quotes', 'PurchaseOrderController@startQuotes')
+        ->name('purchases.start_quotes');
+    Route::post('purchases/{purchaseOrder}/submit-approval', 'PurchaseOrderController@submitApproval')
+        ->name('purchases.submit_approval');
+    Route::post('purchases/{purchaseOrder}/decision', 'PurchaseOrderController@decide')
+        ->name('purchases.decision');
+    Route::post('purchases/{purchaseOrder}/finalize', 'PurchaseOrderController@finalize')
+        ->name('purchases.finalize');
+
+    Route::post('purchases/{purchaseOrder}/quotes', 'PurchaseQuoteController@store')
+        ->name('purchase_quotes.store');
+    Route::put('purchases/{purchaseOrder}/quotes/{purchaseQuote}', 'PurchaseQuoteController@update')
+        ->name('purchase_quotes.update');
+    Route::delete('purchases/{purchaseOrder}/quotes/{purchaseQuote}', 'PurchaseQuoteController@destroy')
+        ->name('purchase_quotes.destroy');
+
+    Route::resource('purchases', 'PurchaseOrderController')
+        ->parameters(['purchases' => 'purchaseOrder']);
+
+    /*
+    |--------------------------------------------------------------------------
     | Estoque por produto (nested)
     |--------------------------------------------------------------------------
     */

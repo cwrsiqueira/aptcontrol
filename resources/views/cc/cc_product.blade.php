@@ -205,8 +205,9 @@
                     </thead>
                     <tbody>
                         @foreach ($data as $item)
-                            @if ($item->saldo > 0)
-                                <tr>
+                            @if ($item->display_saldo > 0)
+                                <tr data-order-product-id="{{ $item->id }}"
+                                    @if ($item->displayPlan) data-delivery-plan-id="{{ $item->displayPlan->id }}" @endif>
                                     {{-- DATA --}}
                                     {{-- <td>{{ date('d/m/Y', strtotime($item->order->order_date)) }}</td> --}}
                                     {{-- PEDIDO --}}
@@ -233,47 +234,23 @@
                                     <td>{{ $item->order->client->category->name }}</td>
                                     {{-- SALDO --}}
                                     <td class="text-right">
-                                        {{ number_format($item->saldo > $item->quant ? $item->quant : $item->saldo, 0, '', '.') }}
+                                        {{ number_format($item->display_saldo, 0, '', '.') }}
                                     </td>
                                     {{-- CARGA / PALETES --}}
                                     <td>
-                                        {{-- Usa a carga antiga quando não há composição nova. --}}
                                         @php
-                                            $hasPlannedPallets = $item->deliveryPlans->contains(function ($plan) {
-                                                return collect($plan->carga ?? [])->contains(function ($quantity) {
-                                                    return (int) $quantity > 0;
-                                                });
-                                            });
+                                            $cargaPlan = $item->displayPlan ? $item->displayPlan->carga ?? [] : [];
                                             $legacyPalletTypes = $item->carga['tipo'] ?? [];
                                             $legacyPalletQuantities = $item->carga['quant'] ?? [];
                                         @endphp
 
-                                        @if ($hasPlannedPallets)
-                                            @foreach ($item->deliveryPlans as $plan)
-                                                @php
-                                                    $cargaPlan = $plan->carga ?? [];
-                                                @endphp
-                                                <div class="mb-2">
-                                                    <strong>Entrega {{ $plan->sequence }}</strong>
-                                                    @foreach ($cargaPlan as $capacidade => $quantidadePaletes)
-                                                        <div class="small">{{ $quantidadePaletes }} pal. × {{ $capacidade }}</div>
-                                                    @endforeach
-                                                    {{--
-                                                        Indicador de paletes alocados, mantido para uso futuro.
-                                                        @php
-                                                            $usado = $plan->paletes_em_carga ?? 0;
-                                                            $total = $plan->paletes_total ?? 0;
-                                                            $restante = $total - $usado;
-                                                        @endphp
-                                                        @if ($total > 0 && $item->order->withdraw === 'entregar')
-                                                            <span class="badge badge-{{ $restante <= 0 ? 'success' : ($usado > 0 ? 'warning' : 'light') }}">
-                                                                {{ $usado }} de {{ $total }} em carga
-                                                            </span>
-                                                        @endif
-                                                    --}}
-                                                </div>
+                                        @if ($item->displayPlan && count($cargaPlan))
+                                            @foreach ($cargaPlan as $capacidade => $quantidadePaletes)
+                                                @if ($quantidadePaletes > 0)
+                                                    <div class="small">{{ $quantidadePaletes }} pal. × {{ $capacidade }}</div>
+                                                @endif
                                             @endforeach
-                                        @elseif (count($legacyPalletTypes))
+                                        @elseif (!$item->displayPlan && count($legacyPalletTypes))
                                             <div class="mb-2">
                                                 @foreach ($legacyPalletTypes as $index => $capacity)
                                                     @if (($legacyPalletQuantities[$index] ?? 0) > 0)
@@ -289,11 +266,11 @@
                                     <td>{{ $item->order->seller->name ?? ' - ' }}</td>
                                     {{-- DATA DA ENTREGA --}}
                                     <td class="text-right d-flex flex-column align-items-end">
-                                        @forelse ($item->deliveryPlans as $plan)
-                                            <span>Entrega {{ $plan->sequence }}: {{ $plan->delivery_date->format('d/m/Y') }}</span>
-                                        @empty
+                                        @if ($item->displayPlan)
+                                            <span>{{ $item->displayPlan->delivery_date->format('d/m/Y') }}</span>
+                                        @else
                                             {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
-                                        @endforelse
+                                        @endif
                                         <span
                                             class="btn btn-sm btn-danger p-0 px-1 @if (!$item->favorite_delivery) d-none @endif date-field">Data
                                             fixada</span>
@@ -338,8 +315,9 @@
 
                                             {{-- Adiciona uma entrega específica à carga. --}}
                                             @if ($item->order->withdraw === 'entregar')
-                                                @foreach ($item->deliveryPlans as $plan)
+                                                @if ($item->displayPlan)
                                                     @php
+                                                        $plan = $item->displayPlan;
                                                         $totalPaletesItem = $plan->paletes_total ?? 0;
                                                         $paletesEmCarga = $plan->paletes_em_carga ?? 0;
                                                         $podeAdicionar = $paletesEmCarga < $totalPaletesItem;
@@ -354,9 +332,9 @@
                                                         data-delivery-date="{{ $plan->delivery_date->format('d/m/Y') }}"
                                                         data-max-paletes="{{ $paletesDisponivel }}"
                                                         data-zona="{{ $item->order->zona ?? '' }}">
-                                                        <i class="fa fa-truck"></i> {{ $plan->sequence }}
+                                                        <i class="fa fa-truck"></i>
                                                     </button>
-                                                @endforeach
+                                                @endif
                                             @else
                                                 <button class="btn btn-sm btn-outline-secondary"
                                                     title="Só é possível marcar carga para pedidos CIF" disabled><i

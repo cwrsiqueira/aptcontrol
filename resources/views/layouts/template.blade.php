@@ -94,6 +94,14 @@
                             </a>
                         </li>
 
+                        <li class="nav-item" @if (in_array('menu-compras', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
+                            <a class="nav-link @if (Request::is(['purchases', 'purchases/*'])) active @endif"
+                                href="{{ route('purchases.index') }}">
+                                <span data-feather="shopping-bag"></span>
+                                Compras
+                            </a>
+                        </li>
+
                         <li class="nav-item" @if (in_array('menu-relatorios', $user_permissions) || Auth::user()->is_admin) @else style="display:none;" @endif>
                             <a class="nav-link @if (Request::is(['reports', 'reports/*'])) active @endif"
                                 href="{{ route('reports.index') }}">
