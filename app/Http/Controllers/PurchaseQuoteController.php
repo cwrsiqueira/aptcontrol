@@ -41,7 +41,7 @@ class PurchaseQuoteController extends Controller
 
         $data = $this->validateQuote($request);
         $attachment = $data['attachment'] ?? null;
-        unset($data['attachment'], $data['remove_attachment']);
+        unset($data['attachment']);
 
         $storedPath = null;
         try {
@@ -83,22 +83,19 @@ class PurchaseQuoteController extends Controller
         $quote = $purchaseOrder->quotes()->findOrFail($purchaseQuote->id);
         $data = $this->validateQuote($request);
         $attachment = $data['attachment'] ?? null;
-        $removeAttachment = (bool) ($data['remove_attachment'] ?? false);
-        unset($data['attachment'], $data['remove_attachment']);
+        unset($data['attachment']);
 
         $oldPath = $quote->attachment_path;
         $storedPath = null;
 
         try {
-            DB::transaction(function () use ($purchaseOrder, $quote, $data, $attachment, $removeAttachment, &$storedPath) {
+            DB::transaction(function () use ($purchaseOrder, $quote, $data, $attachment, &$storedPath) {
                 $quote->update($data);
 
                 if ($attachment) {
                     $attachmentData = $this->storeAttachment($purchaseOrder, $quote, $attachment);
                     $storedPath = $attachmentData['attachment_path'];
                     $quote->update($attachmentData);
-                } elseif ($removeAttachment) {
-                    $quote->update($this->emptyAttachment());
                 }
             });
         } catch (Throwable $exception) {
@@ -110,7 +107,7 @@ class PurchaseQuoteController extends Controller
         }
 
         // Remove o arquivo anterior somente após salvar a alteração.
-        if (($attachment || $removeAttachment) && $oldPath && $oldPath !== $storedPath) {
+        if ($attachment && $oldPath && $oldPath !== $storedPath) {
             Storage::disk(self::ATTACHMENT_DISK)->delete($oldPath);
         }
 
@@ -182,7 +179,6 @@ class PurchaseQuoteController extends Controller
             'quote_date' => 'required|date',
             'notes' => 'nullable|string|max:2000',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png|max:10240',
-            'remove_attachment' => 'nullable|boolean',
         ], [], [
             'supplier_name' => 'Fornecedor',
             'amount' => 'Valor',
@@ -219,16 +215,6 @@ class PurchaseQuoteController extends Controller
         $fileName = preg_replace('/[\x00-\x1F\x7F]/u', '', $fileName) ?: 'orcamento';
 
         return Str::limit($fileName, 255, '');
-    }
-
-    private function emptyAttachment(): array
-    {
-        return [
-            'attachment_path' => null,
-            'attachment_original_name' => null,
-            'attachment_mime' => null,
-            'attachment_size' => null,
-        ];
     }
 
     private function canManageQuotes(): bool

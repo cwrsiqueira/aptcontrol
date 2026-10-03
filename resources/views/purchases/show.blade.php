@@ -190,7 +190,7 @@
                     <form action="{{ route('purchase_quotes.store', $purchase) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-row">
-                            <div class="form-group col-md-4">
+                            <div class="form-group col-md-5">
                                 <label for="supplier_name">Fornecedor *</label>
                                 <input type="text" class="form-control" id="supplier_name" name="supplier_name"
                                     maxlength="150" required value="{{ old('supplier_name') }}">
@@ -200,27 +200,27 @@
                                 <input type="number" class="form-control" id="amount" name="amount"
                                     min="0.01" step="0.01" required value="{{ old('amount') }}">
                             </div>
-                            <div class="form-group col-md-3">
+                            <div class="form-group col-md-4">
                                 <label for="quote_date">Data *</label>
                                 <input type="date" class="form-control" id="quote_date" name="quote_date"
                                     required value="{{ old('quote_date', now()->toDateString()) }}">
-                            </div>
-                            <div class="form-group col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary btn-block">Adicionar</button>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="quote_notes">Observações</label>
                             <textarea class="form-control" id="quote_notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea>
                         </div>
-                        <div class="form-group mb-0">
-                            <label for="quote_attachment">Arquivo do orçamento</label>
-                            <input type="file" class="form-control-file @error('attachment') is-invalid @enderror"
-                                id="quote_attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
-                            @error('attachment')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                            <small class="form-text text-muted">PDF, JPG ou PNG, com no máximo 10 MB.</small>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end">
+                            <div class="form-group mb-3 mb-md-0">
+                                <label for="quote_attachment">Arquivo do orçamento</label>
+                                <input type="file" class="form-control-file @error('attachment') is-invalid @enderror"
+                                    id="quote_attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                @error('attachment')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">PDF, JPG ou PNG, com no máximo 10 MB.</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4">Adicionar</button>
                         </div>
                     </form>
                 </div>
@@ -425,13 +425,6 @@
                                         <input type="file" class="form-control-file" name="attachment"
                                             accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
                                         <small class="form-text text-muted">PDF, JPG ou PNG, com no máximo 10 MB. Um novo arquivo substitui o atual.</small>
-                                        @if ($quote->attachment_path)
-                                            <div class="form-check mt-2">
-                                                <input class="form-check-input" type="checkbox" name="remove_attachment"
-                                                    value="1" id="remove-attachment-{{ $quote->id }}">
-                                                <label class="form-check-label" for="remove-attachment-{{ $quote->id }}">Remover arquivo atual</label>
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
                                 <div class="modal-footer">

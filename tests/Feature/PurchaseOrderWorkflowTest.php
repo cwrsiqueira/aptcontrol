@@ -283,6 +283,35 @@ class PurchaseOrderWorkflowTest extends TestCase
         $this->assertDatabaseMissing('purchase_quotes', ['id' => $quote->id]);
     }
 
+    public function test_keeps_the_quote_attachment_when_updating_without_a_new_file(): void
+    {
+        Storage::fake('local');
+        $purchase = $this->createPurchase(PurchaseOrder::STATUS_AWAITING_QUOTES);
+
+        $this->actingAs($this->admin)->post(route('purchase_quotes.store', $purchase), [
+            'supplier_name' => 'Fornecedor Teste',
+            'amount' => 1200,
+            'quote_date' => now()->toDateString(),
+            'attachment' => UploadedFile::fake()->create('orcamento.pdf', 100, 'application/pdf'),
+        ]);
+
+        $quote = $purchase->quotes()->firstOrFail();
+        $originalPath = $quote->attachment_path;
+        $originalName = $quote->attachment_original_name;
+
+        $this->actingAs($this->admin)->put(route('purchase_quotes.update', [$purchase, $quote]), [
+            'supplier_name' => 'Fornecedor Atualizado',
+            'amount' => 1350,
+            'quote_date' => now()->toDateString(),
+            'notes' => 'Dados do orçamento atualizados.',
+        ])->assertRedirect(route('purchases.show', $purchase));
+
+        $quote->refresh();
+        $this->assertSame($originalPath, $quote->attachment_path);
+        $this->assertSame($originalName, $quote->attachment_original_name);
+        Storage::disk('local')->assertExists($originalPath);
+    }
+
     public function test_requires_a_reason_when_rejecting(): void
     {
         $purchase = $this->createPurchase(PurchaseOrder::STATUS_AWAITING_APPROVAL);
