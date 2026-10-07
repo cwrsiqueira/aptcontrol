@@ -11,15 +11,14 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.6',
+            'version'    => 'v1.0.7',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
-                'Ao imprimir os itens de um pedido, o documento passou a se chamar Romaneio de Transporte e exibe endereço, bairro e zona quando a entrega é feita na obra do cliente.',
-                'Novo relatório Produção pendente no menu Relatórios: mostra só os produtos que ainda têm quantidade a produzir; dá para abrir um PDF na hora.',
-                'Na tela Entregas por produto, a lista segue a data de entrega — o que está mais próximo no calendário aparece primeiro.',
-                'No relatório de entregas, ao escolher entregas já realizadas e um período de datas, o filtro passa a bater certo com a data de entrega.',
-                'Logística: cadastro de caminhões e de zonas; montagem de cargas direto na tela de entregas por produto; motorista informado por carga; PDF da carga para o caminhão; dá para tirar só um pedido da carga sem apagar a carga inteira.',
-                'Estoque por produto com histórico de lançamentos; auditoria de estoque; relatório de entregas com opção de baixar planilha quando o sistema oferecer essa opção.',
+                'No cadastro e na edição do item do pedido, a entrega pode ser dividida em mais de uma data. O sistema só oferece divisões em que os paletes ficam cheios, sem espaço sobrando.',
+                'Cada entrega mostra a quantidade, a data prevista e quantos paletes ela ocupa. Quando a entrega é no cliente, a tela indica se já há outras entregas previstas naquele dia.',
+                'Novo menu Compras: dá para abrir um pedido de compra, incluir os itens, registrar orçamentos de fornecedores e anexar o arquivo do orçamento em PDF ou imagem.',
+                'O pedido de compra segue as etapas de orçamento, aprovação e finalização. Quem pode ver, orçar, aprovar ou concluir fica definido nas permissões.',
+                'Na lista de itens do pedido, o botão Adicionar produto ficou ao lado de Imprimir / PDF.',
             ],
         ];
     }
