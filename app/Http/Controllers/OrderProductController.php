@@ -103,7 +103,7 @@ class OrderProductController extends Controller
         $data = $request->only([
             "product_name",
             "quant",
-            "pallet_capacity",
+            "quantity_per_delivery",
             "delivery_date",
             "order",
             "delivery_plan",
@@ -116,35 +116,53 @@ class OrderProductController extends Controller
             [
                 "product_name" => ['required'],
                 "quant" => ['required'],
-                "pallet_capacity" => ['required', 'integer', 'min:1'],
+                "quantity_per_delivery" => ['required', 'integer', 'min:1'],
                 "delivery_date" => ['required'],
             ],
             [],
             [
                 'product_name' => 'Produto',
-                'pallet_capacity' => 'Capacidade do palete',
+                'quantity_per_delivery' => 'Quantidade por entrega',
                 'delivery_date' => 'Data de entrega',
             ]
         )->validate();
 
-        // Calcula somente paletes completos pela capacidade informada.
+        // Monta lotes cheios e deixa a sobra na última entrega.
         $quantity = (int) preg_replace('/\D+/', '', $data['quant']);
-        $palletCapacity = (int) $data['pallet_capacity'];
+        $perDelivery = (int) $data['quantity_per_delivery'];
         $minimumDeliveryDate = $data['delivery_date'];
 
-        if ($quantity <= 0 || $quantity % $palletCapacity !== 0) {
+        if ($quantity <= 0) {
             return redirect()->back()->withInput()->withErrors([
-                'pallet_capacity' => 'A quantidade total deve preencher os paletes sem deixar espaço livre.',
+                'quant' => 'Informe a quantidade.',
             ]);
         }
 
-        $deliveryPlanInput = array_map(function ($item) use ($palletCapacity) {
-            $deliveryQuantity = (int) ($item['quantity'] ?? 0);
-            $item['palete_tipo'] = [$palletCapacity];
-            $item['palete_quant'] = [$deliveryQuantity > 0 ? intdiv($deliveryQuantity, $palletCapacity) : 0];
+        $submittedPlan = array_values($data['delivery_plan'] ?? []);
+        $submittedQuantities = $this->submittedQuantities($submittedPlan);
+        if ($this->quantitiesMatchTotal($submittedQuantities, $quantity)) {
+            if (count($submittedQuantities) > 100) {
+                return redirect()->back()->withInput()->withErrors([
+                    'delivery_plan' => 'O planejamento permite no máximo 100 entregas.',
+                ]);
+            }
+            $lots = $submittedQuantities;
+        } else {
+            $deliveryCount = $this->deliveryCount($quantity, $perDelivery);
+            if ($deliveryCount > 100) {
+                return redirect()->back()->withInput()->withErrors([
+                    'quantity_per_delivery' => 'A quantidade por entrega gera mais de 100 entregas. Aumente a quantidade por entrega.',
+                ]);
+            }
+            $lots = $this->deliveryLots($quantity, $perDelivery);
+        }
 
-            return $item;
-        }, $data['delivery_plan'] ?? []);
+        $deliveryPlanInput = $this->planFromLots(
+            $lots,
+            $submittedPlan,
+            $minimumDeliveryDate,
+            true
+        );
         $deliveryPlan = $this->validateDeliveryPlan($deliveryPlanInput, $quantity, $minimumDeliveryDate);
         $carga = json_encode($this->aggregatePalletLoads($deliveryPlan));
 
@@ -292,6 +310,7 @@ class OrderProductController extends Controller
 
         $data = $request->only([
             "quant",
+            "quantity_per_delivery",
             "delivery_date",
             "favorite_delivery",
             "order_id",
@@ -319,6 +338,56 @@ class OrderProductController extends Controller
         $quantity = (int) preg_replace('/\D+/', '', $data['quant']);
         $planCount = $order_product->deliveryPlans()->count();
         $deliveryPlan = null;
+        $perDelivery = array_key_exists('quantity_per_delivery', $data)
+            ? (int) $data['quantity_per_delivery']
+            : null;
+
+        if ($perDelivery !== null && $perDelivery < 1) {
+            return redirect()->back()->withInput()->withErrors([
+                'quantity_per_delivery' => 'Informe a quantidade por entrega.',
+            ]);
+        }
+
+        if (array_key_exists('delivery_plan', $data)) {
+            if ($quantity <= 0) {
+                return redirect()->back()->withInput()->withErrors([
+                    'quant' => 'Informe a quantidade.',
+                ]);
+            }
+
+            $submittedPlan = array_values($data['delivery_plan'] ?? []);
+            $submittedQuantities = $this->submittedQuantities($submittedPlan);
+            if ($this->quantitiesMatchTotal($submittedQuantities, $quantity)) {
+                if (count($submittedQuantities) > 100) {
+                    return redirect()->back()->withInput()->withErrors([
+                        'delivery_plan' => 'O planejamento permite no máximo 100 entregas.',
+                    ]);
+                }
+                $lots = $submittedQuantities;
+                $singlePallet = false;
+            } elseif ($perDelivery !== null) {
+                $deliveryCount = $this->deliveryCount($quantity, $perDelivery);
+                if ($deliveryCount > 100) {
+                    return redirect()->back()->withInput()->withErrors([
+                        'quantity_per_delivery' => 'A quantidade por entrega gera mais de 100 entregas. Aumente a quantidade por entrega.',
+                    ]);
+                }
+                $lots = $this->deliveryLots($quantity, $perDelivery);
+                $singlePallet = true;
+            } else {
+                $lots = null;
+                $singlePallet = false;
+            }
+
+            if ($lots !== null) {
+                $data['delivery_plan'] = $this->planFromLots(
+                    $lots,
+                    $submittedPlan,
+                    $data['delivery_date'],
+                    $singlePallet
+                );
+            }
+        }
 
         if (array_key_exists('delivery_plan', $data)) {
             $deliveryPlan = $this->validateDeliveryPlan(
@@ -370,10 +439,10 @@ class OrderProductController extends Controller
         if ($deliveryPlan === null) {
             $quantityValidator = Validator::make([], []);
             $quantityValidator->after(function ($validator) use ($quantity, $planCount, $order_product) {
-                if ($planCount > 0 && $quantity % $planCount !== 0) {
+                if ($planCount > 0 && $quantity < $planCount) {
                     $validator->errors()->add(
                         'quant',
-                        "A quantidade deve ser divisível pelas {$planCount} entregas planejadas."
+                        'A quantidade precisa ser de pelo menos um produto por entrega.'
                     );
                 }
 
@@ -397,9 +466,26 @@ class OrderProductController extends Controller
             $order_product->save();
 
             if ($deliveryPlan === null && $planCount > 0) {
-                $order_product->deliveryPlans()->update([
-                    'quantity' => $quantity / $planCount,
-                ]);
+                $lots = $this->remainderOnLast($quantity, $planCount);
+                $plans = $order_product->deliveryPlans()->orderBy('sequence')->orderBy('id')->get();
+                $changed = $plans->contains(function ($plan, $index) use ($lots) {
+                    return (int) $plan->quantity !== $lots[$index];
+                });
+
+                foreach ($plans as $index => $plan) {
+                    $plan->quantity = $lots[$index];
+                    if ($changed) {
+                        $plan->carga = [$lots[$index] => 1];
+                    }
+                    $plan->save();
+                }
+
+                if ($changed) {
+                    $order_product->carga = json_encode($this->aggregatePalletLoads(
+                        $plans->map(fn ($plan) => ['carga' => $plan->carga ?? []])->all()
+                    ));
+                    $order_product->save();
+                }
             }
 
             if ($deliveryPlan !== null) {
@@ -537,6 +623,122 @@ class OrderProductController extends Controller
         return redirect()->route('order_products.delivery', $order_product->id)->with('success', 'Salvo com sucesso!');
     }
 
+    // Conta as entregas cheias e a última com sobra.
+    private function deliveryCount(int $quantity, int $perDelivery): int
+    {
+        if ($quantity <= 0 || $perDelivery <= 0 || $perDelivery >= $quantity) {
+            return 1;
+        }
+
+        $remainder = $quantity % $perDelivery;
+
+        return intdiv($quantity, $perDelivery) + ($remainder > 0 ? 1 : 0);
+    }
+
+    // Separa a quantidade em lotes iguais e deixa o resto na última posição.
+    private function deliveryLots(int $quantity, int $perDelivery): array
+    {
+        if ($quantity <= 0 || $perDelivery <= 0 || $perDelivery >= $quantity) {
+            return [$quantity];
+        }
+
+        $fullCount = intdiv($quantity, $perDelivery);
+        $remainder = $quantity % $perDelivery;
+        $lots = array_fill(0, $fullCount, $perDelivery);
+        if ($remainder > 0) {
+            $lots[] = $remainder;
+        }
+
+        return $lots;
+    }
+
+    // Distribui uma nova quantidade nas entregas já existentes, com a sobra na última.
+    private function remainderOnLast(int $quantity, int $deliveryCount): array
+    {
+        $base = intdiv($quantity, $deliveryCount);
+        $remainder = $quantity % $deliveryCount;
+        $lots = array_fill(0, $deliveryCount, $base);
+        $lots[$deliveryCount - 1] = $base + $remainder;
+
+        return $lots;
+    }
+
+    private function dateAfter(string $date, int $days): string
+    {
+        return date('Y-m-d', strtotime($date . ' 12:00:00 +' . $days . ' days'));
+    }
+
+    private function isSunday(string $date): bool
+    {
+        return date('w', strtotime($date . ' 12:00:00')) === '0';
+    }
+
+    // Domingo calculado passa para a segunda-feira.
+    private function nextBusinessDay(string $date): string
+    {
+        return $this->isSunday($date) ? $this->dateAfter($date, 1) : $date;
+    }
+
+    private function businessDayAfter(string $date): string
+    {
+        return $this->nextBusinessDay($this->dateAfter($date, 1));
+    }
+
+    private function submittedQuantities(array $submitted): array
+    {
+        return array_map(fn ($item) => (int) ($item['quantity'] ?? 0), array_values($submitted));
+    }
+
+    private function quantitiesMatchTotal(array $quantities, int $total): bool
+    {
+        if ($quantities === [] || $total <= 0 || min($quantities) < 1) {
+            return false;
+        }
+
+        return array_sum($quantities) === $total;
+    }
+
+    // Aplica os lotes calculados e usa as datas enviadas pelo formulário.
+    private function planFromLots(array $lots, array $submitted, string $minimumDate, bool $singlePallet): array
+    {
+        $submitted = array_values($submitted);
+        $plan = [];
+        $previousDate = null;
+
+        foreach ($lots as $index => $lot) {
+            $source = $submitted[$index] ?? [];
+            if (!empty($source['date'])) {
+                $date = $source['date'];
+            } elseif ($previousDate === null) {
+                $date = $this->nextBusinessDay($minimumDate);
+            } else {
+                $date = $this->businessDayAfter($previousDate);
+            }
+            $previousDate = $date;
+
+            $item = [
+                'quantity' => $lot,
+                'date' => $date,
+            ];
+
+            if (!empty($source['id'])) {
+                $item['id'] = $source['id'];
+            }
+
+            if ($singlePallet || empty($source['palete_tipo'])) {
+                $item['palete_tipo'] = [$lot];
+                $item['palete_quant'] = [1];
+            } else {
+                $item['palete_tipo'] = $source['palete_tipo'];
+                $item['palete_quant'] = $source['palete_quant'] ?? [];
+            }
+
+            $plan[] = $item;
+        }
+
+        return $plan;
+    }
+
     // Valida quantidades, datas e paletes de cada entrega.
     private function validateDeliveryPlan(array $deliveryPlan, int $quantity, string $minimumDeliveryDate): array
     {
@@ -572,8 +774,13 @@ class OrderProductController extends Controller
                 $validator->errors()->add('delivery_plan', 'A soma das entregas deve ser igual à quantidade do produto.');
             }
 
-            if (count(array_unique($quantities)) > 1) {
-                $validator->errors()->add('delivery_plan', 'O fracionamento deve ter quantidades iguais em todas as entregas.');
+            foreach ($deliveryPlan as $index => $item) {
+                if (!empty($item['date']) && $this->isSunday($item['date'])) {
+                    $validator->errors()->add(
+                        "delivery_plan.{$index}.date",
+                        'Não é possível agendar entrega no domingo.'
+                    );
+                }
             }
 
             foreach ($deliveryPlan as $index => $item) {

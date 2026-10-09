@@ -61,17 +61,33 @@ class OrderProductDeliveryPlanningTest extends TestCase
         ]);
     }
 
+    private function upcomingWeekday(int $offset = 0): string
+    {
+        $date = now()->addDay()->startOfDay();
+        $found = 0;
+
+        while (true) {
+            if (!$date->isSunday()) {
+                if ($found === $offset) {
+                    return $date->toDateString();
+                }
+                $found++;
+            }
+            $date->addDay();
+        }
+    }
+
     public function test_creates_one_order_item_with_equal_delivery_installments(): void
     {
-        $firstDate = now()->addDay()->toDateString();
-        $secondDate = now()->addDays(2)->toDateString();
-        $thirdDate = now()->addDays(3)->toDateString();
+        $firstDate = $this->upcomingWeekday(0);
+        $secondDate = $this->upcomingWeekday(1);
+        $thirdDate = $this->upcomingWeekday(2);
 
         $response = $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
             'product_name' => $this->product->name,
             'quant' => '10',
-            'pallet_capacity' => 5,
+            'quantity_per_delivery' => 5,
             'delivery_date' => $firstDate,
             'delivery_plan' => [
                 ['quantity' => 5, 'date' => $secondDate],
@@ -97,26 +113,62 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertSame(['5' => 2], json_decode(Order_product::first()->carga, true));
     }
 
-    public function test_rejects_a_plan_with_unequal_installments(): void
+    public function test_rejects_a_sunday_delivery(): void
     {
-        $date = now()->addDay()->toDateString();
+        $response = $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'quantity_per_delivery' => 5,
+            'delivery_date' => '2026-10-10',
+            'delivery_plan' => [
+                ['quantity' => 5, 'date' => '2026-10-10'],
+                ['quantity' => 5, 'date' => '2026-10-11'],
+            ],
+        ]);
 
-        $response = $this->actingAs($this->user)->from(route('order_products.create', ['order' => $this->order]))
-            ->post(route('order_products.store'), [
-                'order' => $this->order->id,
-                'product_name' => $this->product->name,
-                'quant' => '10',
-                'pallet_capacity' => 5,
-                'delivery_date' => $date,
-                'delivery_plan' => [
-                    ['quantity' => 4, 'date' => $date],
-                    ['quantity' => 6, 'date' => $date],
-                ],
-            ]);
-
-        $response->assertSessionHasErrors('delivery_plan');
+        $response->assertSessionHasErrors('delivery_plan.1.date');
         $this->assertDatabaseCount('order_products', 0);
-        $this->assertDatabaseCount('order_product_delivery_plans', 0);
+    }
+
+    public function test_skips_sunday_when_the_next_delivery_is_calculated(): void
+    {
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'quantity_per_delivery' => 5,
+            'delivery_date' => '2026-10-10',
+        ])->assertRedirect();
+
+        $dates = Order_product::first()->deliveryPlans()->orderBy('sequence')->pluck('delivery_date')
+            ->map(fn ($date) => $date->toDateString())
+            ->all();
+
+        $this->assertSame(['2026-10-10', '2026-10-12'], $dates);
+    }
+
+    public function test_saves_custom_delivery_quantities(): void
+    {
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '100',
+            'quantity_per_delivery' => 30,
+            'delivery_date' => '2026-10-12',
+            'delivery_plan' => [
+                ['quantity' => 30, 'date' => '2026-10-12'],
+                ['quantity' => 40, 'date' => '2026-10-13'],
+                ['quantity' => 30, 'date' => '2026-10-14'],
+            ],
+        ])->assertRedirect();
+
+        $quantities = Order_product::first()->deliveryPlans()->orderBy('sequence')->pluck('quantity')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
+        $this->assertSame([30, 40, 30], $quantities);
+        $this->assertSame(['30' => 2, '40' => 1], json_decode(Order_product::first()->carga, true));
     }
 
     public function test_rejects_repeated_delivery_dates(): void
@@ -127,7 +179,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'order' => $this->order->id,
             'product_name' => $this->product->name,
             'quant' => '10',
-            'pallet_capacity' => 5,
+            'quantity_per_delivery' => 5,
             'delivery_date' => $date,
             'delivery_plan' => [
                 ['quantity' => 5, 'date' => $date],
@@ -140,7 +192,37 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertDatabaseCount('order_product_delivery_plans', 0);
     }
 
-    public function test_requires_a_pallet_capacity(): void
+    public function test_edit_page_asks_for_the_quantity_per_delivery(): void
+    {
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 10,
+            'delivery_date' => now()->addDay()->toDateString(),
+        ]);
+        $orderProduct->deliveryPlans()->createMany([
+            ['sequence' => 1, 'quantity' => 6, 'delivery_date' => now()->addDay()->toDateString(), 'carga' => [6 => 1]],
+            ['sequence' => 2, 'quantity' => 4, 'delivery_date' => now()->addDays(2)->toDateString(), 'carga' => [4 => 1]],
+        ]);
+
+        $this->actingAs($this->user)
+            ->get(route('order_products.edit', ['order_product' => $orderProduct, 'order' => $this->order->id]))
+            ->assertOk()
+            ->assertSee('Quantidade por entrega')
+            ->assertSee('value="6"', false);
+    }
+
+    public function test_create_page_asks_for_the_quantity_per_delivery(): void
+    {
+        $this->actingAs($this->user)
+            ->get(route('order_products.create', ['order' => $this->order->id]))
+            ->assertOk()
+            ->assertSee('Quantidade por entrega')
+            ->assertSee('A última fica com a sobra')
+            ->assertDontSee('Capacidade do palete');
+    }
+
+    public function test_requires_a_quantity_per_delivery(): void
     {
         $date = now()->addDay()->toDateString();
 
@@ -155,11 +237,11 @@ class OrderProductDeliveryPlanningTest extends TestCase
             ]],
         ]);
 
-        $response->assertSessionHasErrors('pallet_capacity');
+        $response->assertSessionHasErrors('quantity_per_delivery');
         $this->assertDatabaseCount('order_products', 0);
     }
 
-    public function test_calculates_the_pallet_count_from_the_capacity(): void
+    public function test_splits_an_exact_quantity_into_one_pallet_per_delivery(): void
     {
         $date = now()->addDay()->toDateString();
 
@@ -167,39 +249,106 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'order' => $this->order->id,
             'product_name' => $this->product->name,
             'quant' => '12',
-            'pallet_capacity' => 6,
+            'quantity_per_delivery' => 6,
             'delivery_date' => $date,
             'delivery_plan' => [[
-                'quantity' => 12,
                 'date' => $date,
                 'palete_tipo' => [999],
                 'palete_quant' => [999],
             ]],
         ])->assertRedirect();
 
+        $this->assertDatabaseCount('order_product_delivery_plans', 2);
         $this->assertDatabaseHas('order_product_delivery_plans', [
-            'quantity' => 12,
-            'carga' => json_encode([6 => 2]),
+            'quantity' => 6,
+            'carga' => json_encode([6 => 1]),
+        ]);
+        $this->assertSame(['6' => 2], json_decode(Order_product::first()->carga, true));
+    }
+
+    public function test_puts_the_remainder_on_the_last_delivery(): void
+    {
+        $date = now()->addDay()->toDateString();
+        $nextDate = now()->addDays(2)->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'quantity_per_delivery' => 6,
+            'delivery_date' => $date,
+            'delivery_plan' => [
+                ['date' => $date],
+                ['date' => $nextDate],
+            ],
+        ])->assertRedirect();
+
+        $quantities = Order_product::first()->deliveryPlans()->orderBy('sequence')->pluck('quantity')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+        $this->assertSame([6, 4], $quantities);
+        $this->assertDatabaseHas('order_product_delivery_plans', [
+            'sequence' => 2,
+            'quantity' => 4,
+            'carga' => json_encode([4 => 1]),
         ]);
     }
 
-    public function test_rejects_pallets_with_free_space(): void
+    public function test_splits_a_large_quantity_and_keeps_the_remainder_on_the_last_delivery(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '84327',
+            'quantity_per_delivery' => 2219,
+            'delivery_date' => $date,
+        ])->assertRedirect();
+
+        $item = Order_product::first();
+        $quantities = $item->deliveryPlans()->orderBy('sequence')->pluck('quantity')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
+        $this->assertCount(39, $quantities);
+        $this->assertSame(array_fill(0, 38, 2219), array_slice($quantities, 0, 38));
+        $this->assertSame(5, $quantities[38]);
+        $this->assertSame(['2219' => 38, '5' => 1], json_decode($item->carga, true));
+    }
+
+    public function test_uses_a_single_delivery_when_the_lot_is_larger_than_the_total(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'quantity_per_delivery' => 25,
+            'delivery_date' => $date,
+        ])->assertRedirect();
+
+        $this->assertDatabaseCount('order_product_delivery_plans', 1);
+        $this->assertDatabaseHas('order_product_delivery_plans', [
+            'quantity' => 10,
+            'carga' => json_encode([10 => 1]),
+        ]);
+    }
+
+    public function test_rejects_more_than_one_hundred_deliveries(): void
     {
         $date = now()->addDay()->toDateString();
 
         $response = $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
             'product_name' => $this->product->name,
-            'quant' => '10',
-            'pallet_capacity' => 6,
+            'quant' => '101',
+            'quantity_per_delivery' => 1,
             'delivery_date' => $date,
-            'delivery_plan' => [[
-                'quantity' => 10,
-                'date' => $date,
-            ]],
         ]);
 
-        $response->assertSessionHasErrors('pallet_capacity');
+        $response->assertSessionHasErrors('quantity_per_delivery');
         $this->assertDatabaseCount('order_products', 0);
         $this->assertDatabaseCount('order_product_delivery_plans', 0);
     }
@@ -280,6 +429,56 @@ class OrderProductDeliveryPlanningTest extends TestCase
         }
     }
 
+    public function test_lists_deliveries_by_the_date_shown_when_it_differs_from_the_item_date(): void
+    {
+        $this->order->update(['zona' => 'A', 'bairro' => 'A']);
+
+        $laterOnScreen = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 10,
+            'delivery_date' => now()->addDay()->toDateString(),
+        ]);
+        $laterOnScreen->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 10,
+            'delivery_date' => now()->addDays(10)->toDateString(),
+        ]);
+
+        $earlierOrder = Order::create([
+            'client_id' => $this->order->client_id,
+            'order_number' => 'PED-200',
+            'order_date' => now()->toDateString(),
+            'withdraw' => 'entregar',
+            'complete_order' => 0,
+            'zona' => 'Z',
+            'bairro' => 'Z',
+        ]);
+        $earlierOnScreen = Order_product::create([
+            'order_id' => $earlierOrder->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 10,
+            'delivery_date' => now()->addDays(6)->toDateString(),
+        ]);
+        $earlierOnScreen->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 10,
+            'delivery_date' => now()->addDays(2)->toDateString(),
+        ]);
+
+        $html = $this->actingAs($this->user)
+            ->get(route('cc_product', ['id' => $this->product->id]))
+            ->assertOk()
+            ->getContent();
+
+        $earlierPosition = strpos($html, '#' . $earlierOrder->order_number);
+        $laterPosition = strpos($html, '#' . $this->order->order_number);
+
+        $this->assertNotFalse($earlierPosition);
+        $this->assertNotFalse($laterPosition);
+        $this->assertLessThan($laterPosition, $earlierPosition);
+    }
+
     public function test_keeps_installments_equal_when_the_item_quantity_changes(): void
     {
         $date = now()->addDay()->toDateString();
@@ -312,7 +511,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
         );
     }
 
-    public function test_rejects_an_item_quantity_incompatible_with_its_delivery_count(): void
+    public function test_puts_the_remainder_on_the_last_delivery_when_the_item_quantity_changes(): void
     {
         $date = now()->addDay()->toDateString();
         $orderProduct = Order_product::create([
@@ -333,14 +532,14 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'delivery_date' => $date,
         ]);
 
-        $response->assertSessionHasErrors('quant');
+        $response->assertRedirect(route('order_products.index', ['order' => $this->order->id]));
         $this->assertDatabaseHas('order_products', [
             'id' => $orderProduct->id,
-            'quant' => 10,
+            'quant' => 9,
         ]);
         $this->assertSame(
-            [5.0, 5.0],
-            $orderProduct->deliveryPlans()->pluck('quantity')->map(fn ($value) => (float) $value)->all()
+            [4.0, 5.0],
+            $orderProduct->deliveryPlans()->orderBy('sequence')->pluck('quantity')->map(fn ($value) => (float) $value)->all()
         );
     }
 
@@ -457,7 +656,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
                 'delivery_plan' => [[
                     'id' => $plan->id,
                     'quantity' => 10,
-                    'date' => now()->addDays(3)->toDateString(),
+                    'date' => $this->upcomingWeekday(3),
                     'palete_tipo' => [5],
                     'palete_quant' => [2],
                 ]],

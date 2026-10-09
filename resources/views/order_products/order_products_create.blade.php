@@ -25,7 +25,7 @@
 
                     {{-- Reúne os dados principais antes do planejamento. --}}
                     <div class="row align-items-end">
-                        <div class="col-lg-5 col-md-12">
+                        <div class="col-lg-4 col-md-12">
                             <div class="form-group">
                                 <label for="product_name">Produto <small>(Digite um novo nome para cadastrar)</small>:</label>
                                 <input type="search" class="form-control @error('product_name') is-invalid @enderror"
@@ -46,12 +46,12 @@
                                     placeholder="Quantidade" value="{{ old('quant') }}">
                             </div>
                         </div>
-                        <div class="col-lg-2 col-md-4">
+                        <div class="col-lg-3 col-md-4">
                             <div class="form-group">
-                                <label for="pallet_capacity">Capacidade do palete</label>
-                                <input type="number" name="pallet_capacity" id="pallet_capacity" min="1" required
-                                    class="form-control @error('pallet_capacity') is-invalid @enderror"
-                                    placeholder="Ex.: 520" value="{{ old('pallet_capacity') }}">
+                                <label for="quantity_per_delivery">Quantidade por entrega</label>
+                                <input type="number" name="quantity_per_delivery" id="quantity_per_delivery" min="1" required
+                                    class="form-control @error('quantity_per_delivery') is-invalid @enderror"
+                                    placeholder="Ex.: 2219" value="{{ old('quantity_per_delivery') }}">
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-4">
@@ -87,6 +87,7 @@
         const form = document.querySelector('form');
         const product = document.querySelector('#product_name');
         const quant = document.querySelector('#quant');
+        const perDelivery = document.querySelector('#quantity_per_delivery');
         const saveButton = document.querySelector('#btn-salvar');
         let submitting = false;
 
@@ -118,8 +119,8 @@
         form.addEventListener('submit', function(event) {
             if (submitting) return;
             event.preventDefault();
-            if (!product.value || !Number(String(quant.value).replace(/\D/g, ''))) {
-                alert('Informe o produto e a quantidade.');
+            if (!product.value || !Number(String(quant.value).replace(/\D/g, '')) || !Number(perDelivery.value)) {
+                alert('Informe o produto, a quantidade e a quantidade por entrega.');
                 return;
             }
 

@@ -25,14 +25,18 @@
                     @csrf
                     <input type="hidden" name="order_id" value="{{ $order->id }}">
 
+                    @php
+                        $savedDeliveryQuantities = collect($deliveryPlan ?? [])->pluck('quantity')->map(fn ($value) => (int) $value)->filter();
+                        $quantityPerDelivery = old('quantity_per_delivery', $savedDeliveryQuantities->max() ?: $order_product->quant);
+                    @endphp
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label>Produto</label>
                                 <div class="form-control" readonly>{{ $order_product->product->name }}</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="quant">Quantidade</label>
                                 @if ($order_product->quant > $saldo)
@@ -43,6 +47,14 @@
                                         class="form-control @error('quant') is-invalid @enderror qt"
                                         placeholder="Quantidade" value="{{ old('quant') ?? $order_product->quant }}">
                                 @endif
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="quantity_per_delivery">Quantidade por entrega</label>
+                                <input type="number" name="quantity_per_delivery" id="quantity_per_delivery" min="1" required
+                                    class="form-control @error('quantity_per_delivery') is-invalid @enderror"
+                                    value="{{ $quantityPerDelivery }}">
                             </div>
                         </div>
                         <div class="col-md-3">

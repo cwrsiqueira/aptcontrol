@@ -14,7 +14,7 @@ class HomeController extends Controller
             'version'    => 'v1.0.7',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
-                'No cadastro e na edição do item do pedido, a entrega pode ser dividida em mais de uma data. O sistema só oferece divisões em que os paletes ficam cheios, sem espaço sobrando.',
+                'No cadastro do item do pedido, informe quantos produtos saem em cada entrega. O sistema calcula o número de entregas e deixa na última o que sobrar.',
                 'Cada entrega mostra a quantidade, a data prevista e quantos paletes ela ocupa. Quando a entrega é no cliente, a tela indica se já há outras entregas previstas naquele dia.',
                 'Novo menu Compras: dá para abrir um pedido de compra, incluir os itens, registrar orçamentos de fornecedores e anexar o arquivo do orçamento em PDF ou imagem.',
                 'O pedido de compra segue as etapas de orçamento, aprovação e finalização. Quem pode ver, orçar, aprovar ou concluir fica definido nas permissões.',

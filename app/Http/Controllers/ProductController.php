@@ -359,6 +359,19 @@ class ProductController extends Controller
 
                 return $row;
             })->filter();
+        })->sortBy(function ($item) {
+            // A coluna mostra a data de cada entrega, que pode ser diferente da data gravada no item.
+            $date = $item->displayPlan
+                ? $item->displayPlan->delivery_date->format('Y-m-d')
+                : ($item->delivery_date ? date('Y-m-d', strtotime($item->delivery_date)) : '');
+
+            return [
+                $date,
+                (string) ($item->order->zona ?? ''),
+                (string) ($item->order->bairro ?? ''),
+                (int) $item->id,
+                (int) ($item->displayPlan ? $item->displayPlan->sequence : 0),
+            ];
         })->values();
 
         $cargasPorCaminhao = Load::with(['truck', 'items.zone', 'items.deliveryPlan', 'items.orderProduct.order.client', 'items.orderProduct.product'])

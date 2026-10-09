@@ -1,4 +1,4 @@
-{{-- Calcula o fracionamento com uma capacidade de palete. --}}
+{{-- Calcula as entregas pela quantidade de cada lote. --}}
 @php
     $initialDeliveryPlan = old('delivery_plan', []);
 @endphp
@@ -11,16 +11,16 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <div class="mr-3">
                 <h6 class="mb-1">Fracionamento e carga por entrega @includeIf('partials.change_marker')</h6>
-                <small class="text-muted">Serão exibidas somente formas de entrega que preencham os paletes sem espaço livre.</small>
+                <small class="text-muted">O sistema calcula quantas entregas são necessárias. A última fica com a sobra. Não há entrega no domingo, e a quantidade de cada entrega pode ser ajustada.</small>
             </div>
             <div class="form-group mb-0 mt-2 mt-sm-0 delivery-count-field">
-                <label for="delivery_count" class="mb-1">Forma de entrega</label>
-                <select id="delivery_count" class="form-control form-control-sm"></select>
+                <label for="delivery_count_summary" class="mb-1">Entregas</label>
+                <input type="text" id="delivery_count_summary" class="form-control form-control-sm" readonly value="">
             </div>
         </div>
 
         <div id="delivery_plan_empty" class="alert alert-secondary mb-0">
-            Informe a quantidade e a capacidade do palete para montar o planejamento.
+            Informe a quantidade e a quantidade por entrega para montar o planejamento.
         </div>
         <div id="delivery_plan_rows" class="d-none"></div>
     </div>
@@ -28,7 +28,7 @@
 
 @push('css')
     <style>
-        .delivery-count-field { min-width: 240px; }
+        .delivery-count-field { min-width: 280px; }
         .delivery-schedule { white-space: normal; line-height: 1.35; }
         .delivery-load-card { border-left: 3px solid #007bff; }
         .delivery-calculated-value { font-weight: 600; background: #fff; }
@@ -49,9 +49,9 @@
         (function() {
             const editor = document.querySelector('[data-delivery-plan-editor]');
             const quant = document.querySelector('#quant');
-            const palletCapacity = document.querySelector('#pallet_capacity');
+            const perDeliveryField = document.querySelector('#quantity_per_delivery');
             const deliveryDate = document.querySelector('#delivery_date');
-            const deliveryCount = document.querySelector('#delivery_count');
+            const summary = document.querySelector('#delivery_count_summary');
             const rowsContainer = document.querySelector('#delivery_plan_rows');
             const emptyMessage = document.querySelector('#delivery_plan_empty');
             const initialPlan = JSON.parse(atob(editor.dataset.initialPlan || 'W10='));
@@ -69,6 +69,20 @@
                 const result = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
                 result.setUTCDate(result.getUTCDate() + days);
                 return result.toISOString().slice(0, 10);
+            }
+
+            function isSunday(date) {
+                const parts = String(date || '').split('-').map(Number);
+                if (parts.length !== 3 || parts.some(Number.isNaN)) return false;
+                return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay() === 0;
+            }
+
+            function nextBusinessDay(date) {
+                return isSunday(date) ? addDays(date, 1) : date;
+            }
+
+            function businessDayAfter(date) {
+                return nextBusinessDay(addDays(date, 1));
             }
 
             function formatDate(date) {
@@ -99,76 +113,78 @@
                 return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
 
-            // Lista somente divisões que completam todos os paletes.
-            function divisors(total, capacity) {
-                const values = [];
-                if (total <= 0 || capacity <= 0 || total % capacity !== 0) return values;
+            // Monta os lotes cheios e, se houver resto, uma última entrega menor.
+            function deliveryLots(total, perDelivery) {
+                if (total <= 0 || perDelivery <= 0) return [];
+                if (perDelivery >= total) return [total];
 
-                for (let count = 1; count <= Math.sqrt(total); count++) {
-                    if (total % count !== 0) continue;
-                    if (count <= maxDeliveries && (total / count) % capacity === 0) values.push(count);
-                    const pair = total / count;
-                    if (pair !== count && pair <= maxDeliveries && (total / pair) % capacity === 0) values.push(pair);
+                const fullCount = Math.floor(total / perDelivery);
+                const remainder = total % perDelivery;
+                const lots = Array(fullCount).fill(perDelivery);
+                if (remainder > 0) lots.push(remainder);
+                return lots;
+            }
+
+            function summaryText(lots) {
+                if (!lots.length) return '';
+                const label = lots.length === 1 ? 'entrega' : 'entregas';
+                if (lots.every(lot => lot === lots[0])) {
+                    return `${lots.length.toLocaleString('pt-BR')} ${label} de ${lots[0].toLocaleString('pt-BR')}`;
                 }
-                return values.sort((a, b) => a - b);
+
+                return `${lots.length.toLocaleString('pt-BR')} ${label}`;
+            }
+
+            function showMessage(message) {
+                summary.value = '';
+                rowsContainer.classList.add('d-none');
+                rowsContainer.innerHTML = '';
+                emptyMessage.textContent = message;
+                emptyMessage.classList.remove('d-none');
             }
 
             function currentPlan() {
                 return Array.from(rowsContainer.querySelectorAll('.delivery-load-card')).map(card => ({
-                    id: Number(card.querySelector('.delivery-plan-id')?.value) || null,
-                    date: card.querySelector('.delivery-plan-date')?.value || ''
+                    date: card.querySelector('.delivery-plan-date')?.value || '',
+                    quantity: Number(card.dataset.quantity) || 0
                 }));
             }
 
-            // Monta as entregas e calcula os paletes necessários.
-            function render(count, savedPlan = []) {
-                const total = parseQuantity(quant.value);
-                const capacity = parseQuantity(palletCapacity.value);
-                const perDelivery = total / count;
+            function resolveDate(index, savedDate, previousDate) {
+                const minimumDate = index === 0
+                    ? nextBusinessDay(deliveryDate.value)
+                    : businessDayAfter(previousDate);
+                let date = /^\d{4}-\d{2}-\d{2}$/.test(savedDate || '') ? savedDate : minimumDate;
+                if (!date || isSunday(date) || date < minimumDate) date = minimumDate;
+                return { date, minimumDate };
+            }
 
-                if (!Number.isInteger(perDelivery) || perDelivery <= 0 || capacity <= 0 || perDelivery % capacity !== 0) {
-                    rowsContainer.classList.add('d-none');
-                    emptyMessage.textContent = 'A quantidade de cada entrega deve preencher os paletes sem deixar espaço livre.';
-                    emptyMessage.classList.remove('d-none');
-                    return;
-                }
-
+            // Monta as entregas e o palete de cada uma.
+            function render(lots, savedPlan = []) {
                 let previousDate = '';
                 let html = '';
-                for (let index = 0; index < count; index++) {
+                lots.forEach((lot, index) => {
                     const saved = savedPlan[index] || {};
-                    const defaultDate = addDays(deliveryDate.value, index);
-                    const minimumDate = index === 0 ? deliveryDate.value : addDays(previousDate, 1);
-                    let date = /^\d{4}-\d{2}-\d{2}$/.test(saved.date || '') ? saved.date : defaultDate;
-                    if (date < minimumDate) date = minimumDate;
+                    const resolved = resolveDate(index, saved.date, previousDate);
+                    const date = resolved.date;
+                    const minimumDate = resolved.minimumDate;
                     previousDate = date;
+                    const isRemainder = index === lots.length - 1 && lot !== lots[0];
+                    const palletLabel = `1 palete de ${lot.toLocaleString('pt-BR')}`;
 
-                    const palletCount = perDelivery / capacity;
-                    const loadTotal = palletCount * capacity;
-                    const availableCapacity = loadTotal - perDelivery;
-                    const palletLabel = capacity > 0
-                        ? `${palletCount.toLocaleString('pt-BR')} ${palletCount === 1 ? 'palete' : 'paletes'} de ${capacity.toLocaleString('pt-BR')}`
-                        : 'Informe a capacidade no topo';
-                    const capacityLabel = capacity > 0
-                        ? (availableCapacity > 0
-                            ? `Capacidade total: ${loadTotal.toLocaleString('pt-BR')} · Espaço livre: ${availableCapacity.toLocaleString('pt-BR')}`
-                            : `Capacidade total: ${loadTotal.toLocaleString('pt-BR')} · Carga exata`)
-                        : 'O cálculo será feito automaticamente.';
-
-                    html += `<div class="card delivery-load-card mb-3" data-quantity="${perDelivery}">
+                    html += `<div class="card delivery-load-card mb-3" data-quantity="${lot}">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center py-2">
-                            <strong>Entrega ${index + 1} @includeIf('partials.change_marker')</strong>
+                            <strong>Entrega ${index + 1}${isRemainder ? ' (sobra)' : ''} @includeIf('partials.change_marker')</strong>
                             <span class="badge badge-light delivery-schedule">${isCif ? 'Consultando entregas...' : 'Retirada pelo cliente (FOB)'}</span>
                         </div>
                         <div class="card-body py-3">
-                            ${saved.id ? `<input type="hidden" class="delivery-plan-id" name="delivery_plan[${index}][id]" value="${Number(saved.id)}">` : ''}
-                            <input type="hidden" name="delivery_plan[${index}][quantity]" value="${perDelivery}">
-                            <input type="hidden" name="delivery_plan[${index}][palete_tipo][0]" value="${capacity || ''}">
-                            <input type="hidden" name="delivery_plan[${index}][palete_quant][0]" value="${palletCount || ''}">
+                            <input type="hidden" name="delivery_plan[${index}][quantity]" value="${lot}">
+                            <input type="hidden" name="delivery_plan[${index}][palete_tipo][0]" value="${lot}">
+                            <input type="hidden" name="delivery_plan[${index}][palete_quant][0]" value="1">
                             <div class="row align-items-start">
                                 <div class="col-lg-3 col-md-4 form-group mb-md-0">
                                     <label>Quantidade da entrega</label>
-                                    <input type="text" class="form-control delivery-calculated-value" value="${perDelivery.toLocaleString('pt-BR')}" readonly>
+                                    <input type="text" class="form-control delivery-quantity-input" value="${lot.toLocaleString('pt-BR')}" inputmode="numeric">
                                 </div>
                                 <div class="col-lg-3 col-md-4 form-group mb-md-0">
                                     <label>Data prevista</label>
@@ -182,26 +198,27 @@
                                         </div>
                                     </div>
                                     <input type="hidden" name="delivery_plan[${index}][date]" class="delivery-plan-date"
-                                        value="${date}" data-minimum-date="${minimumDate}">
+                                        value="${date}" data-minimum-date="${minimumDate}" data-accepted-date="${date}">
                                 </div>
                                 <div class="col-lg-6 col-md-4 form-group mb-0">
                                     <label>Paletes calculados</label>
                                     <input type="text" class="form-control delivery-calculated-value" value="${palletLabel}" readonly>
-                                    <small class="form-text text-muted">${capacityLabel}</small>
+                                    <small class="form-text text-muted">${isRemainder ? 'Palete com a sobra da divisão.' : 'Carga exata: 1 palete.'}</small>
                                 </div>
                             </div>
                         </div>
                     </div>`;
-                }
+                });
 
                 rowsContainer.innerHTML = html;
                 rowsContainer.classList.remove('d-none');
                 emptyMessage.classList.add('d-none');
+                summary.value = summaryText(lots);
                 bindDateControls();
+                bindQuantityControls();
                 refreshSchedule();
             }
 
-            // Aceita data digitada e mantém o calendário sincronizado.
             function bindDateControls() {
                 rowsContainer.querySelectorAll('.delivery-plan-date-text').forEach(field => {
                     field.addEventListener('focus', function() {
@@ -218,7 +235,7 @@
                         if (!date) return;
                         const hidden = this.closest('.form-group').querySelector('.delivery-plan-date');
                         hidden.value = date;
-                        recalculateDates({ currentTarget: hidden });
+                        recalculateDates({ currentTarget: hidden, manual: true });
                     });
                 });
 
@@ -226,7 +243,7 @@
                     field.addEventListener('change', function() {
                         const hidden = this.closest('.form-group').querySelector('.delivery-plan-date');
                         hidden.value = this.value;
-                        recalculateDates({ currentTarget: hidden });
+                        recalculateDates({ currentTarget: hidden, manual: true });
                     });
                 });
             }
@@ -243,33 +260,80 @@
                 });
             }
 
-            // Mantém uma data diferente para cada entrega.
             function recalculateDates(event) {
                 const fields = Array.from(rowsContainer.querySelectorAll('.delivery-plan-date'));
                 const changedIndex = fields.indexOf(event.currentTarget);
                 if (changedIndex < 0) return;
 
                 const minimumDate = changedIndex === 0
-                    ? deliveryDate.value
-                    : addDays(fields[changedIndex - 1].value, 1);
+                    ? nextBusinessDay(deliveryDate.value)
+                    : businessDayAfter(fields[changedIndex - 1].value);
+                const chosen = fields[changedIndex].value;
 
-                if (!fields[changedIndex].value || fields[changedIndex].value < minimumDate) {
+                if (event.manual && isSunday(chosen)) {
+                    alert('Não é possível agendar entrega no domingo.');
+                    fields[changedIndex].value = fields[changedIndex].dataset.acceptedDate || minimumDate;
+                } else if (!chosen || chosen < minimumDate || isSunday(chosen)) {
                     fields[changedIndex].value = minimumDate;
                 }
 
+                fields[changedIndex].dataset.acceptedDate = fields[changedIndex].value;
+
                 for (let index = changedIndex + 1; index < fields.length; index++) {
-                    fields[index].value = addDays(fields[index - 1].value, 1);
+                    fields[index].value = businessDayAfter(fields[index - 1].value);
+                    fields[index].dataset.acceptedDate = fields[index].value;
                 }
 
                 fields.forEach((field, index) => {
-                    field.dataset.minimumDate = index === 0 ? deliveryDate.value : addDays(fields[index - 1].value, 1);
+                    field.dataset.minimumDate = index === 0
+                        ? nextBusinessDay(deliveryDate.value)
+                        : businessDayAfter(fields[index - 1].value);
+                    field.dataset.acceptedDate = field.value;
                 });
 
                 syncDateControls();
                 refreshSchedule();
             }
 
-            // Informa as entregas já previstas para cada data.
+            function bindQuantityControls() {
+                rowsContainer.querySelectorAll('.delivery-quantity-input').forEach((field, index) => {
+                    field.addEventListener('focus', function() {
+                        this.select();
+                    });
+                    field.addEventListener('blur', function() {
+                        adjustFrom(index, parseQuantity(this.value));
+                    });
+                });
+            }
+
+            // Mantém as entregas anteriores e reparte o restante a partir da linha alterada.
+            function adjustFrom(index, value) {
+                const total = parseQuantity(quant.value);
+                const perDelivery = parseQuantity(perDeliveryField.value);
+                const saved = currentPlan();
+                if (value === saved[index]?.quantity) return;
+                const previousSum = saved.slice(0, index).reduce((sum, item) => sum + item.quantity, 0);
+                const available = total - previousSum;
+
+                if (value < 1 || value > available) {
+                    alert(value > available
+                        ? `A quantidade não pode passar de ${available.toLocaleString('pt-BR')}.`
+                        : 'Informe uma quantidade válida.');
+                    render(saved.map(item => item.quantity), saved);
+                    return;
+                }
+
+                const tail = deliveryLots(available - value, perDelivery);
+                const lots = saved.slice(0, index).map(item => item.quantity).concat([value], tail);
+                if (lots.length > maxDeliveries) {
+                    alert('A quantidade por entrega gera mais de 100 entregas. Aumente a quantidade por entrega.');
+                    render(saved.map(item => item.quantity), saved);
+                    return;
+                }
+
+                render(lots, saved);
+            }
+
             function refreshSchedule() {
                 if (!isCif) return;
                 rowsContainer.querySelectorAll('.delivery-plan-date').forEach(field => {
@@ -290,57 +354,50 @@
                 });
             }
 
-            function rebuild(preferredCount, savedPlan = currentPlan()) {
+            function rebuild(savedPlan = currentPlan()) {
                 const total = parseQuantity(quant.value);
-                const capacity = parseQuantity(palletCapacity.value);
-                const options = divisors(total, capacity);
-                deliveryCount.innerHTML = '';
+                const perDelivery = parseQuantity(perDeliveryField.value);
+                const lots = deliveryLots(total, perDelivery);
 
-                if (!options.length) {
-                    rowsContainer.classList.add('d-none');
-                    emptyMessage.textContent = total > 0 && capacity > 0
-                        ? 'A quantidade total deve ser múltipla da capacidade do palete.'
-                        : 'Informe a quantidade e a capacidade do palete para montar o planejamento.';
-                    emptyMessage.classList.remove('d-none');
+                if (!lots.length) {
+                    showMessage('Informe a quantidade e a quantidade por entrega para montar o planejamento.');
                     return;
                 }
 
-                options.forEach(count => {
-                    const option = document.createElement('option');
-                    option.value = count;
-                    option.textContent = `${count} ${count === 1 ? 'entrega' : 'entregas'} de ${(total / count).toLocaleString('pt-BR')}`;
-                    deliveryCount.appendChild(option);
-                });
+                if (lots.length > maxDeliveries) {
+                    showMessage('A quantidade por entrega gera mais de 100 entregas. Aumente a quantidade por entrega.');
+                    return;
+                }
 
-                const selected = options.includes(Number(preferredCount)) ? Number(preferredCount) : options[0];
-                deliveryCount.value = selected;
-                render(selected, savedPlan.length === selected ? savedPlan : []);
+                render(lots, savedPlan.length === lots.length ? savedPlan : []);
             }
 
             function setMinimumDate(date) {
                 deliveryDate.value = date;
                 const plan = currentPlan();
                 const used = new Set();
+                let previous = '';
                 plan.forEach((item, index) => {
-                    if (!item.date || item.date < date || used.has(item.date)) item.date = addDays(date, index);
-                    while (used.has(item.date)) item.date = addDays(item.date, 1);
+                    const minimum = index === 0 ? nextBusinessDay(date) : businessDayAfter(previous);
+                    if (!item.date || item.date < minimum || isSunday(item.date) || used.has(item.date)) {
+                        item.date = minimum;
+                    }
+                    while (used.has(item.date) || isSunday(item.date)) item.date = businessDayAfter(item.date);
                     used.add(item.date);
+                    previous = item.date;
                 });
-                render(Number(deliveryCount.value) || 1, plan);
+                rebuild(plan);
             }
 
-            deliveryCount.addEventListener('change', function() {
-                render(Number(this.value));
-            });
             quant.addEventListener('blur', function() {
-                rebuild(Number(deliveryCount.value) || 1);
+                rebuild(currentPlan());
             });
-            palletCapacity.addEventListener('input', function() {
-                rebuild(Number(deliveryCount.value) || 1, currentPlan());
+            perDeliveryField.addEventListener('input', function() {
+                rebuild(currentPlan());
             });
 
             window.deliveryPlanEditor = { rebuild, setMinimumDate };
-            rebuild(initialPlan.length || 1, initialPlan);
+            rebuild(initialPlan);
         })();
     </script>
 @endpush
