@@ -138,7 +138,19 @@
                 return lots.length === plan.length && lots.every((lot, index) => Number(plan[index].quantity) === lot);
             }
 
-            function palletLabel(types, counts) {
+            function palletSplit(quantity, capacity) {
+                const qty = Number(quantity) || 0;
+                const cap = Number(capacity) || 0;
+                if (qty <= 0) return { types: [], counts: [] };
+                if (cap < 1 || cap >= qty) return { types: [qty], counts: [1] };
+
+                const full = Math.floor(qty / cap);
+                const remainder = qty % cap;
+                if (remainder === 0) return { types: [cap], counts: [full] };
+                return { types: [cap, remainder], counts: [full, 1] };
+            }
+
+            function palletSummary(types, counts) {
                 const parts = [];
                 types.forEach((type, index) => {
                     const capacity = Number(type) || 0;
@@ -147,7 +159,36 @@
                         parts.push(`${count.toLocaleString('pt-BR')} ${count === 1 ? 'palete' : 'paletes'} de ${capacity.toLocaleString('pt-BR')}`);
                     }
                 });
-                return parts.join(' e ');
+                return parts.length ? `${parts.join(' e ')}.` : '';
+            }
+
+            function inferCapacity(item, quantity) {
+                const types = (item?.palete_tipo || []).map(Number).filter(type => type > 0);
+                const counts = (item?.palete_quant || []).map(Number);
+                if (types.length === 1 && counts[0] > 1 && types[0] * counts[0] === quantity) return types[0];
+                if (types.length >= 2) return Math.max(...types);
+                return 0;
+            }
+
+            function typedCapacity(item) {
+                if (!item || !Object.prototype.hasOwnProperty.call(item, 'pallet_capacity')) return null;
+                if (item.pallet_capacity === null || item.pallet_capacity === '') return null;
+                return Number(item.pallet_capacity) || 0;
+            }
+
+            function rowCapacity(saved, original, quantity) {
+                const typed = typedCapacity(saved);
+                if (typed !== null) return typed;
+                if ((saved?.palete_tipo || []).some(type => Number(type) > 0)) {
+                    return inferCapacity(saved, quantity);
+                }
+                return inferCapacity(original, quantity);
+            }
+
+            function readCapacity(card) {
+                const value = card.querySelector('.delivery-pallet-capacity')?.value;
+                if (value === undefined || String(value).trim() === '') return null;
+                return parseQuantity(value);
             }
 
             function showMessage(message) {
@@ -163,6 +204,7 @@
                     id: Number(card.querySelector('.delivery-plan-id')?.value) || null,
                     date: card.querySelector('.delivery-plan-date')?.value || '',
                     quantity: Number(card.dataset.quantity) || 0,
+                    pallet_capacity: readCapacity(card),
                     palete_tipo: Array.from(card.querySelectorAll('input[name*="[palete_tipo]"]')).map(field => field.value),
                     palete_quant: Array.from(card.querySelectorAll('input[name*="[palete_quant]"]')).map(field => field.value)
                 }));
@@ -194,12 +236,24 @@
                         && index < editableFrom
                         && savedQuantity === lot
                         && (saved.palete_tipo || []).some(type => Number(type) > 0);
-                    const types = keepRowPallets
-                        ? saved.palete_tipo
-                        : (keepSavedPallets && (original.palete_tipo || []).length ? original.palete_tipo : [lot]);
-                    const counts = keepRowPallets
-                        ? saved.palete_quant
-                        : (keepSavedPallets && (original.palete_quant || []).length ? original.palete_quant : [1]);
+                    const capacity = rowCapacity(saved, original, lot);
+                    const clearedCapacity = typedCapacity(saved) === 0;
+                    let types;
+                    let counts;
+                    if (capacity > 0) {
+                        const split = palletSplit(lot, capacity);
+                        types = split.types;
+                        counts = split.counts;
+                    } else if (!clearedCapacity && keepRowPallets) {
+                        types = saved.palete_tipo;
+                        counts = saved.palete_quant;
+                    } else if (!clearedCapacity && keepSavedPallets && (original.palete_tipo || []).length) {
+                        types = original.palete_tipo;
+                        counts = original.palete_quant;
+                    } else {
+                        types = [lot];
+                        counts = [1];
+                    }
                     const rowId = saved.id || original.id;
                     const isRemainder = index === lots.length - 1 && lot !== lots[0];
                     let palletFields = '';
@@ -240,9 +294,10 @@
                                         value="${date}" data-minimum-date="${minimumDate}" data-accepted-date="${date}">
                                 </div>
                                 <div class="col-lg-6 col-md-4 form-group mb-0">
-                                    <label>Paletes</label>
-                                    <input type="text" class="form-control delivery-calculated-value" value="${palletLabel(types, counts)}" readonly>
-                                    <small class="form-text text-muted">${keepSavedPallets || keepRowPallets ? 'Composição já salva.' : (isRemainder ? 'Palete com a sobra da divisão.' : 'Carga exata: 1 palete.')}</small>
+                                    <label>Capacidade do palete</label>
+                                    <input type="text" class="form-control delivery-pallet-capacity" name="delivery_plan[${index}][pallet_capacity]"
+                                        value="${capacity > 0 ? capacity : ''}" inputmode="numeric" placeholder="Ex.: 261">
+                                    <small class="form-text text-muted delivery-pallet-summary">${palletSummary(types, counts)}</small>
                                 </div>
                             </div>
                         </div>
@@ -255,7 +310,36 @@
                 summary.value = summaryText(lots);
                 bindDateControls();
                 bindQuantityControls();
+                bindCapacityControls();
                 refreshSchedule();
+            }
+
+            function bindCapacityControls() {
+                rowsContainer.querySelectorAll('.delivery-pallet-capacity').forEach(field => {
+                    field.addEventListener('input', function() {
+                        updatePalletFields(this.closest('.delivery-load-card'), parseQuantity(this.value));
+                    });
+                    field.addEventListener('blur', function() {
+                        const capacity = parseQuantity(this.value);
+                        this.value = capacity > 0 ? String(capacity) : '';
+                        updatePalletFields(this.closest('.delivery-load-card'), capacity);
+                    });
+                });
+            }
+
+            function updatePalletFields(card, capacity) {
+                const quantity = Number(card.dataset.quantity) || 0;
+                const split = palletSplit(quantity, capacity);
+                const named = card.querySelector('[name^="delivery_plan["]');
+                const index = named?.name.match(/delivery_plan\[(\d+)\]/)?.[1] || '0';
+                card.querySelectorAll('input[name*="[palete_tipo]"], input[name*="[palete_quant]"]').forEach(field => field.remove());
+                let palletFields = '';
+                split.types.forEach((type, slot) => {
+                    palletFields += `<input type="hidden" name="delivery_plan[${index}][palete_tipo][${slot}]" value="${type}">`;
+                    palletFields += `<input type="hidden" name="delivery_plan[${index}][palete_quant][${slot}]" value="${split.counts[slot]}">`;
+                });
+                card.querySelector('input[name*="[quantity]"]').insertAdjacentHTML('afterend', palletFields);
+                card.querySelector('.delivery-pallet-summary').textContent = palletSummary(split.types, split.counts);
             }
 
             function bindDateControls() {
@@ -408,7 +492,16 @@
                 }
 
                 const dates = savedPlan || currentPlan();
-                render(lots, dates.length === lots.length ? dates : (initialPlan.length === lots.length ? initialPlan : []));
+                const aligned = dates.length === lots.length
+                    ? dates
+                    : (initialPlan.length === lots.length ? initialPlan : []);
+                render(lots, lots.map((_, index) => {
+                    const row = { ...(aligned[index] || {}) };
+                    if (dates[index] && Object.prototype.hasOwnProperty.call(dates[index], 'pallet_capacity')) {
+                        row.pallet_capacity = dates[index].pallet_capacity;
+                    }
+                    return row;
+                }));
             }
 
             function setMinimumDate(date) {

@@ -272,6 +272,7 @@ class OrderProductController extends Controller
                 'id' => $plan->id,
                 'quantity' => (int) $plan->quantity,
                 'date' => $plan->delivery_date->format('Y-m-d'),
+                'pallet_capacity' => $this->inferPalletCapacity($carga, (int) $plan->quantity),
                 'palete_tipo' => array_map('intval', array_keys($carga)),
                 'palete_quant' => array_map('intval', array_values($carga)),
             ];
@@ -279,9 +280,18 @@ class OrderProductController extends Controller
 
         // Usa os dados antigos quando ainda não existe planejamento.
         if (empty($deliveryPlan)) {
+            $legacyLoad = [];
+            foreach ($palete['tipo'] as $index => $type) {
+                $count = (int) ($palete['quant'][$index] ?? 0);
+                if ((int) $type > 0 && $count > 0) {
+                    $legacyLoad[(int) $type] = ($legacyLoad[(int) $type] ?? 0) + $count;
+                }
+            }
+
             $deliveryPlan[] = [
                 'quantity' => (int) $order_product->quant,
                 'date' => date('Y-m-d', strtotime($order_product->delivery_date)),
+                'pallet_capacity' => $this->inferPalletCapacity($legacyLoad, (int) $order_product->quant),
                 'palete_tipo' => $palete['tipo'],
                 'palete_quant' => $palete['quant'],
             ];
@@ -725,7 +735,12 @@ class OrderProductController extends Controller
                 $item['id'] = $source['id'];
             }
 
-            if ($singlePallet || empty($source['palete_tipo'])) {
+            $capacity = (int) preg_replace('/\D+/', '', (string) ($source['pallet_capacity'] ?? ''));
+            if ($capacity > 0) {
+                $split = $this->palletSplit($lot, $capacity);
+                $item['palete_tipo'] = $split['types'];
+                $item['palete_quant'] = $split['counts'];
+            } elseif ($singlePallet || empty($source['palete_tipo'])) {
                 $item['palete_tipo'] = [$lot];
                 $item['palete_quant'] = [1];
             } else {
@@ -825,6 +840,52 @@ class OrderProductController extends Controller
 
             return $item;
         }, $deliveryPlan);
+    }
+
+    // Divide a quantidade da entrega em paletes cheios e, se sobrar, mais um palete.
+    private function palletSplit(int $quantity, int $capacity): array
+    {
+        if ($capacity < 1 || $capacity >= $quantity) {
+            return [
+                'types' => [$quantity],
+                'counts' => [1],
+            ];
+        }
+
+        $full = intdiv($quantity, $capacity);
+        $remainder = $quantity % $capacity;
+        if ($remainder === 0) {
+            return [
+                'types' => [$capacity],
+                'counts' => [$full],
+            ];
+        }
+
+        return [
+            'types' => [$capacity, $remainder],
+            'counts' => [$full, 1],
+        ];
+    }
+
+    // Recupera a capacidade cheia quando a carga da entrega já está dividida.
+    private function inferPalletCapacity(array $carga, int $quantity): ?int
+    {
+        $carga = array_filter(array_map('intval', $carga));
+        if (count($carga) === 1) {
+            $type = (int) array_key_first($carga);
+            $count = (int) reset($carga);
+            if ($count > 1 && $type * $count === $quantity) {
+                return $type;
+            }
+
+            return null;
+        }
+
+        if (count($carga) >= 2) {
+            return max(array_map('intval', array_keys($carga)));
+        }
+
+        return null;
     }
 
     private function buildPalletLoad(array $types, array $counts): array

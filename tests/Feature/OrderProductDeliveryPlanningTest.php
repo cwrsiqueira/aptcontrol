@@ -219,7 +219,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
             ->assertOk()
             ->assertSee('Quantidade por entrega')
             ->assertSee('A última fica com a sobra')
-            ->assertDontSee('Capacidade do palete');
+            ->assertSee('Capacidade do palete');
     }
 
     public function test_requires_a_quantity_per_delivery(): void
@@ -268,8 +268,8 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
     public function test_puts_the_remainder_on_the_last_delivery(): void
     {
-        $date = now()->addDay()->toDateString();
-        $nextDate = now()->addDays(2)->toDateString();
+        $date = $this->upcomingWeekday(0);
+        $nextDate = $this->upcomingWeekday(1);
 
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
@@ -696,5 +696,162 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
         $this->assertDatabaseMissing('load_items', ['delivery_plan_id' => $plans[0]->id]);
         $this->assertDatabaseHas('load_items', ['delivery_plan_id' => $plans[1]->id]);
+    }
+
+    public function test_splits_a_delivery_into_full_pallets_and_a_remainder_pallet(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '2219',
+            'quantity_per_delivery' => 2219,
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'quantity' => 2219,
+                'date' => $date,
+                'pallet_capacity' => 261,
+            ]],
+        ])->assertRedirect();
+
+        $plan = Order_product::first()->deliveryPlans()->first();
+        $this->assertSame(['261' => 8, '131' => 1], $plan->carga);
+        $this->assertSame(9, $plan->total_paletes);
+    }
+
+    public function test_uses_only_full_pallets_when_the_capacity_divides_the_delivery(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '522',
+            'quantity_per_delivery' => 522,
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'quantity' => 522,
+                'date' => $date,
+                'pallet_capacity' => 261,
+            ]],
+        ])->assertRedirect();
+
+        $this->assertSame(['261' => 2], Order_product::first()->deliveryPlans()->first()->carga);
+    }
+
+    public function test_keeps_one_pallet_when_the_capacity_is_empty(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '2219',
+            'quantity_per_delivery' => 2219,
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'quantity' => 2219,
+                'date' => $date,
+            ]],
+        ])->assertRedirect();
+
+        $this->assertSame(['2219' => 1], Order_product::first()->deliveryPlans()->first()->carga);
+    }
+
+    public function test_uses_one_pallet_when_capacity_is_greater_than_the_delivery(): void
+    {
+        $date = now()->addDay()->toDateString();
+
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '100',
+            'quantity_per_delivery' => 100,
+            'delivery_date' => $date,
+            'delivery_plan' => [[
+                'quantity' => 100,
+                'date' => $date,
+                'pallet_capacity' => 261,
+            ]],
+        ])->assertRedirect();
+
+        $this->assertSame(['100' => 1], Order_product::first()->deliveryPlans()->first()->carga);
+    }
+
+    public function test_edit_page_fills_the_pallet_capacity_of_a_split_delivery(): void
+    {
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 2219,
+            'delivery_date' => now()->addDay()->toDateString(),
+        ]);
+        $orderProduct->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 2219,
+            'delivery_date' => now()->addDay()->toDateString(),
+            'carga' => [261 => 8, 131 => 1],
+        ]);
+
+        $html = $this->actingAs($this->user)
+            ->get(route('order_products.edit', ['order_product' => $orderProduct, 'order' => $this->order->id]))
+            ->assertOk()
+            ->assertSee('Capacidade do palete')
+            ->getContent();
+
+        preg_match('/data-initial-plan="([^"]+)"/', $html, $matches);
+        $plan = json_decode(base64_decode($matches[1]), true);
+
+        $this->assertSame(261, $plan[0]['pallet_capacity']);
+    }
+
+    public function test_does_not_allow_a_loaded_installment_to_change_pallet_capacity(): void
+    {
+        $date = $this->upcomingWeekday(2);
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 10,
+            'delivery_date' => $date,
+            'carga' => json_encode([5 => 2]),
+        ]);
+        $plan = $orderProduct->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 10,
+            'delivery_date' => $date,
+            'carga' => [5 => 2],
+        ]);
+        $truck = Truck::create([
+            'responsavel' => 'Motorista Teste',
+            'capacidade_paletes' => 10,
+        ]);
+        $load = Load::create([
+            'truck_id' => $truck->id,
+            'status' => 'montagem',
+            'data_montagem' => $date,
+        ]);
+        LoadItem::create([
+            'load_id' => $load->id,
+            'order_product_id' => $orderProduct->id,
+            'delivery_plan_id' => $plan->id,
+            'qtd_paletes' => 1,
+        ]);
+
+        $response = $this->actingAs($this->user)->from(route('order_products.edit', $orderProduct))
+            ->put(route('order_products.update', $orderProduct), [
+                'order_id' => $this->order->id,
+                'quant' => '10',
+                'delivery_date' => $date,
+                'delivery_plan' => [[
+                    'id' => $plan->id,
+                    'quantity' => 10,
+                    'date' => $date,
+                    'pallet_capacity' => 3,
+                ]],
+            ]);
+
+        $response->assertSessionHasErrors('delivery_plan.0');
+        $this->assertSame(['5' => 2], $plan->fresh()->carga);
     }
 }
