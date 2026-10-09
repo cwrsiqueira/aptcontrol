@@ -4,7 +4,11 @@
 
 @section('content')
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4">
-        <h2>Cadastrar Produto do Pedido @includeIf('partials.change_marker')</h2>
+        <div class="d-flex justify-content-between align-items-center page-header mb-2">
+            <h2 class="page-title mb-0">Cadastrar Produto do Pedido @includeIf('partials.change_marker')</h2>
+            <a class="btn btn-sm btn-light" href="{{ route('order_products.index', ['order' => $order->id]) }}">
+                < Detalhes do pedido</a>
+        </div>
 
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible">

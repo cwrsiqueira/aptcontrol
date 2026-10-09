@@ -209,6 +209,8 @@ class OrderProductDeliveryPlanningTest extends TestCase
             ->get(route('order_products.edit', ['order_product' => $orderProduct, 'order' => $this->order->id]))
             ->assertOk()
             ->assertSee('Quantidade por entrega')
+            ->assertSee('Detalhes do pedido')
+            ->assertSee(route('order_products.index', ['order' => $this->order->id]), false)
             ->assertSee('value="6"', false);
     }
 
@@ -219,7 +221,9 @@ class OrderProductDeliveryPlanningTest extends TestCase
             ->assertOk()
             ->assertSee('Quantidade por entrega')
             ->assertSee('A última fica com a sobra')
-            ->assertSee('Capacidade do palete');
+            ->assertSee('Capacidade do palete')
+            ->assertSee('Detalhes do pedido')
+            ->assertSee(route('order_products.index', ['order' => $this->order->id]), false);
     }
 
     public function test_requires_a_quantity_per_delivery(): void
@@ -853,5 +857,145 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
         $response->assertSessionHasErrors('delivery_plan.0');
         $this->assertSame(['5' => 2], $plan->fresh()->carga);
+    }
+
+    public function test_releases_only_the_selected_delivery(): void
+    {
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 1000,
+            'delivery_date' => $this->upcomingWeekday(0),
+        ]);
+        $orderProduct->checkmark = 0;
+        $orderProduct->save();
+        $plans = collect([
+            $orderProduct->deliveryPlans()->create([
+                'sequence' => 1,
+                'quantity' => 100,
+                'delivery_date' => $this->upcomingWeekday(0),
+            ]),
+            $orderProduct->deliveryPlans()->create([
+                'sequence' => 2,
+                'quantity' => 100,
+                'delivery_date' => $this->upcomingWeekday(1),
+            ]),
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('products.marcar_produto', [
+                'order_product' => $orderProduct,
+                'action' => 'checkmark',
+                'value' => 2,
+                'delivery_plan_id' => $plans[0]->id,
+            ]))
+            ->assertOk()
+            ->assertJson(['ok' => true, 'value' => 2]);
+
+        $this->assertSame(2, (int) $plans[0]->fresh()->checkmark);
+        $this->assertSame(0, (int) $plans[1]->fresh()->checkmark);
+        $this->assertSame(0, (int) $orderProduct->fresh()->checkmark);
+    }
+
+    public function test_keeps_the_release_on_the_product_when_there_is_no_delivery_plan(): void
+    {
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 100,
+            'delivery_date' => $this->upcomingWeekday(0),
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('products.marcar_produto', [
+                'order_product' => $orderProduct,
+                'action' => 'checkmark',
+                'value' => 2,
+            ]))
+            ->assertOk()
+            ->assertJson(['ok' => true, 'value' => 2]);
+
+        $this->assertSame(2, (int) $orderProduct->fresh()->checkmark);
+    }
+
+    public function test_filters_only_the_released_delivery(): void
+    {
+        $orderProduct = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 200,
+            'delivery_date' => $this->upcomingWeekday(0),
+        ]);
+        $orderProduct->checkmark = 2;
+        $orderProduct->save();
+        $released = $orderProduct->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 100,
+            'delivery_date' => $this->upcomingWeekday(0),
+            'checkmark' => 2,
+        ]);
+        $waiting = $orderProduct->deliveryPlans()->create([
+            'sequence' => 2,
+            'quantity' => 100,
+            'delivery_date' => $this->upcomingWeekday(1),
+            'checkmark' => 0,
+        ]);
+
+        $filtered = $this->actingAs($this->user)
+            ->get(route('cc_product', ['id' => $this->product->id, 'por_favorito' => [2]]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('data-delivery-plan-id="' . $released->id . '"', $filtered);
+        $this->assertStringNotContainsString('data-delivery-plan-id="' . $waiting->id . '"', $filtered);
+        $this->assertSame(1, substr_count($filtered, 'btn-success p-0 px-1'));
+    }
+
+    public function test_copies_the_product_mark_only_for_a_single_planned_delivery(): void
+    {
+        $single = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 10,
+            'delivery_date' => $this->upcomingWeekday(0),
+        ]);
+        $single->checkmark = 2;
+        $single->favorite_delivery = 1;
+        $single->save();
+        $singlePlan = $single->deliveryPlans()->create([
+            'sequence' => 1,
+            'quantity' => 10,
+            'delivery_date' => $this->upcomingWeekday(0),
+        ]);
+
+        $split = Order_product::create([
+            'order_id' => $this->order->order_number,
+            'product_id' => $this->product->id,
+            'quant' => 20,
+            'delivery_date' => $this->upcomingWeekday(0),
+        ]);
+        $split->checkmark = 2;
+        $split->favorite_delivery = 1;
+        $split->save();
+        $splitPlans = collect([
+            $split->deliveryPlans()->create([
+                'sequence' => 1,
+                'quantity' => 10,
+                'delivery_date' => $this->upcomingWeekday(0),
+            ]),
+            $split->deliveryPlans()->create([
+                'sequence' => 2,
+                'quantity' => 10,
+                'delivery_date' => $this->upcomingWeekday(1),
+            ]),
+        ]);
+
+        \AddReleaseMarksToDeliveryPlans::copySingleDeliveryMarks();
+
+        $this->assertSame(2, (int) $singlePlan->fresh()->checkmark);
+        $this->assertSame(1, (int) $singlePlan->fresh()->favorite_delivery);
+        $this->assertSame(0, (int) $splitPlans[0]->fresh()->checkmark);
+        $this->assertSame(0, (int) $splitPlans[1]->fresh()->checkmark);
+        $this->assertSame(0, (int) $splitPlans[0]->fresh()->favorite_delivery);
     }
 }

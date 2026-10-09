@@ -227,7 +227,7 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Excluído com sucesso!');
     }
 
-    public function cc_product(Request $request, $id)
+    public function cc_product(Request $request, int $id)
     {
         $user_permissions = Helper::get_permissions();
 
@@ -268,10 +268,6 @@ class ProductController extends Controller
 
         $sub->select('base.*');
 
-        if (!empty($checks)) {
-            $sub->whereIn('base.checkmark', $checks);
-        }
-
         $rows = $sub
             ->orderBy('base.delivery_date', 'asc')
             ->orderBy('orders.zona')
@@ -294,18 +290,6 @@ class ProductController extends Controller
             $quant = (int) $r->quant;
             return $saldo > 0 ? min($saldo, $quant) : 0;
         });
-
-        $sum_by_check = $rows
-            ->filter(fn($r) => (int) ($r->saldo ?? 0) > 0)
-            ->groupBy(fn($r) => (int) ($r->checkmark ?? 0))
-            ->map(fn($group) => $group->sum(function ($r) {
-                $saldo = (int) ($r->saldo ?? 0);
-                $quant = (int) $r->quant;
-                return $saldo > $quant ? $quant : $saldo;
-            }))
-            ->toArray();
-
-        $sum_by_check += [0 => 0, 1 => 0, 2 => 0];
 
         $delivery_in = Helper::day_delivery_calc($id);
 
@@ -359,7 +343,22 @@ class ProductController extends Controller
 
                 return $row;
             })->filter();
-        })->sortBy(function ($item) {
+        });
+
+        $sum_by_check = [0 => 0, 1 => 0, 2 => 0];
+        foreach ($data as $item) {
+            $mark = $this->deliveryCheckmark($item);
+            $sum_by_check[$mark] = ($sum_by_check[$mark] ?? 0) + (int) $item->display_saldo;
+        }
+
+        $selectedMarks = array_map('intval', $checks);
+        if ($selectedMarks !== []) {
+            $data = $data->filter(function ($item) use ($selectedMarks) {
+                return in_array($this->deliveryCheckmark($item), $selectedMarks, true);
+            });
+        }
+
+        $data = $data->sortBy(function ($item) {
             // A coluna mostra a data de cada entrega, que pode ser diferente da data gravada no item.
             $date = $item->displayPlan
                 ? $item->displayPlan->delivery_date->format('Y-m-d')
@@ -406,14 +405,28 @@ class ProductController extends Controller
         }
 
         $action = $request->input('action');
-        $value = $request->input('value');
+        $value = (int) $request->input('value');
 
-        if ($order_product->$action == $value) {
+        if (!in_array($action, ['checkmark', 'favorite_delivery'], true)) {
+            return response()->json(['ok' => false, 'message' => 'Marcação inválida.'], 422);
+        }
+
+        $target = $order_product;
+        $planId = $request->input('delivery_plan_id');
+        if ($planId) {
+            $plan = $order_product->deliveryPlans()->where('id', $planId)->first();
+            if (!$plan) {
+                return response()->json(['ok' => false, 'message' => 'Entrega não encontrada.'], 422);
+            }
+            $target = $plan;
+        }
+
+        if ((int) $target->$action === $value) {
             $value = 0;
         }
 
-        $order_product->$action = $value;
-        $order_product->save();
+        $target->$action = $value;
+        $target->save();
 
         Helper::saveLog(
             Auth::user()->id,
@@ -426,9 +439,20 @@ class ProductController extends Controller
         return response()->json([
             'ok' => true,
             'id' => $order_product->id,
+            'delivery_plan_id' => $planId ? (int) $planId : null,
             'action' => $action,
             'value' => $value,
         ]);
+    }
+
+    // Usa a marca da entrega planejada e, no cadastro antigo, a marca do produto.
+    private function deliveryCheckmark(Order_product $item): int
+    {
+        if ($item->displayPlan) {
+            return (int) $item->displayPlan->checkmark;
+        }
+
+        return (int) $item->checkmark;
     }
 
     public function toggleCarga(Request $request)
@@ -554,7 +578,7 @@ class ProductController extends Controller
         return response()->json(['ok' => true, 'message' => 'Adicionado à carga com sucesso!']);
     }
 
-    public function cargaZonaPdf($zona)
+    public function cargaZonaPdf(string $zona)
     {
         $user_permissions = Helper::get_permissions();
 
@@ -711,7 +735,7 @@ class ProductController extends Controller
         return $pdf->stream("carga_" . \Illuminate\Support\Str::slug($nomeArquivo) . ".pdf");
     }
 
-    public function limparCargaZona($zona)
+    public function limparCargaZona(string $zona)
     {
         $user_permissions = Helper::get_permissions();
 

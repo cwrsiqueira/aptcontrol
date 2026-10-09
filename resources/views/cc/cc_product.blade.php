@@ -206,6 +206,22 @@
                     <tbody>
                         @foreach ($data as $item)
                             @if ($item->display_saldo > 0)
+                                @php
+                                    $deliveryCheckmark = $item->displayPlan ? (int) $item->displayPlan->checkmark : (int) $item->getAttribute('checkmark');
+                                    $deliveryFavorite = $item->displayPlan ? (int) $item->displayPlan->favorite_delivery : (int) $item->getAttribute('favorite_delivery');
+                                    $markRoute = function ($action, $value) use ($item) {
+                                        $params = [
+                                            'order_product' => $item,
+                                            'action' => $action,
+                                            'value' => $value,
+                                        ];
+                                        if ($item->displayPlan) {
+                                            $params['delivery_plan_id'] = $item->displayPlan->id;
+                                        }
+
+                                        return route('products.marcar_produto', $params);
+                                    };
+                                @endphp
                                 <tr data-order-product-id="{{ $item->id }}"
                                     @if ($item->displayPlan) data-delivery-plan-id="{{ $item->displayPlan->id }}" @endif>
                                     {{-- DATA --}}
@@ -217,13 +233,13 @@
                                     </td>
                                     {{-- CLIENTE --}}
                                     <td title="{{ $item->order->client->name }}"
-                                        class="@if ($item->checkmark == 1) btn btn-sm btn-warning p-0 px-1 @elseif($item->checkmark == 2) btn btn-sm btn-success p-0 px-1 @endif mouse-help name-field">
+                                        class="@if ($deliveryCheckmark == 1) btn btn-sm btn-warning p-0 px-1 @elseif($deliveryCheckmark == 2) btn btn-sm btn-success p-0 px-1 @endif mouse-help name-field">
                                         <div>
                                             <button
-                                                class="btn btn-sm @if ($item->checkmark == 1) btn-warning @elseif($item->checkmark == 2) btn-success @endif mr-2 btn-legenda">
-                                                @if ($item->checkmark == 1)
+                                                class="btn btn-sm @if ($deliveryCheckmark == 1) btn-warning @elseif($deliveryCheckmark == 2) btn-success @endif mr-2 btn-legenda">
+                                                @if ($deliveryCheckmark == 1)
                                                     {{ 'A' }}
-                                                @elseif($item->checkmark == 2)
+                                                @elseif($deliveryCheckmark == 2)
                                                     {{ 'L' }}
                                                 @endif
                                             </button>
@@ -272,7 +288,7 @@
                                             {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}
                                         @endif
                                         <span
-                                            class="btn btn-sm btn-danger p-0 px-1 @if (!$item->favorite_delivery) d-none @endif date-field">Data
+                                            class="btn btn-sm btn-danger p-0 px-1 @if (!$deliveryFavorite) d-none @endif date-field">Data
                                             fixada</span>
                                     </td>
                                     {{-- TIPO DE ENTREGA --}}
@@ -293,23 +309,23 @@
                                     <td class="nao-imprimir">
                                         @if (in_array('products.marcar_produto', $user_permissions) || Auth::user()->is_admin)
                                             <button
-                                                class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning btn-fav"
+                                                class="btn btn-sm btn{{ $deliveryCheckmark == 1 ? '' : '-outline' }}-warning btn-fav"
                                                 data-id="{{ $item->id }}"
-                                                data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 1]) }}"
+                                                data-url="{{ $markRoute('checkmark', 1) }}"
                                                 title="Marcar aguardando antecipação"><i
                                                     class="icon fas fa-clock"></i></button>
 
                                             <button
-                                                class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success btn-fav"
+                                                class="btn btn-sm btn{{ $deliveryCheckmark == 2 ? '' : '-outline' }}-success btn-fav"
                                                 data-id="{{ $item->id }}"
-                                                data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'checkmark', 'value' => 2]) }}"
+                                                data-url="{{ $markRoute('checkmark', 2) }}"
                                                 title="Marcar liberado para entrega"><i
                                                     class="icon fas fa-thumbs-up"></i></button>
 
                                             <button
-                                                class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger btn-fav"
+                                                class="btn btn-sm btn{{ $deliveryFavorite == 1 ? '' : '-outline' }}-danger btn-fav"
                                                 data-id="{{ $item->id }}"
-                                                data-url="{{ route('products.marcar_produto', ['order_product' => $item, 'action' => 'favorite_delivery', 'value' => 1]) }}"
+                                                data-url="{{ $markRoute('favorite_delivery', 1) }}"
                                                 title="Marcar fixar data"><i
                                                     class="icon fas fa-calendar-day"></i></button>
 
@@ -342,17 +358,17 @@
                                             @endif
                                         @else
                                             <button
-                                                class="btn btn-sm btn{{ $item->checkmark == 1 ? '' : '-outline' }}-warning"
+                                                class="btn btn-sm btn{{ $deliveryCheckmark == 1 ? '' : '-outline' }}-warning"
                                                 title="Solicitar acesso" disabled><i
                                                     class="icon fas fa-clock"></i></button>
 
                                             <button
-                                                class="btn btn-sm btn{{ $item->checkmark == 2 ? '' : '-outline' }}-success"
+                                                class="btn btn-sm btn{{ $deliveryCheckmark == 2 ? '' : '-outline' }}-success"
                                                 title="Solicitar acesso" disabled><i
                                                     class="icon fas fa-thumbs-up"></i></button>
 
                                             <button
-                                                class="btn btn-sm btn{{ $item->favorite_delivery == 1 ? '' : '-outline' }}-danger"
+                                                class="btn btn-sm btn{{ $deliveryFavorite == 1 ? '' : '-outline' }}-danger"
                                                 title="Solicitar acesso" disabled><i
                                                     class="icon fas fa-calendar-day"></i></button>
 

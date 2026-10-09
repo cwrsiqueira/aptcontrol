@@ -13,6 +13,8 @@ class OrderProductDeliveryPlan extends Model
         'quantity',         // Quantidade de produtos prevista nesta entrega.
         'delivery_date',    // Data prevista para realizar a entrega.
         'carga',            // Capacidades e quantidades dos paletes da entrega.
+        'checkmark',        // 0 sem marca, 1 aguardando antecipação, 2 liberada.
+        'favorite_delivery', // Data fixada desta entrega.
     ];
 
     protected $casts = [
@@ -20,6 +22,8 @@ class OrderProductDeliveryPlan extends Model
         'quantity' => 'decimal:3', // Mantém a quantidade com até três casas decimais.
         'delivery_date' => 'date', // Converte a data para o formato de data do Laravel.
         'carga' => 'array',        // Converte o JSON dos paletes para array.
+        'checkmark' => 'integer',
+        'favorite_delivery' => 'boolean',
     ];
 
     public function orderProduct()
