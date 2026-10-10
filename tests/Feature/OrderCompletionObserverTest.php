@@ -93,5 +93,16 @@ class OrderCompletionObserverTest extends TestCase
         ]);
         $order->refresh();
         $this->assertSame(0, (int) $order->complete_order, 'Deveria reabrir ao voltar ter saldo');
+
+        // Cancelado permanece cancelado mesmo quando a linha é alterada.
+        $order->complete_order = 2;
+        $order->save();
+
+        $line = Order_product::where('order_id', '2001')->where('quant', 50)->first();
+        $line->quant = 60;
+        $line->save();
+
+        $order->refresh();
+        $this->assertSame(2, (int) $order->complete_order, 'Pedido cancelado não deve reabrir ao salvar o produto');
     }
 }

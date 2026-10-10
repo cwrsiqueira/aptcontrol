@@ -61,9 +61,6 @@ class OrderProductController extends Controller
         // ->where('delivery_date', '>', '1970-01-01');
 
         $total_products = $order_products->pluck('quant')->sum();
-        if ($total_products > 0) {
-            $order->update(['complete_order' => 0]);
-        }
 
         return view('order_products.order_products', compact(
             'user_permissions',

@@ -10,9 +10,18 @@ class OrderProductObserver
     /**
      * Recalcula e atualiza complete_order para um order_number específico.
      */
-    protected function recomputeOrderCompletion($orderNumber): void
+    protected function recomputeOrderCompletion(string|int|null $orderNumber): void
     {
         if (empty($orderNumber)) {
+            return;
+        }
+
+        $current = DB::table('orders')
+            ->where('order_number', $orderNumber)
+            ->value('complete_order');
+
+        // Cancelado só muda pela reabertura explícita.
+        if ($current === null || (int) $current === 2) {
             return;
         }
 
@@ -23,12 +32,10 @@ class OrderProductObserver
             ->havingRaw('SUM(CAST(quant AS INTEGER)) <> 0')
             ->exists();
 
-        // Se não há linhas em order_products para esse order, considere concluído (=1)
-        if (!$hasOpenBalance) {
-            $hasAnyItem = DB::table('order_products')->where('order_id', $orderNumber)->exists();
-            $complete = $hasAnyItem ? 1 : 1; // sem itens também tratamos como concluído
-        } else {
-            $complete = 0;
+        $complete = $hasOpenBalance ? 0 : 1;
+
+        if ((int) $current === $complete) {
+            return;
         }
 
         DB::table('orders')
