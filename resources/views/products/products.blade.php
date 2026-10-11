@@ -3,6 +3,17 @@
 @section('title', 'Produtos')
 
 @section('content')
+    @php
+        $fromQuery = array_filter(
+            [
+                'from_page' => request('page'),
+                'from_q' => $q ?? null,
+            ],
+            function ($value) {
+                return $value !== null && $value !== '';
+            }
+        );
+    @endphp
     <main role="main" class="col-md-9 ml-sm-auto col-lg pt-3 px-4 mb-3">
 
         <h2>Produtos</h2>
@@ -47,7 +58,7 @@
             </div>
             <div class="col-sm-3 d-flex justify-content-end">
                 @if (in_array('products.create', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-primary w-80" href="{{ route('products.create') }}" title="Cadastrar produto"><i
+                    <a class="btn btn-primary w-80" href="{{ route('products.create', $fromQuery) }}" title="Cadastrar produto"><i
                             class="fas fa-plus"></i></a>
                 @else
                     <button class="btn btn-primary w-80" disabled title="Solicitar Acesso"><i
@@ -81,7 +92,7 @@
                                         $shortName = \Illuminate\Support\Str::limit($fullName, 40, '...');
                                     @endphp
 
-                                    <a href="{{ route('products.show', $item) }}" title="{{ $fullName }}">
+                                    <a href="{{ route('products.show', array_merge(['product' => $item], $fromQuery)) }}" title="{{ $fullName }}">
                                         <span class="product-name">{{ $shortName }}</span>
                                     </a>
                                 </td>
@@ -95,7 +106,7 @@
                                 <td>
                                     @if (in_array('products.stock', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-secondary" title="Estoque"
-                                            href="{{ route('products.stocks.index', $item->id) }}"><i
+                                            href="{{ route('products.stocks.index', array_merge(['product' => $item->id], $fromQuery)) }}"><i
                                                 class="fas fa-boxes"></i></a>
                                     @else
                                         <button class="btn btn-sm btn-outline-secondary" disabled
@@ -104,7 +115,7 @@
 
                                     @if (in_array('products.cc', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-success" title="Ver entregas"
-                                            href="{{ route('cc_product', $item->id) }}"><i class="fas fa-truck"></i></a>
+                                            href="{{ route('cc_product', array_merge(['id' => $item->id], $fromQuery)) }}"><i class="fas fa-truck"></i></a>
                                     @else
                                         <button class="btn btn-sm btn-outline-success" disabled title="Solicitar Acesso"><i
                                                 class="fas fa-truck"></i></button>
@@ -112,7 +123,7 @@
 
                                     @if (in_array('products.update', $user_permissions) || Auth::user()->is_admin)
                                         <a class="btn btn-sm btn-outline-primary" title="Editar"
-                                            href="{{ route('products.edit', $item) }}"><i class="fas fa-edit"></i></a>
+                                            href="{{ route('products.edit', array_merge(['product' => $item], $fromQuery)) }}"><i class="fas fa-edit"></i></a>
                                     @else
                                         <button class="btn btn-sm btn-outline-primary" disabled title="Solicitar Acesso"><i
                                                 class="fas fa-edit"></i></button>
@@ -124,6 +135,9 @@
                                             onsubmit="return confirm('Tem certeza que deseja excluir?');" title="Excluir">
                                             @csrf
                                             @method('DELETE')
+                                            @foreach ($fromQuery as $name => $value)
+                                                <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+                                            @endforeach
                                             <button class="btn btn-sm btn-outline-danger"><i
                                                     class="fas fa-trash-alt"></i></button>
                                         </form>

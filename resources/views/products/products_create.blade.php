@@ -23,6 +23,7 @@
             <div class="card-body">
                 <form action="{{ route('products.store') }}" method="post" novalidate>
                     @csrf
+                    @include('products.origin_fields')
 
                     <div class="form-group">
                         <label for="name">Nome do Produto:</label>
@@ -38,7 +39,7 @@
                     </div>
 
                     <button class="btn btn-primary">Salvar</button>
-                    <a class="btn btn-light" href="{{ route('products.index') }}">Cancelar</a>
+                    <a class="btn btn-light" href="{{ \App\Helpers\Helper::productsIndexUrl() }}">Cancelar</a>
                 </form>
             </div>
         </div>

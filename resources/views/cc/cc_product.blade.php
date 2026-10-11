@@ -8,7 +8,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3 page-header">
             <h2 class="mb-0">Entregas por Produto @includeIf('partials.change_marker')</h2>
             <div class="btn-group">
-                <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ route('products.index') }}">
+                <a class="btn btn-sm btn-secondary" id="btn_voltar" href="{{ \App\Helpers\Helper::productsIndexUrl() }}">
                     < Produtos</a>
                         <button class="btn btn-sm btn-secondary" id="btn_imprimir">Imprimir</button>
             </div>
@@ -47,6 +47,7 @@
             {{-- FILTROS --}}
             <div class="col-lg">
                 <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
+                    @include('products.origin_fields')
                     <div class="card card-lift mb-3">
                         <div class="card-header">
                             <strong>Filtros por legendas</strong>
@@ -87,6 +88,7 @@
 
                     <div class="card-body">
                         <form method="get" action="{{ route('cc_product', ['id' => $product->id]) }}">
+                            @include('products.origin_fields')
                             <div class="row">
                                 <div class="col-md mb-2">
                                     <label class="btn btn-sm btn-secondary w-100 text-left">

@@ -69,7 +69,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.create', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         return view('products.products_create', [
@@ -83,7 +83,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.create', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $data = $request->only([
@@ -123,7 +123,7 @@ class ProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Cadastro', $prod->id, $prod->name, 'Produtos');
 
-        return redirect()->route('products.index')->with('success', 'Salvo com sucesso!');
+        return redirect()->to(Helper::productsIndexUrl())->with('success', 'Salvo com sucesso!');
     }
 
     public function show(Product $product)
@@ -131,7 +131,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.view', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         return view('products.products_view', [
@@ -146,7 +146,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.update', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         return view('products.products_edit', [
@@ -161,7 +161,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.update', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $data = $request->only([
@@ -194,7 +194,7 @@ class ProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Alteração', $product->id, $product->name, 'Produtos');
 
-        return redirect()->route('products.index')->with('success', 'Atualizado com sucesso!');
+        return redirect()->to(Helper::productsIndexUrl())->with('success', 'Atualizado com sucesso!');
     }
 
     public function destroy(Product $product)
@@ -202,7 +202,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.delete', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $order_products = Order_product::where('product_id', $product->id)->count();
@@ -212,7 +212,7 @@ class ProductController extends Controller
         // if ($hasStocks) { ... }
 
         if ($order_products > 0) {
-            return redirect()->route('products.index')->withErrors([
+            return redirect()->to(Helper::productsIndexUrl())->withErrors([
                 'cannot_exclude' => 'Produto possui pedidos vinculados e não pode ser excluído!',
             ]);
         }
@@ -224,7 +224,7 @@ class ProductController extends Controller
 
         Helper::saveLog(Auth::user()->id, 'Deleção', $id, $name, 'Produtos');
 
-        return redirect()->route('products.index')->with('success', 'Excluído com sucesso!');
+        return redirect()->to(Helper::productsIndexUrl())->with('success', 'Excluído com sucesso!');
     }
 
     public function cc_product(Request $request, int $id)
@@ -232,7 +232,7 @@ class ProductController extends Controller
         $user_permissions = Helper::get_permissions();
 
         if (!in_array('products.cc', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $checks = (array) $request->input('por_favorito', []); // 1 = A, 2 = L

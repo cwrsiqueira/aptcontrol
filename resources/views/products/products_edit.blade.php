@@ -24,6 +24,7 @@
                 <form action="{{ route('products.update', ['product' => $product]) }}" method="post" novalidate>
                     @method('PUT')
                     @csrf
+                    @include('products.origin_fields')
 
                     <div class="form-group">
                         <label for="name">Nome do produto:</label>
@@ -39,7 +40,7 @@
                     </div>
 
                     <button class="btn btn-primary">Salvar alterações</button>
-                    <a class="btn btn-light" href="{{ route('products.index') }}">Cancelar</a>
+                    <a class="btn btn-light" href="{{ \App\Helpers\Helper::productsIndexUrl() }}">Cancelar</a>
                 </form>
             </div>
         </div>

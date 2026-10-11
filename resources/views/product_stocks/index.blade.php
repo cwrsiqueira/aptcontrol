@@ -28,6 +28,7 @@
         <div class="row mb-3">
             <div class="col-sm-4">
                 <form method="get" action="{{ route('products.stocks.index', $product->id) }}">
+                    @include('products.origin_fields')
                     <div class="input-group">
                         <input type="search" class="form-control" name="q"
                             placeholder="Buscar por observação ou estoque" value="{{ $q ?? '' }}">
@@ -39,16 +40,16 @@
                     </div>
                     @if (!empty($q))
                         <a class="btn btn-sm btn-secondary ml-2"
-                            href="{{ route('products.stocks.index', $product->id) }}">Limpar</a>
+                            href="{{ \App\Helpers\Helper::stocksIndexUrl($product) }}">Limpar</a>
                     @endif
                 </form>
             </div>
 
             <div class="col-sm-8 d-flex justify-content-end">
-                <a class="btn btn-primary" href="{{ route('products.stocks.create', $product->id) }}">
+                <a class="btn btn-primary" href="{{ route('products.stocks.create', array_merge(['product' => $product->id], \App\Helpers\Helper::listOriginQuery())) }}">
                     Atualizar estoque
                 </a>
-                <a class="btn btn-outline-secondary ml-2" href="{{ route('products.index') }}">Voltar</a>
+                <a class="btn btn-outline-secondary ml-2" href="{{ \App\Helpers\Helper::productsIndexUrl() }}">Voltar</a>
             </div>
         </div>
 
@@ -73,16 +74,17 @@
                                 <td class="text-left">{{ $s->notes }}</td>
                                 <td>
                                     <a class="btn btn-sm btn-outline-info"
-                                        href="{{ route('products.stocks.show', [$product->id, $s->id]) }}">Visualizar</a>
+                                        href="{{ route('products.stocks.show', array_merge(['product' => $product->id, 'stock' => $s->id], \App\Helpers\Helper::listOriginQuery())) }}">Visualizar</a>
 
                                     <a class="btn btn-sm btn-outline-primary"
-                                        href="{{ route('products.stocks.edit', [$product->id, $s->id]) }}">Editar</a>
+                                        href="{{ route('products.stocks.edit', array_merge(['product' => $product->id, 'stock' => $s->id], \App\Helpers\Helper::listOriginQuery())) }}">Editar</a>
 
                                     <form action="{{ route('products.stocks.destroy', [$product->id, $s->id]) }}"
                                         method="post" style="display:inline-block"
                                         onsubmit="return confirm('Tem certeza que deseja excluir?');">
                                         @csrf
                                         @method('DELETE')
+                                        @include('products.origin_fields')
                                         <button class="btn btn-sm btn-outline-danger">Excluir</button>
                                     </form>
                                 </td>

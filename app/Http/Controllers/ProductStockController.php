@@ -33,7 +33,7 @@ class ProductStockController extends Controller
     {
         $user_permissions = Helper::get_permissions();
         if (!in_array('products.stock', $user_permissions) && !Auth::user()->is_admin) {
-            return redirect()->route('products.index')->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
+            return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
         $product = Product::findOrFail($productId);
@@ -100,7 +100,7 @@ class ProductStockController extends Controller
         });
 
         return redirect()
-            ->route('products.stocks.index', $product->id)
+            ->to(Helper::stocksIndexUrl($product))
             ->with('success', 'Estoque atualizado com sucesso!');
     }
 
@@ -159,7 +159,7 @@ class ProductStockController extends Controller
         });
 
         return redirect()
-            ->route('products.stocks.index', $product->id)
+            ->to(Helper::stocksIndexUrl($product))
             ->with('success', 'Registro atualizado com sucesso!');
     }
 
@@ -174,7 +174,7 @@ class ProductStockController extends Controller
         });
 
         return redirect()
-            ->route('products.stocks.index', $product->id)
+            ->to(Helper::stocksIndexUrl($product))
             ->with('success', 'Registro excluído com sucesso!');
     }
 }

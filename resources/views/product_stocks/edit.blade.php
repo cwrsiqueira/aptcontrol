@@ -12,7 +12,7 @@
             </div>
 
             <div>
-                <a class="btn btn-outline-secondary" href="{{ route('products.stocks.index', $product->id) }}">Voltar</a>
+                <a class="btn btn-outline-secondary" href="{{ \App\Helpers\Helper::stocksIndexUrl($product) }}">Voltar</a>
             </div>
         </div>
 
@@ -33,11 +33,12 @@
                 <form method="POST" action="{{ route('products.stocks.update', [$product->id, $stock->id]) }}">
                     @csrf
                     @method('PUT')
+                    @include('products.origin_fields')
 
                     @include('product_stocks._form', ['stock' => $stock])
 
                     <button type="submit" class="btn btn-success">Salvar</button>
-                    <a class="btn btn-secondary" href="{{ route('products.stocks.index', $product->id) }}">Cancelar</a>
+                    <a class="btn btn-secondary" href="{{ \App\Helpers\Helper::stocksIndexUrl($product) }}">Cancelar</a>
                 </form>
             </div>
         </div>

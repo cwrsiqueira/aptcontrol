@@ -9,9 +9,9 @@
             <h2>Produto</h2>
             <div>
                 @if (in_array('products.view', $user_permissions) || Auth::user()->is_admin)
-                    <a class="btn btn-sm btn-outline-primary" href="{{ route('products.edit', $product) }}">Editar</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('products.edit', array_merge(['product' => $product], \App\Helpers\Helper::listOriginQuery())) }}">Editar</a>
                 @endif
-                <a class="btn btn-sm btn-light" href="{{ route('products.index') }}">
+                <a class="btn btn-sm btn-light" href="{{ \App\Helpers\Helper::productsIndexUrl() }}">
                     < Produtos</a>
             </div>
         </div>

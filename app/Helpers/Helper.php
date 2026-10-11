@@ -168,4 +168,43 @@ class Helper
         }
         return $total;
     }
+
+    // Guarda a página e a busca da lista de produtos sem colidir com page/q das outras telas.
+    public static function listOriginQuery(): array
+    {
+        $query = [];
+        $page = request('from_page');
+        $q = request('from_q');
+
+        if ($page !== null && $page !== '') {
+            $query['from_page'] = $page;
+        }
+        if ($q !== null && $q !== '') {
+            $query['from_q'] = $q;
+        }
+
+        return $query;
+    }
+
+    public static function productsIndexUrl(): string
+    {
+        $origin = self::listOriginQuery();
+        $query = [];
+
+        if (isset($origin['from_page'])) {
+            $query['page'] = $origin['from_page'];
+        }
+        if (isset($origin['from_q'])) {
+            $query['q'] = $origin['from_q'];
+        }
+
+        return route('products.index', $query);
+    }
+
+    public static function stocksIndexUrl(int|string|object $product): string
+    {
+        $id = is_object($product) ? $product->id : $product;
+
+        return route('products.stocks.index', array_merge(['product' => $id], self::listOriginQuery()));
+    }
 }

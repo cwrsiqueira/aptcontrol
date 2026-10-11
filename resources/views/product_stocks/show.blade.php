@@ -12,7 +12,7 @@
             </div>
 
             <div>
-                <a class="btn btn-outline-secondary" href="{{ route('products.stocks.index', $product->id) }}">Voltar</a>
+                <a class="btn btn-outline-secondary" href="{{ \App\Helpers\Helper::stocksIndexUrl($product) }}">Voltar</a>
             </div>
         </div>
 
@@ -50,7 +50,7 @@
 
                 <hr>
 
-                <a class="btn btn-outline-primary" href="{{ route('products.stocks.edit', [$product->id, $stock->id]) }}">
+                <a class="btn btn-outline-primary" href="{{ route('products.stocks.edit', array_merge(['product' => $product->id, 'stock' => $stock->id], \App\Helpers\Helper::listOriginQuery())) }}">
                     Editar
                 </a>
 
@@ -58,6 +58,7 @@
                     style="display:inline-block" onsubmit="return confirm('Tem certeza que deseja excluir?');">
                     @csrf
                     @method('DELETE')
+                    @include('products.origin_fields')
                     <button class="btn btn-outline-danger">Excluir</button>
                 </form>
             </div>
