@@ -7,6 +7,8 @@ alwaysApply: true
 
 Sistema Laravel 12 para gestão de pedidos, produtos, clientes, vendedores e controle de entregas.
 
+Contexto completo, regras de negócio, segurança e deploy: [AGENTS.md](../../AGENTS.md) e [docs/](../../docs/README.md). Esta regra fica só com o resumo.
+
 ## Stack
 - Laravel 12, PHP 8.2, SQLite
 - Bootstrap 4, jQuery, Vue 2
