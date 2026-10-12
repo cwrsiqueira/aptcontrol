@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\Helper;
 use App\Order_product;
+use App\Reports\PendingDeliveryRows;
 use App\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -100,26 +101,27 @@ class ReportPrintController extends Controller
                     if ($iniObj && $finObj) $sub->whereBetween(DB::raw('date(orders.order_date)'), [$iniObj, $finObj]);
                     elseif ($iniObj) $sub->where(DB::raw('date(orders.order_date)'), '>=', $iniObj);
                     elseif ($finObj) $sub->where(DB::raw('date(orders.order_date)'), '<=', $finObj);
-                } else {
-                    if ($iniObj && $finObj) $sub->whereBetween(DB::raw('date(base.delivery_date)'), [$iniObj, $finObj]);
-                    elseif ($iniObj) $sub->where(DB::raw('date(base.delivery_date)'), '>=', $iniObj);
-                    elseif ($finObj) $sub->where(DB::raw('date(base.delivery_date)'), '<=', $finObj);
                 }
             }
 
             $rows = $sub->orderBy('base.delivery_date')->orderBy('base.id')->get();
 
             $ids = $rows->pluck('id')->all();
-            $models = Order_product::with('order', 'product', 'order.client.category', 'order.seller')
+            $models = Order_product::with('order', 'product', 'order.client.category', 'order.seller', 'deliveryPlans')
                 ->whereIn('id', $ids)->get()->keyBy('id');
 
-            $pendingData = collect($rows)->map(function ($r) use ($models) {
-                $m = $models[$r->id] ?? (object) (array) $r;
-                $m->saldo = (int) ($r->saldo ?? 0);
-                return $m;
-            })->values();
+            $pendingData = PendingDeliveryRows::expand(
+                collect($rows)->map(function ($r) use ($models) {
+                    $m = $models[$r->id] ?? (object) (array) $r;
+                    $m->saldo = (int) ($r->saldo ?? 0);
+                    return $m;
+                })->values(),
+                $iniObj,
+                $finObj,
+                $dateField !== 'order'
+            );
 
-            $totalPending = $rows->sum(function ($r) {
+            $totalPending = $pendingData->sum(function ($r) {
                 $saldo = (int) ($r->saldo ?? 0);
                 $quant = (int) $r->quant;
                 return $saldo > 0 ? min($saldo, $quant) : 0;

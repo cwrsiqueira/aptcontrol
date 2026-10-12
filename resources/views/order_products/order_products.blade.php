@@ -160,26 +160,33 @@
                                         <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                         <td class="text-right">
                                             {{ number_format($item->saldo < 0 ? 0 : $item->saldo, 0, '', '.') }}</td>
-                                        {{-- Resume as entregas planejadas do produto. --}}
+                                        {{-- Resume as entregas planejadas que ainda faltam. --}}
                                         <td class="text-right d-flex flex-column align-items-end">
+                                            @php
+                                                $openPlans = \App\Reports\PendingDeliveryRows::openPlans(
+                                                    $item->deliveryPlans,
+                                                    (float) $item->quant,
+                                                    (float) $item->saldo
+                                                );
+                                            @endphp
                                             @if ($item->deliveryPlans->count())
-                                                @if ($item->deliveryPlans->count() > 1)
+                                                @if ($openPlans->count() > 1)
                                                     <span class="badge badge-info mt-1">
-                                                        {{ $item->deliveryPlans->count() }} entregas planejadas
+                                                        {{ $openPlans->count() }} entregas planejadas
                                                     </span>
                                                 @endif
-                                                @foreach ($item->deliveryPlans->take(3) as $plan)
+                                                @foreach ($openPlans->take(3) as $slice)
                                                     <small class="text-muted">
-                                                        Entrega {{ $plan->sequence }}:
-                                                        {{ number_format($plan->quantity, 0, '', '.') }} em
-                                                        {{ $plan->delivery_date->format('d/m/Y') }}
-                                                        @if ($plan->total_paletes)
-                                                            · {{ $plan->total_paletes }} pal.
+                                                        Entrega {{ $slice->sequence }}:
+                                                        {{ number_format($slice->quantity, 0, '', '.') }} em
+                                                        {{ $slice->date }}
+                                                        @if ((int) $slice->quantity === (int) $slice->plan->quantity && $slice->plan->total_paletes)
+                                                            · {{ $slice->plan->total_paletes }} pal.
                                                         @endif
                                                     </small>
                                                 @endforeach
-                                                @if ($item->deliveryPlans->count() > 3)
-                                                    <small class="text-muted">+ {{ $item->deliveryPlans->count() - 3 }} entrega(s)</small>
+                                                @if ($openPlans->count() > 3)
+                                                    <small class="text-muted">+ {{ $openPlans->count() - 3 }} entrega(s)</small>
                                                 @endif
                                             @else
                                                 {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}

@@ -76,6 +76,8 @@
                                     </div>
                                 </div>
 
+                                <p id="delivery-effect" class="text-muted small mb-2">{{ \App\Reports\PendingDeliveryRows::describe($openDeliveries, (int) $saldo_produto->saldo) }}</p>
+
                                 <button class="btn btn-primary" id="confirm-delivery">Confirmar entrega</button>
                                 <a class="btn btn-light"
                                     href="{{ route('order_products.index', ['order' => $order_product->order]) }}">Cancelar</a>
@@ -166,18 +168,79 @@
 
 @section('js')
     <script src="{{ asset('js/jquery.min.js') }}"></script>
-    <script src="{{ asset('js/jquery.mask.min.js') }}"></script>p
+    <script src="{{ asset('js/jquery.mask.min.js') }}"></script>
     <script>
         $('.qt').mask('000.000.000', {
             reverse: true
         });
 
-        document.querySelector('#confirm-delivery').addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('Confirmar a entrega?')) {
-                this.setAttribute('disabled', true);
-                this.form.submit();
+        const openDeliveries = @json($openDeliveryPreview);
+        const quantityField = document.querySelector('#quant');
+        const effect = document.querySelector('#delivery-effect');
+
+        function deliveryQuantity() {
+            return Number(String(quantityField.value || '').replace(/\D/g, '')) || 0;
+        }
+
+        function joinNames(names) {
+            if (names.length === 1) return names[0];
+            const last = names.pop();
+            return names.join(', a ') + ' e a ' + last;
+        }
+
+        function deliveryEffect(amount) {
+            if (!openDeliveries.length || amount <= 0) return '';
+            let left = amount;
+            const closed = [];
+            let partial = null;
+            openDeliveries.forEach(function(slice) {
+                if (left <= 0) return;
+                if (left >= slice.quantity) {
+                    closed.push(slice);
+                    left -= slice.quantity;
+                    return;
+                }
+                partial = {
+                    sequence: slice.sequence,
+                    date: slice.date,
+                    left: slice.quantity - left
+                };
+                left = 0;
+            });
+            const parts = [];
+            if (closed.length) {
+                const names = closed.map(function(slice) {
+                    return 'entrega ' + slice.sequence + ' (' + slice.date + ')';
+                });
+                parts.push('Encerra a ' + joinNames(names) + '.');
             }
-        });
+            if (partial && partial.left > 0) {
+                parts.push('Ficam ' + partial.left.toLocaleString('pt-BR') + ' na entrega ' + partial.sequence + ' (' + partial.date + ').');
+            }
+            return parts.join(' ');
+        }
+
+        function refreshDeliveryEffect() {
+            if (!effect) return;
+            effect.textContent = deliveryEffect(deliveryQuantity());
+        }
+
+        if (quantityField) {
+            quantityField.addEventListener('input', refreshDeliveryEffect);
+            refreshDeliveryEffect();
+        }
+
+        const confirmButton = document.querySelector('#confirm-delivery');
+        if (confirmButton) {
+            confirmButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const note = effect ? effect.textContent.trim() : '';
+                const message = note ? note + '\n\nConfirmar a entrega?' : 'Confirmar a entrega?';
+                if (confirm(message)) {
+                    this.setAttribute('disabled', true);
+                    this.form.submit();
+                }
+            });
+        }
     </script>
 @endsection

@@ -203,6 +203,7 @@
                 return Array.from(rowsContainer.querySelectorAll('.delivery-load-card')).map(card => ({
                     id: Number(card.querySelector('.delivery-plan-id')?.value) || null,
                     date: card.querySelector('.delivery-plan-date')?.value || '',
+                    manual: card.querySelector('.delivery-plan-date')?.dataset.manualDate === '1',
                     quantity: Number(card.dataset.quantity) || 0,
                     pallet_capacity: readCapacity(card),
                     palete_tipo: Array.from(card.querySelectorAll('input[name*="[palete_tipo]"]')).map(field => field.value),
@@ -211,12 +212,12 @@
             }
 
             function resolveDate(index, savedDate, previousDate) {
-                const minimumDate = index === 0
+                const fallbackDate = index === 0
                     ? nextBusinessDay(deliveryDate.value)
                     : businessDayAfter(previousDate);
-                let date = /^\d{4}-\d{2}-\d{2}$/.test(savedDate || '') ? savedDate : minimumDate;
-                if (!date || isSunday(date) || date < minimumDate) date = minimumDate;
-                return { date, minimumDate };
+                const saved = /^\d{4}-\d{2}-\d{2}$/.test(savedDate || '') ? savedDate : '';
+                if (saved && !isSunday(saved)) return saved;
+                return fallbackDate;
             }
 
             function render(lots, savedPlan = [], editableFrom = null) {
@@ -227,9 +228,7 @@
                 lots.forEach((lot, index) => {
                     const saved = savedPlan[index] || {};
                     const original = initialPlan[index] || {};
-                    const resolved = resolveDate(index, saved.date, previousDate);
-                    const date = resolved.date;
-                    const minimumDate = resolved.minimumDate;
+                    const date = resolveDate(index, saved.date, previousDate);
                     previousDate = date;
                     const savedQuantity = Number(saved.quantity) || Number(original.quantity) || 0;
                     const keepRowPallets = editableFrom !== null
@@ -286,12 +285,12 @@
                                             placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off" required>
                                         <div class="input-group-append delivery-date-calendar">
                                             <span class="input-group-text"><i class="fa fa-calendar-alt"></i></span>
-                                            <input type="date" class="delivery-plan-date-picker" value="${date}" min="${minimumDate}"
+                                            <input type="date" class="delivery-plan-date-picker" value="${date}"
                                                 aria-label="Selecionar data no calendário">
                                         </div>
                                     </div>
                                     <input type="hidden" name="delivery_plan[${index}][date]" class="delivery-plan-date"
-                                        value="${date}" data-minimum-date="${minimumDate}" data-accepted-date="${date}">
+                                        value="${date}" data-accepted-date="${date}"${saved.manual ? ' data-manual-date="1"' : ''}>
                                 </div>
                                 <div class="col-lg-6 col-md-4 form-group mb-0">
                                     <label>Capacidade do palete</label>
@@ -379,7 +378,7 @@
                     text.value = formatDate(hidden.value);
                     text.setCustomValidity('');
                     picker.value = hidden.value;
-                    picker.min = hidden.dataset.minimumDate || '';
+                    picker.removeAttribute('min');
                 });
             }
 
@@ -388,16 +387,19 @@
                 const changedIndex = fields.indexOf(event.currentTarget);
                 if (changedIndex < 0) return;
 
-                const minimumDate = changedIndex === 0
+                const fallbackDate = changedIndex === 0
                     ? nextBusinessDay(deliveryDate.value)
                     : businessDayAfter(fields[changedIndex - 1].value);
                 const chosen = fields[changedIndex].value;
 
                 if (event.manual && isSunday(chosen)) {
                     alert('Não é possível agendar entrega no domingo.');
-                    fields[changedIndex].value = fields[changedIndex].dataset.acceptedDate || minimumDate;
-                } else if (!chosen || chosen < minimumDate || isSunday(chosen)) {
-                    fields[changedIndex].value = minimumDate;
+                    fields[changedIndex].value = fields[changedIndex].dataset.acceptedDate || fallbackDate;
+                } else if (!chosen || isSunday(chosen)) {
+                    fields[changedIndex].value = fallbackDate;
+                    fields[changedIndex].dataset.manualDate = '';
+                } else {
+                    fields[changedIndex].dataset.manualDate = '1';
                 }
 
                 fields[changedIndex].dataset.acceptedDate = fields[changedIndex].value;
@@ -405,14 +407,8 @@
                 for (let index = changedIndex + 1; index < fields.length; index++) {
                     fields[index].value = businessDayAfter(fields[index - 1].value);
                     fields[index].dataset.acceptedDate = fields[index].value;
+                    fields[index].dataset.manualDate = '';
                 }
-
-                fields.forEach((field, index) => {
-                    field.dataset.minimumDate = index === 0
-                        ? nextBusinessDay(deliveryDate.value)
-                        : businessDayAfter(fields[index - 1].value);
-                    field.dataset.acceptedDate = field.value;
-                });
 
                 syncDateControls();
                 refreshSchedule();
@@ -510,9 +506,9 @@
                 const used = new Set();
                 let previous = '';
                 plan.forEach((item, index) => {
-                    const minimum = index === 0 ? nextBusinessDay(date) : businessDayAfter(previous);
-                    if (!item.date || item.date < minimum || isSunday(item.date) || used.has(item.date)) {
-                        item.date = minimum;
+                    const fallback = index === 0 ? nextBusinessDay(date) : businessDayAfter(previous);
+                    if (!item.manual || !item.date || isSunday(item.date) || used.has(item.date)) {
+                        item.date = fallback;
                     }
                     while (used.has(item.date) || isSunday(item.date)) item.date = businessDayAfter(item.date);
                     used.add(item.date);
@@ -529,7 +525,7 @@
             });
 
             window.deliveryPlanEditor = { rebuild, setMinimumDate };
-            rebuild(initialPlan);
+            rebuild(initialPlan.map(item => ({ ...item, manual: Boolean(item?.date) })));
         })();
     </script>
 @endpush

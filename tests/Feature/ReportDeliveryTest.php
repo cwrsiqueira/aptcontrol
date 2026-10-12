@@ -16,6 +16,7 @@ use App\Seller;
 use App\Order;
 use App\Product;
 use App\Order_product;
+use App\OrderProductDeliveryPlan;
 
 class ReportDeliveryTest extends TestCase
 {
@@ -207,5 +208,70 @@ class ReportDeliveryTest extends TestCase
             $totalReal,
             "Era esperado encontrar 200 entregues em 2025-10-04, mas o relatório retornou {$totalReal}."
         );
+    }
+
+    /** @test */
+    public function pendentes_listam_cada_entrega_programada(): void
+    {
+        $this->actingAsAdmin();
+        [$product] = $this->seedBasicScenario();
+
+        $orderProduct = new Order_product();
+        $orderProduct->order_id = 1001;
+        $orderProduct->product_id = $product->id;
+        $orderProduct->quant = 10;
+        $orderProduct->delivery_date = '2026-11-10';
+        $orderProduct->save();
+
+        OrderProductDeliveryPlan::create([
+            'order_product_id' => $orderProduct->id,
+            'sequence' => 1,
+            'quantity' => 6,
+            'delivery_date' => '2026-10-12',
+        ]);
+        OrderProductDeliveryPlan::create([
+            'order_product_id' => $orderProduct->id,
+            'sequence' => 2,
+            'quantity' => 4,
+            'delivery_date' => '2026-10-13',
+        ]);
+
+        $resp = $this->get(route('report_delivery', [
+            'products' => [$product->id],
+            'status' => 'pendentes',
+            'pedido' => '1001',
+        ]));
+
+        $resp->assertStatus(200);
+        $rows = $resp->viewData('pendingData')
+            ->filter(fn ($row) => (int) $row->id === (int) $orderProduct->id)
+            ->values();
+
+        $this->assertSame(
+            ['2026-10-12', '2026-10-13'],
+            $rows->map(fn ($row) => substr((string) $row->delivery_date, 0, 10))->all()
+        );
+        $this->assertSame(
+            [6, 4],
+            $rows->map(fn ($row) => min((int) $row->saldo, (int) $row->quant))->all()
+        );
+
+        $onlySecondDay = $this->get(route('report_delivery', [
+            'products' => [$product->id],
+            'status' => 'pendentes',
+            'pedido' => '1001',
+            'date_field' => 'delivery',
+            'date_ini' => '2026-10-13',
+            'date_fin' => '2026-10-13',
+        ]));
+
+        $onlySecondDay->assertStatus(200);
+        $filtered = $onlySecondDay->viewData('pendingData')
+            ->filter(fn ($row) => (int) $row->id === (int) $orderProduct->id)
+            ->values();
+
+        $this->assertCount(1, $filtered);
+        $this->assertSame('2026-10-13', substr((string) $filtered[0]->delivery_date, 0, 10));
+        $this->assertSame(4, (int) $onlySecondDay->viewData('meta')['total_pendentes']);
     }
 }

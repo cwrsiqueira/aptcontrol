@@ -20,6 +20,10 @@ A tela de entregas do produto lista pedido em aberto com saldo ainda positivo. D
 
 No item do pedido, a quantidade por entrega define quantas saídas serão criadas. O sistema reparte o total e deixa o resto na última. Cada entrega tem quantidade, data prevista e paletes. A capacidade do palete é informada na entrega; a sobra ocupa mais um palete. `Helper::cargaTotalPaletes` soma os paletes e usa o menor valor entre tipo e quantidade para corrigir inversão de digitação.
 
+A data prevista pode ser qualquer dia, inclusive antes da previsão mínima. Domingo não entra. Quando uma data muda, as entregas seguintes passam para o próximo dia útil.
+
+O que já foi entregue é a quantidade pedida menos o saldo. A conta começa na primeira entrega planejada. Entrega coberta por inteiro sai de Entregas por produto, do Relatório de entregas e do resumo em Detalhes do pedido. Se sobrar um pedaço, ela continua na data planejada, só com o restante. A data digitada na confirmação fica na entrega já feita. Excluir essa entrega devolve o saldo e as datas planejadas voltam. Pedido sem divisão continua com uma linha e o saldo diminuindo. Antes de confirmar, a tela Entregar produto diz quais entregas aquela quantidade encerra e o que fica pela metade.
+
 ## Carga
 
 - O caminhão tem responsável pela manutenção, capacidade de paletes, modelo, placa e observação. Não tem motorista fixo.

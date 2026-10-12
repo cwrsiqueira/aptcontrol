@@ -9,6 +9,7 @@ use App\Order_product;
 use App\OrderProductDeliveryPlan;
 use App\Product;
 use App\LoadItem;
+use App\Reports\PendingDeliveryRows;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -160,7 +161,7 @@ class OrderProductController extends Controller
             $minimumDeliveryDate,
             true
         );
-        $deliveryPlan = $this->validateDeliveryPlan($deliveryPlanInput, $quantity, $minimumDeliveryDate);
+        $deliveryPlan = $this->validateDeliveryPlan($deliveryPlanInput, $quantity);
         $carga = json_encode($this->aggregatePalletLoads($deliveryPlan));
 
         $product = Product::firstOrCreate(['name' => trim($data['product_name'])], ['daily_production_forecast' => 0]);
@@ -399,8 +400,7 @@ class OrderProductController extends Controller
         if (array_key_exists('delivery_plan', $data)) {
             $deliveryPlan = $this->validateDeliveryPlan(
                 $data['delivery_plan'] ?? [],
-                $quantity,
-                $data['delivery_date']
+                $quantity
             );
 
             // Protege entregas que já foram adicionadas a uma carga.
@@ -575,7 +575,26 @@ class OrderProductController extends Controller
             ->groupBy('product_id')
             ->first();
 
-        return view('order_products.order_product_delivery', compact('order_product', 'user_permissions', 'delivered', 'saldo_produto'));
+        $order_product->load('deliveryPlans');
+        $openDeliveries = PendingDeliveryRows::openPlans(
+            $order_product->deliveryPlans,
+            (float) $saldo_produto->saldo_inicial,
+            (float) $saldo_produto->saldo
+        );
+        $openDeliveryPreview = $openDeliveries->map(fn ($slice) => [
+            'sequence' => $slice->sequence,
+            'quantity' => $slice->quantity,
+            'date' => $slice->date,
+        ])->values();
+
+        return view('order_products.order_product_delivery', compact(
+            'order_product',
+            'user_permissions',
+            'delivered',
+            'saldo_produto',
+            'openDeliveries',
+            'openDeliveryPreview'
+        ));
     }
 
     public function delivered(Request $request, Order_product $order_product)
@@ -752,7 +771,7 @@ class OrderProductController extends Controller
     }
 
     // Valida quantidades, datas e paletes de cada entrega.
-    private function validateDeliveryPlan(array $deliveryPlan, int $quantity, string $minimumDeliveryDate): array
+    private function validateDeliveryPlan(array $deliveryPlan, int $quantity): array
     {
         $deliveryPlan = array_values($deliveryPlan);
         $validator = Validator::make(
@@ -761,7 +780,7 @@ class OrderProductController extends Controller
                 'delivery_plan' => ['required', 'array', 'min:1', 'max:100'],
                 'delivery_plan.*.id' => ['nullable', 'integer'],
                 'delivery_plan.*.quantity' => ['required', 'integer', 'min:1'],
-                'delivery_plan.*.date' => ['required', 'date', 'after_or_equal:' . $minimumDeliveryDate, 'distinct'],
+                'delivery_plan.*.date' => ['required', 'date', 'distinct'],
                 'delivery_plan.*.palete_tipo' => ['nullable', 'array', 'max:3'],
                 'delivery_plan.*.palete_tipo.*' => ['nullable', 'integer', 'min:1'],
                 'delivery_plan.*.palete_quant' => ['nullable', 'array', 'max:3'],
@@ -772,7 +791,6 @@ class OrderProductController extends Controller
                 'delivery_plan.max' => 'O planejamento permite no máximo 100 entregas.',
                 'delivery_plan.*.quantity.required' => 'Informe a quantidade de cada entrega.',
                 'delivery_plan.*.date.required' => 'Informe a data de cada entrega.',
-                'delivery_plan.*.date.after_or_equal' => 'As entregas não podem ser anteriores à previsão mínima.',
                 'delivery_plan.*.date.distinct' => 'Cada entrega deve ter uma data diferente.',
                 'delivery_plan.*.palete_tipo.*.integer' => 'A capacidade do palete deve ser um número inteiro.',
                 'delivery_plan.*.palete_quant.*.integer' => 'A quantidade de paletes deve ser um número inteiro.',

@@ -7,6 +7,7 @@ use App\Load;
 use App\LoadItem;
 use App\Order_product;
 use App\Product;
+use App\Reports\PendingDeliveryRows;
 use App\Truck;
 use App\Zone;
 use Barryvdh\DomPDF\PDF as DomPDFPDF;
@@ -328,21 +329,18 @@ class ProductController extends Controller
                 return [$item];
             }
 
-            return $item->deliveryPlans->map(function ($plan) use ($item, &$saldoDisponivel) {
-                $saldoEntrega = min($saldoDisponivel, (float) $plan->quantity);
-                $saldoDisponivel = max(0, $saldoDisponivel - $saldoEntrega);
-
-                if ($saldoEntrega <= 0) {
-                    return null;
-                }
-
+            return PendingDeliveryRows::openPlans(
+                $item->deliveryPlans,
+                (float) $item->quant,
+                (float) $item->saldo
+            )->map(function ($slice) use ($item) {
                 $row = clone $item;
-                $row->display_saldo = $saldoEntrega;
-                $row->setRelation('deliveryPlans', collect([$plan]));
-                $row->setRelation('displayPlan', $plan);
+                $row->display_saldo = $slice->quantity;
+                $row->setRelation('deliveryPlans', collect([$slice->plan]));
+                $row->setRelation('displayPlan', $slice->plan);
 
                 return $row;
-            })->filter();
+            })->all();
         });
 
         $sum_by_check = [0 => 0, 1 => 0, 2 => 0];

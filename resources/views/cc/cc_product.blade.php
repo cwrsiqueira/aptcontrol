@@ -449,6 +449,11 @@
 
         <hr>
 
+        <button type="button" id="btn-topo" class="nao-imprimir" aria-label="Voltar ao topo" title="Voltar ao topo">
+            <i class="fas fa-chevron-up" aria-hidden="true"></i>
+            <span>Topo</span>
+        </button>
+
     </main>
 @endsection
 
@@ -487,6 +492,40 @@
         #addCargaZone {
             font-size: 0.875rem;
         }
+
+        #btn-topo {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            z-index: 1030;
+            display: none;
+            align-items: center;
+            gap: .35rem;
+            border: 0;
+            border-radius: 2rem;
+            padding: .5rem .9rem;
+            background: #343a40;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .22);
+            cursor: pointer;
+        }
+
+        #btn-topo.is-visible {
+            display: inline-flex;
+        }
+
+        #btn-topo:hover,
+        #btn-topo:focus {
+            background: #23272b;
+            color: #fff;
+            outline: none;
+        }
+
+        @media print {
+            #btn-topo {
+                display: none !important;
+            }
+        }
     </style>
 @endsection
 
@@ -503,7 +542,7 @@
         $('.btn-legenda').hide();
         $('#btn_imprimir').click(function() {
             $(this).hide();
-            $('#btn_voltar, #btn_sair, #btn_recalc, #search, #clean_search, .nao-imprimir').hide();
+            $('#btn_voltar, #btn_sair, #btn_recalc, #search, #clean_search, #btn-topo, .nao-imprimir').hide();
             $('.btn-legenda').show();
             $('.name-field').attr('class', '');
             window.print();
@@ -545,6 +584,19 @@
                 sessionStorage.setItem('scrollY', window.scrollY);
             }
         });
+
+        const btnTopo = document.getElementById('btn-topo');
+        if (btnTopo) {
+            const atualizarBotaoTopo = function() {
+                btnTopo.classList.toggle('is-visible', window.scrollY > 360);
+            };
+            window.addEventListener('scroll', atualizarBotaoTopo, { passive: true });
+            atualizarBotaoTopo();
+            btnTopo.addEventListener('click', function() {
+                const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                window.scrollTo({ top: 0, behavior: suave ? 'smooth' : 'auto' });
+            });
+        }
 
         // restaura a posição após reload
         document.addEventListener('DOMContentLoaded', function() {

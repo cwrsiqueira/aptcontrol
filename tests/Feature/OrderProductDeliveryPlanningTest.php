@@ -171,6 +171,28 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertSame(['30' => 2, '40' => 1], json_decode(Order_product::first()->carga, true));
     }
 
+    public function test_accepts_a_delivery_date_before_the_minimum_forecast(): void
+    {
+        $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'quantity_per_delivery' => 5,
+            'delivery_date' => '2026-10-14',
+            'delivery_plan' => [
+                ['quantity' => 5, 'date' => '2026-10-12'],
+                ['quantity' => 5, 'date' => '2026-10-13'],
+            ],
+        ])->assertRedirect();
+
+        $this->assertSame('2026-10-14', Order_product::first()->delivery_date);
+        $dates = Order_product::first()->deliveryPlans()->orderBy('sequence')->pluck('delivery_date')
+            ->map(fn ($date) => $date->toDateString())
+            ->all();
+
+        $this->assertSame(['2026-10-12', '2026-10-13'], $dates);
+    }
+
     public function test_rejects_repeated_delivery_dates(): void
     {
         $date = now()->addDay()->toDateString();
@@ -420,7 +442,9 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
         $response = $this->actingAs($this->user)
             ->get(route('cc_product', ['id' => $this->product->id]))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('id="btn-topo"', false)
+            ->assertSee('Voltar ao topo', false);
 
         $html = $response->getContent();
         $this->assertSame(4, substr_count($html, '<tr data-order-product-id="' . $orderProduct->id . '"'));
@@ -997,5 +1021,103 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertSame(0, (int) $splitPlans[0]->fresh()->checkmark);
         $this->assertSame(0, (int) $splitPlans[1]->fresh()->checkmark);
         $this->assertSame(0, (int) $splitPlans[0]->fresh()->favorite_delivery);
+    }
+
+    public function test_delivered_quantity_closes_planned_deliveries_from_the_first(): void
+    {
+        $dates = [
+            $this->upcomingWeekday(1),
+            $this->upcomingWeekday(2),
+            $this->upcomingWeekday(3),
+        ];
+        $labels = array_map(fn ($date) => date('d/m/Y', strtotime($date)), $dates);
+
+        $exact = $this->plannedProduct('PED-EXATA', 'Fatia exata', 11628, $dates);
+        $span = $this->plannedProduct('PED-DEZ', 'Fatia longa', 11628, $dates);
+
+        $open = \App\Reports\PendingDeliveryRows::openPlans($exact->deliveryPlans, 11628, 11628);
+        $this->assertSame(
+            'Encerra a entrega 1 (' . $labels[0] . ').',
+            \App\Reports\PendingDeliveryRows::describe($open, 3876)
+        );
+        $this->assertSame(
+            'Encerra a entrega 1 (' . $labels[0] . ') e a entrega 2 (' . $labels[1] . '). Ficam 1.628 na entrega 3 (' . $labels[2] . ').',
+            \App\Reports\PendingDeliveryRows::describe($open, 10000)
+        );
+
+        $this->actingAs($this->user)
+            ->get(route('order_products.delivery', $span->id))
+            ->assertOk()
+            ->assertSee('id="delivery-effect"', false)
+            ->assertSee('Encerra a entrega 1 (' . $labels[0] . '), a entrega 2 (' . $labels[1] . ') e a entrega 3 (' . $labels[2] . ').', false);
+
+        $this->actingAs($this->user)->post(route('order_products.delivered', $exact->id), [
+            'quant' => '3.876',
+            'delivery_date' => now()->toDateString(),
+        ])->assertRedirect();
+
+        $this->actingAs($this->user)->post(route('order_products.delivered', $span->id), [
+            'quant' => '10.000',
+            'delivery_date' => now()->toDateString(),
+        ])->assertRedirect();
+
+        $this->assertDeliveryScreens($exact, 'Fatia exata', [$labels[0]], [$labels[1], $labels[2]], '3.876');
+        $this->assertDeliveryScreens($span, 'Fatia longa', [$labels[0], $labels[1]], [$labels[2]], '1.628');
+    }
+
+    private function plannedProduct(string $orderNumber, string $productName, int $quantity, array $dates): Order_product
+    {
+        $order = Order::create([
+            'client_id' => $this->order->client_id,
+            'order_number' => $orderNumber,
+            'order_date' => now()->toDateString(),
+            'withdraw' => 'entregar',
+            'complete_order' => 0,
+        ]);
+        $product = Product::create([
+            'name' => $productName,
+            'current_stock' => 0,
+            'daily_production_forecast' => 0,
+        ]);
+        $item = Order_product::create([
+            'order_id' => $order->order_number,
+            'product_id' => $product->id,
+            'quant' => $quantity,
+            'delivery_date' => $dates[0],
+        ]);
+        foreach ($dates as $index => $date) {
+            $item->deliveryPlans()->create([
+                'sequence' => $index + 1,
+                'quantity' => 3876,
+                'delivery_date' => $date,
+            ]);
+        }
+
+        return $item->load('deliveryPlans');
+    }
+
+    private function assertDeliveryScreens(Order_product $item, string $productName, array $hiddenDates, array $visibleDates, string $quantity): void
+    {
+        $order = Order::where('order_number', $item->order_id)->first();
+        $pages = [
+            route('cc_product', ['id' => $item->product_id]),
+            route('order_products.index', ['order' => $order->id]),
+            route('report_delivery', [
+                'products' => [$item->product_id],
+                'status' => 'pendentes',
+                'date_field' => 'delivery',
+            ]),
+        ];
+
+        foreach ($pages as $page) {
+            $html = $this->actingAs($this->user)->get($page)->assertOk()->assertSee($productName)->getContent();
+            $this->assertStringContainsString($quantity, $html);
+            foreach ($visibleDates as $date) {
+                $this->assertStringContainsString($date, $html);
+            }
+            foreach ($hiddenDates as $date) {
+                $this->assertStringNotContainsString($date, $html);
+            }
+        }
     }
 }

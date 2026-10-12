@@ -10,6 +10,7 @@ use App\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\Helper;
+use App\Reports\PendingDeliveryRows;
 use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
@@ -238,14 +239,6 @@ class ReportController extends Controller
                     } elseif ($finObj) {
                         $sub->where(DB::raw('date(orders.order_date)'), '<=', $finObj);
                     }
-                } else { // delivery
-                    if ($iniObj && $finObj) {
-                        $sub->whereBetween(DB::raw('date(base.delivery_date)'), [$iniObj, $finObj]);
-                    } elseif ($iniObj) {
-                        $sub->where(DB::raw('date(base.delivery_date)'), '>=', $iniObj);
-                    } elseif ($finObj) {
-                        $sub->where(DB::raw('date(base.delivery_date)'), '<=', $finObj);
-                    }
                 }
             }
 
@@ -253,17 +246,22 @@ class ReportController extends Controller
 
             // carrega relações
             $ids    = $rows->pluck('id')->all();
-            $models = Order_product::with('order', 'product', 'order.client', 'order.seller')
+            $models = Order_product::with('order', 'product', 'order.client', 'order.seller', 'deliveryPlans')
                 ->whereIn('id', $ids)->get()->keyBy('id');
 
-            $pendingData = collect($rows)->map(function ($r) use ($models) {
-                $m = $models[$r->id] ?? (object) (array) $r;
-                $m->saldo = (int) ($r->saldo ?? 0);
-                return $m;
-            })->values();
+            $pendingData = PendingDeliveryRows::expand(
+                collect($rows)->map(function ($r) use ($models) {
+                    $m = $models[$r->id] ?? (object) (array) $r;
+                    $m->saldo = (int) ($r->saldo ?? 0);
+                    return $m;
+                })->values(),
+                $iniObj,
+                $finObj,
+                $dateField !== 'order'
+            );
 
             // total pendente (igual a tabela)
-            $totalPending = $rows->sum(function ($r) {
+            $totalPending = $pendingData->sum(function ($r) {
                 $saldo = (int) ($r->saldo ?? 0);
                 $quant = (int) $r->quant;
                 return $saldo > 0 ? min($saldo, $quant) : 0;

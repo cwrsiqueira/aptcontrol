@@ -11,9 +11,14 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.7',
+            'version'    => 'v1.0.8',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
+                'Ao registrar uma entrega, a quantidade sai da primeira entrega planejada. A que fecha some das telas; a que sobra continua na mesma data, só com o que falta.',
+                'Antes de confirmar, a tela mostra quais entregas aquela quantidade encerra e o que fica pela metade.',
+                'A data prevista de cada entrega pode ser o dia que você precisar, inclusive antes da previsão mínima. Domingo continua bloqueado.',
+                'O relatório de entregas mostra cada entrega programada, com a quantidade e a data dela.',
+                'Em Entregas por produto, o botão Topo aparece ao descer a lista e volta para o início.',
                 'No cadastro do item do pedido, informe quantos produtos saem em cada entrega. O sistema calcula o número de entregas e deixa na última o que sobrar.',
                 'Em cada entrega, informe quantos produtos cabem no palete. O sistema calcula os paletes e a sobra ocupa mais um palete.',
                 'Cada entrega mostra a quantidade, a data prevista e quantos paletes ela ocupa. Quando a entrega é no cliente, a tela indica se já há outras entregas previstas naquele dia.',
