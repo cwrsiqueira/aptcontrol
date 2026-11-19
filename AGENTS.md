@@ -4,10 +4,11 @@ Sistema interno de pedidos, produtos, clientes, vendedores, entregas, cargas e c
 
 Antes de alterar o sistema, leia:
 
-1. [docs/CONTEXTO.md](docs/CONTEXTO.md) — stack, módulos e permissões
-2. [docs/REGRAS-DE-NEGOCIO.md](docs/REGRAS-DE-NEGOCIO.md) — o que o código já decide
-3. [docs/SEGURANCA.md](docs/SEGURANCA.md) — o que não pode ir para a tela nem ser aceito sem validação
-4. [docs/DEPLOY.md](docs/DEPLOY.md) — como a produção é atualizada
+1. [docs/STATUS_PROJETO.md](docs/STATUS_PROJETO.md) — onde paramos e próximo passo (chat novo)
+2. [docs/CONTEXTO.md](docs/CONTEXTO.md) — stack, módulos e permissões
+3. [docs/REGRAS-DE-NEGOCIO.md](docs/REGRAS-DE-NEGOCIO.md) — o que o código já decide
+4. [docs/SEGURANCA.md](docs/SEGURANCA.md) — o que não pode ir para a tela nem ser aceito sem validação
+5. [docs/DEPLOY.md](docs/DEPLOY.md) — como a produção é atualizada
 
 ## Ao implementar
 
