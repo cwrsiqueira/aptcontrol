@@ -4,24 +4,28 @@ Estado curto para um chat novo. Confira o git antes de confiar neste arquivo (`g
 
 ## Onde paramos
 
-- **Git:** após este fechamento, `master` deve estar alinhada com `origin/master`.
-- **Tag de retorno:** `pre-ux-fatias-baixadas-e6b049b` aponta para `e6b049b` (estado antes desta publicação).
-- **Último deploy de código (produto):** marcação de fatias já baixadas/parciais no editor e resumo no Detalhes do pedido; painel `v1.0.9`.
-- **Backup produção (pré-deploy):** `database/database.sqlite.backup.pre_ux_fatias_20261121` no servidor.
-- **Versão no painel:** `v1.0.9` (`HomeController::systemInfo()`).
+- **Git:** `master` = `origin/master` em `ca3737f`. **Já no GitHub.**
+- **Tag de retorno:** `pre-ux-fatias-baixadas-e6b049b` → commit `e6b049b` (estado anterior à publicação).
+- **Backup local:** `database/database.sqlite.backup.local_20261121_115725` (não vai pro Git).
+- **Deploy em produção:** código **já no GitHub**; o `./deploy.sh` **ainda precisa rodar no servidor** (SSH daqui não alcançou o host; Git Hostinger recusou diretório não vazio; cron novo não executou).
+- **Versão no painel (após deploy):** `v1.0.9`.
 
 ## O que já está no código
 
-- Quantidade entregue desconta a partir da primeira entrega planejada (`PendingDeliveryRows::openPlans` / `planStatuses`).
-- Editor de entregas marca fatias cobertas (“Já baixada”) e parciais; Detalhes do pedido separa abertas e baixadas.
-- Telas: Entregas por produto, Relatório de entregas e Detalhes do pedido usam a mesma conta.
-- Skill do projeto: `.cursor/skills/pode-subir`.
+- Fatias cobertas pela baixa marcadas no editor (“Já baixada” / parcial) e resumo no Detalhes do pedido.
+- `PendingDeliveryRows::planStatuses` + `openPlans`.
+- Skill: `.cursor/skills/pode-subir`.
 
 ## Próximo passo sugerido
 
-1. Validar no ar: editar item com baixas (ex. pedido #5392) e conferir badges Já baixada / Parcial.
-2. Confirmar na lista e no Detalhes do pedido o resumo de fatias abertas.
+No servidor, na pasta do site:
+
+```bash
+./deploy.sh
+```
+
+Isso faz backup do SQLite, `git pull` de `ca3737f`, composer, migrate e cache. Depois validar editor do pedido #5392 (badges Já baixada / Parcial).
 
 ## Pendências
 
-- Nenhuma pendência de código aberta nesta máquina.
+- Executar `./deploy.sh` em produção (fora desta máquina, se o acesso SSH/hPanel for local).
