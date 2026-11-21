@@ -269,7 +269,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
     public function test_splits_an_exact_quantity_into_one_pallet_per_delivery(): void
     {
-        $date = now()->addDay()->toDateString();
+        $date = $this->upcomingWeekday(0);
 
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
@@ -728,7 +728,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
     public function test_splits_a_delivery_into_full_pallets_and_a_remainder_pallet(): void
     {
-        $date = now()->addDay()->toDateString();
+        $date = $this->upcomingWeekday(0);
 
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
@@ -750,7 +750,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
     public function test_uses_only_full_pallets_when_the_capacity_divides_the_delivery(): void
     {
-        $date = now()->addDay()->toDateString();
+        $date = $this->upcomingWeekday(0);
 
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
@@ -770,7 +770,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
     public function test_keeps_one_pallet_when_the_capacity_is_empty(): void
     {
-        $date = now()->addDay()->toDateString();
+        $date = $this->upcomingWeekday(0);
 
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
@@ -789,7 +789,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
 
     public function test_uses_one_pallet_when_capacity_is_greater_than_the_delivery(): void
     {
-        $date = now()->addDay()->toDateString();
+        $date = $this->upcomingWeekday(0);
 
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
@@ -1065,7 +1065,60 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertDeliveryScreens($span, 'Fatia longa', [$labels[0], $labels[1]], [$labels[2]], '1.628');
     }
 
-    private function plannedProduct(string $orderNumber, string $productName, int $quantity, array $dates): Order_product
+    public function test_large_multi_slice_partial_delivery_hides_closed_plans_and_marks_editor(): void
+    {
+        $perDelivery = 7752;
+        $dates = [
+            $this->upcomingWeekday(0),
+            $this->upcomingWeekday(1),
+            $this->upcomingWeekday(2),
+            $this->upcomingWeekday(3),
+        ];
+        $labels = array_map(fn ($date) => date('d/m/Y', strtotime($date)), $dates);
+        $item = $this->plannedProduct('PED-5392', 'Tijolao multi', $perDelivery * 4, $dates, $perDelivery);
+
+        $this->actingAs($this->user)->post(route('order_products.delivered', $item->id), [
+            'quant' => '19.380',
+            'delivery_date' => now()->toDateString(),
+        ])->assertRedirect();
+
+        $this->assertDeliveryScreens(
+            $item->fresh(),
+            'Tijolao multi',
+            [$labels[0], $labels[1]],
+            [$labels[2], $labels[3]],
+            '3.876'
+        );
+
+        $order = Order::where('order_number', $item->order_id)->first();
+        $details = $this->actingAs($this->user)
+            ->get(route('order_products.index', ['order' => $order->id]))
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('2 já baixadas', $details);
+        $this->assertStringContainsString('2 abertas', $details);
+        $this->assertStringContainsString('3.876', $details);
+        $this->assertStringContainsString('de 7.752', $details);
+
+        $edit = $this->actingAs($this->user)
+            ->get(route('order_products.edit', [$item, 'product_id' => $item->product_id]))
+            ->assertOk()
+            ->getContent();
+        $this->assertMatchesRegularExpression('/data-initial-plan="([^"]+)"/', $edit);
+        preg_match('/data-initial-plan="([^"]+)"/', $edit, $matches);
+        $encodedPlan = json_decode(base64_decode($matches[1]), true);
+        $this->assertIsArray($encodedPlan);
+        $this->assertCount(4, $encodedPlan);
+        $this->assertSame('closed', $encodedPlan[0]['status']);
+        $this->assertSame(0, $encodedPlan[0]['remaining_quantity']);
+        $this->assertSame('closed', $encodedPlan[1]['status']);
+        $this->assertSame('partial', $encodedPlan[2]['status']);
+        $this->assertSame(3876, $encodedPlan[2]['remaining_quantity']);
+        $this->assertSame('open', $encodedPlan[3]['status']);
+        $this->assertSame(7752, $encodedPlan[3]['remaining_quantity']);
+    }
+
+    private function plannedProduct(string $orderNumber, string $productName, int $quantity, array $dates, int $perDelivery = 3876): Order_product
     {
         $order = Order::create([
             'client_id' => $this->order->client_id,
@@ -1088,7 +1141,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
         foreach ($dates as $index => $date) {
             $item->deliveryPlans()->create([
                 'sequence' => $index + 1,
-                'quantity' => 3876,
+                'quantity' => $perDelivery,
                 'delivery_date' => $date,
             ]);
         }

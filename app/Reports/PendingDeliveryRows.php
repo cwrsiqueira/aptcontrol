@@ -7,40 +7,69 @@ use Illuminate\Support\Collection;
 // Abre cada produto pendente nas entregas programadas.
 class PendingDeliveryRows
 {
-    // Tira o que já foi entregue a partir da primeira entrega planejada.
-    public static function openPlans(iterable $plans, float $ordered, float $remaining): Collection
+    // Situação de cada fatia: já baixada, parcial ou ainda aberta.
+    public static function planStatuses(iterable $plans, float $ordered, float $remaining): Collection
     {
         $delivered = max(0, $ordered - min(max(0, $remaining), $ordered));
-        $open = collect();
+        $statuses = collect();
 
         foreach ($plans as $plan) {
             $quantity = (float) $plan->quantity;
             if ($quantity <= 0) {
                 continue;
             }
+
+            $date = $plan->delivery_date;
+            $dateLabel = $date instanceof \DateTimeInterface
+                ? $date->format('d/m/Y')
+                : date('d/m/Y', strtotime((string) $date));
+            $planned = (int) round($quantity);
+
             if ($delivered >= $quantity) {
                 $delivered -= $quantity;
+                $statuses->push((object) [
+                    'plan' => $plan,
+                    'sequence' => (int) $plan->sequence,
+                    'planned_quantity' => $planned,
+                    'remaining_quantity' => 0,
+                    'status' => 'closed',
+                    'date' => $dateLabel,
+                ]);
                 continue;
             }
 
             $left = (int) round($quantity - $delivered);
+            $status = $delivered > 0 ? 'partial' : 'open';
             $delivered = 0;
             if ($left <= 0) {
                 continue;
             }
 
-            $date = $plan->delivery_date;
-            $open->push((object) [
+            $statuses->push((object) [
                 'plan' => $plan,
                 'sequence' => (int) $plan->sequence,
-                'quantity' => $left,
-                'date' => $date instanceof \DateTimeInterface
-                    ? $date->format('d/m/Y')
-                    : date('d/m/Y', strtotime((string) $date)),
+                'planned_quantity' => $planned,
+                'remaining_quantity' => $left,
+                'status' => $status,
+                'date' => $dateLabel,
             ]);
         }
 
-        return $open;
+        return $statuses;
+    }
+
+    // Tira o que já foi entregue a partir da primeira entrega planejada.
+    public static function openPlans(iterable $plans, float $ordered, float $remaining): Collection
+    {
+        return self::planStatuses($plans, $ordered, $remaining)
+            ->filter(fn ($slice) => $slice->status !== 'closed')
+            ->map(fn ($slice) => (object) [
+                'plan' => $slice->plan,
+                'sequence' => $slice->sequence,
+                'quantity' => $slice->remaining_quantity,
+                'date' => $slice->date,
+            ])
+            ->values();
     }
 
     // Diz quais entregas a quantidade encerra e o que fica pela metade.

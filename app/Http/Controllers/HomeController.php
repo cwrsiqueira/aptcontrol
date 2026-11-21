@@ -11,9 +11,11 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.8',
+            'version'    => 'v1.0.9',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
+                'Na edição do produto do pedido, as entregas já cobertas pela baixa aparecem como “Já baixada” e a parcial mostra o que ainda falta naquela data.',
+                'Nos detalhes do pedido, o resumo separa quantas entregas já foram baixadas e quantas ainda estão abertas.',
                 'Ao registrar uma entrega, a quantidade sai da primeira entrega planejada. A que fecha some das telas; a que sobra continua na mesma data, só com o que falta.',
                 'Antes de confirmar, a tela mostra quais entregas aquela quantidade encerra e o que fica pela metade.',
                 'A data prevista de cada entrega pode ser o dia que você precisar, inclusive antes da previsão mínima. Domingo continua bloqueado.',
@@ -23,8 +25,6 @@ class HomeController extends Controller
                 'Em cada entrega, informe quantos produtos cabem no palete. O sistema calcula os paletes e a sobra ocupa mais um palete.',
                 'Cada entrega mostra a quantidade, a data prevista e quantos paletes ela ocupa. Quando a entrega é no cliente, a tela indica se já há outras entregas previstas naquele dia.',
                 'Novo menu Compras: dá para abrir um pedido de compra, incluir os itens, registrar orçamentos de fornecedores e anexar o arquivo do orçamento em PDF ou imagem.',
-                'O pedido de compra segue as etapas de orçamento, aprovação e finalização. Quem pode ver, orçar, aprovar ou concluir fica definido nas permissões.',
-                'Na lista de itens do pedido, o botão Adicionar produto ficou ao lado de Imprimir / PDF.',
             ],
         ];
     }

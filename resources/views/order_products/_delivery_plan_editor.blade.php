@@ -31,6 +31,8 @@
         .delivery-count-field { min-width: 280px; }
         .delivery-schedule { white-space: normal; line-height: 1.35; }
         .delivery-load-card { border-left: 3px solid #007bff; }
+        .delivery-load-card.is-closed { border-left-color: #6c757d; opacity: 0.92; }
+        .delivery-load-card.is-partial { border-left-color: #ffc107; }
         .delivery-calculated-value { font-weight: 600; background: #fff; }
         .delivery-date-calendar { position: relative; }
         .delivery-date-calendar .delivery-plan-date-picker {
@@ -40,6 +42,9 @@
             height: 100%;
             opacity: 0;
             cursor: pointer;
+        }
+        .delivery-load-card.is-closed .delivery-date-calendar .delivery-plan-date-picker {
+            cursor: not-allowed;
         }
     </style>
 @endpush
@@ -199,6 +204,34 @@
                 emptyMessage.classList.remove('d-none');
             }
 
+            function planStatusOf(item = {}) {
+                const status = item.status || 'open';
+                if (status === 'closed' || status === 'partial' || status === 'open') {
+                    return status;
+                }
+                return 'open';
+            }
+
+            function statusBadge(status, remaining, planned) {
+                if (status === 'closed') {
+                    return '<span class="badge badge-secondary ml-2">Já baixada</span>';
+                }
+                if (status === 'partial') {
+                    return `<span class="badge badge-warning ml-2">Parcial — restam ${Number(remaining || 0).toLocaleString('pt-BR')} de ${Number(planned || 0).toLocaleString('pt-BR')}</span>`;
+                }
+                return '';
+            }
+
+            function lookupStatus(saved, original) {
+                const byId = initialPlan.find(item => item.id && (item.id === saved.id || item.id === original.id));
+                const source = byId || saved || original || {};
+                return {
+                    status: planStatusOf(source),
+                    remaining_quantity: Number(source.remaining_quantity ?? source.quantity) || 0,
+                    planned_quantity: Number(source.quantity) || 0,
+                };
+            }
+
             function currentPlan() {
                 return Array.from(rowsContainer.querySelectorAll('.delivery-load-card')).map(card => ({
                     id: Number(card.querySelector('.delivery-plan-id')?.value) || null,
@@ -206,6 +239,8 @@
                     manual: card.querySelector('.delivery-plan-date')?.dataset.manualDate === '1',
                     quantity: Number(card.dataset.quantity) || 0,
                     pallet_capacity: readCapacity(card),
+                    status: card.dataset.status || 'open',
+                    remaining_quantity: Number(card.dataset.remainingQuantity) || 0,
                     palete_tipo: Array.from(card.querySelectorAll('input[name*="[palete_tipo]"]')).map(field => field.value),
                     palete_quant: Array.from(card.querySelectorAll('input[name*="[palete_quant]"]')).map(field => field.value)
                 }));
@@ -254,6 +289,9 @@
                         counts = [1];
                     }
                     const rowId = saved.id || original.id;
+                    const fulfillment = lookupStatus(saved, original);
+                    const isClosed = fulfillment.status === 'closed';
+                    const isPartial = fulfillment.status === 'partial';
                     const isRemainder = index === lots.length - 1 && lot !== lots[0];
                     let palletFields = '';
                     types.forEach((type, slot) => {
@@ -264,9 +302,20 @@
                         palletFields += `<input type="hidden" name="delivery_plan[${index}][palete_quant][${slot}]" value="${count}">`;
                     });
 
-                    html += `<div class="card delivery-load-card mb-3" data-quantity="${lot}">
+                    const cardClass = [
+                        'card delivery-load-card mb-3',
+                        isClosed ? 'is-closed' : '',
+                        isPartial ? 'is-partial' : '',
+                    ].filter(Boolean).join(' ');
+                    const readonlyAttr = isClosed ? ' readonly' : '';
+                    const pickerDisabled = isClosed ? ' disabled' : '';
+
+                    html += `<div class="${cardClass}" data-quantity="${lot}" data-status="${fulfillment.status}" data-remaining-quantity="${fulfillment.remaining_quantity}">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center py-2">
-                            <strong>Entrega ${index + 1}${isRemainder ? ' (sobra)' : ''} @includeIf('partials.change_marker')</strong>
+                            <div class="d-flex flex-wrap align-items-center">
+                                <strong>Entrega ${index + 1}${isRemainder ? ' (sobra)' : ''} @includeIf('partials.change_marker')</strong>
+                                ${statusBadge(fulfillment.status, fulfillment.remaining_quantity, lot)}
+                            </div>
                             <span class="badge badge-light delivery-schedule">${isCif ? 'Consultando entregas...' : 'Retirada pelo cliente (FOB)'}</span>
                         </div>
                         <div class="card-body py-3">
@@ -276,17 +325,19 @@
                             <div class="row align-items-start">
                                 <div class="col-lg-3 col-md-4 form-group mb-md-0">
                                     <label>Quantidade da entrega</label>
-                                    <input type="text" class="form-control delivery-quantity-input" value="${lot.toLocaleString('pt-BR')}" inputmode="numeric">
+                                    <input type="text" class="form-control delivery-quantity-input" value="${lot.toLocaleString('pt-BR')}" inputmode="numeric"${readonlyAttr}>
+                                    ${isPartial ? `<small class="form-text text-muted">Ainda faltam ${fulfillment.remaining_quantity.toLocaleString('pt-BR')} nesta data.</small>` : ''}
+                                    ${isClosed ? `<small class="form-text text-muted">Esta entrega já foi coberta pela baixa e não entra mais na lista.</small>` : ''}
                                 </div>
                                 <div class="col-lg-3 col-md-4 form-group mb-md-0">
                                     <label>Data prevista</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control delivery-plan-date-text" value="${formatDate(date)}"
-                                            placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off" required>
+                                            placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off" required${readonlyAttr}>
                                         <div class="input-group-append delivery-date-calendar">
                                             <span class="input-group-text"><i class="fa fa-calendar-alt"></i></span>
                                             <input type="date" class="delivery-plan-date-picker" value="${date}"
-                                                aria-label="Selecionar data no calendário">
+                                                aria-label="Selecionar data no calendário"${pickerDisabled}>
                                         </div>
                                     </div>
                                     <input type="hidden" name="delivery_plan[${index}][date]" class="delivery-plan-date"
@@ -295,7 +346,7 @@
                                 <div class="col-lg-6 col-md-4 form-group mb-0">
                                     <label>Capacidade do palete</label>
                                     <input type="text" class="form-control delivery-pallet-capacity" name="delivery_plan[${index}][pallet_capacity]"
-                                        value="${capacity > 0 ? capacity : ''}" inputmode="numeric" placeholder="Ex.: 261">
+                                        value="${capacity > 0 ? capacity : ''}" inputmode="numeric" placeholder="Ex.: 261"${readonlyAttr}>
                                     <small class="form-text text-muted delivery-pallet-summary">${palletSummary(types, counts)}</small>
                                 </div>
                             </div>
@@ -315,6 +366,7 @@
 
             function bindCapacityControls() {
                 rowsContainer.querySelectorAll('.delivery-pallet-capacity').forEach(field => {
+                    if (field.readOnly) return;
                     field.addEventListener('input', function() {
                         updatePalletFields(this.closest('.delivery-load-card'), parseQuantity(this.value));
                     });
@@ -343,6 +395,7 @@
 
             function bindDateControls() {
                 rowsContainer.querySelectorAll('.delivery-plan-date-text').forEach(field => {
+                    if (field.readOnly) return;
                     field.addEventListener('focus', function() {
                         this.select();
                     });
@@ -362,6 +415,7 @@
                 });
 
                 rowsContainer.querySelectorAll('.delivery-plan-date-picker').forEach(field => {
+                    if (field.disabled) return;
                     field.addEventListener('change', function() {
                         const hidden = this.closest('.form-group').querySelector('.delivery-plan-date');
                         hidden.value = this.value;
@@ -383,9 +437,11 @@
             }
 
             function recalculateDates(event) {
+                const cards = Array.from(rowsContainer.querySelectorAll('.delivery-load-card'));
                 const fields = Array.from(rowsContainer.querySelectorAll('.delivery-plan-date'));
                 const changedIndex = fields.indexOf(event.currentTarget);
                 if (changedIndex < 0) return;
+                if (cards[changedIndex]?.dataset.status === 'closed') return;
 
                 const fallbackDate = changedIndex === 0
                     ? nextBusinessDay(deliveryDate.value)
@@ -405,6 +461,7 @@
                 fields[changedIndex].dataset.acceptedDate = fields[changedIndex].value;
 
                 for (let index = changedIndex + 1; index < fields.length; index++) {
+                    if (cards[index]?.dataset.status === 'closed') continue;
                     fields[index].value = businessDayAfter(fields[index - 1].value);
                     fields[index].dataset.acceptedDate = fields[index].value;
                     fields[index].dataset.manualDate = '';
@@ -416,6 +473,7 @@
 
             function bindQuantityControls() {
                 rowsContainer.querySelectorAll('.delivery-quantity-input').forEach((field, index) => {
+                    if (field.readOnly) return;
                     field.addEventListener('focus', function() {
                         this.select();
                     });
@@ -429,6 +487,7 @@
                 const total = parseQuantity(quant.value);
                 const perDelivery = parseQuantity(perDeliveryField.value);
                 const saved = currentPlan();
+                if (saved[index]?.status === 'closed') return;
                 if (value === saved[index]?.quantity) return;
                 const previousSum = saved.slice(0, index).reduce((sum, item) => sum + item.quantity, 0);
                 const available = total - previousSum;

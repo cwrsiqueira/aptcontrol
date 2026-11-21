@@ -160,33 +160,49 @@
                                         <td class="text-right">{{ number_format($item->quant, 0, '', '.') }}</td>
                                         <td class="text-right">
                                             {{ number_format($item->saldo < 0 ? 0 : $item->saldo, 0, '', '.') }}</td>
-                                        {{-- Resume as entregas planejadas que ainda faltam. --}}
+                                        {{-- Resume só as fatias ainda abertas; as baixadas ficam só no contador. --}}
                                         <td class="text-right d-flex flex-column align-items-end">
                                             @php
-                                                $openPlans = \App\Reports\PendingDeliveryRows::openPlans(
+                                                $planStatuses = \App\Reports\PendingDeliveryRows::planStatuses(
                                                     $item->deliveryPlans,
                                                     (float) $item->quant,
                                                     (float) $item->saldo
                                                 );
+                                                $openPlans = $planStatuses->filter(fn ($slice) => $slice->status !== 'closed')->values();
+                                                $closedPlans = $planStatuses->where('status', 'closed')->count();
                                             @endphp
                                             @if ($item->deliveryPlans->count())
-                                                @if ($openPlans->count() > 1)
-                                                    <span class="badge badge-info mt-1">
-                                                        {{ $openPlans->count() }} entregas planejadas
-                                                    </span>
-                                                @endif
+                                                <div class="d-flex flex-wrap justify-content-end mb-1">
+                                                    @if ($closedPlans > 0)
+                                                        <span class="badge badge-secondary mr-1 mt-1">
+                                                            {{ $closedPlans }} já baixada{{ $closedPlans > 1 ? 's' : '' }}
+                                                        </span>
+                                                    @endif
+                                                    @if ($openPlans->count() > 0)
+                                                        <span class="badge badge-info mt-1">
+                                                            {{ $openPlans->count() }} aberta{{ $openPlans->count() > 1 ? 's' : '' }}
+                                                        </span>
+                                                    @elseif ($closedPlans > 0)
+                                                        <span class="badge badge-success mt-1">Tudo baixado</span>
+                                                    @endif
+                                                </div>
                                                 @foreach ($openPlans->take(3) as $slice)
                                                     <small class="text-muted">
                                                         Entrega {{ $slice->sequence }}:
-                                                        {{ number_format($slice->quantity, 0, '', '.') }} em
-                                                        {{ $slice->date }}
-                                                        @if ((int) $slice->quantity === (int) $slice->plan->quantity && $slice->plan->total_paletes)
+                                                        @if ($slice->status === 'partial')
+                                                            {{ number_format($slice->remaining_quantity, 0, '', '.') }}
+                                                            de {{ number_format($slice->planned_quantity, 0, '', '.') }}
+                                                        @else
+                                                            {{ number_format($slice->remaining_quantity, 0, '', '.') }}
+                                                        @endif
+                                                        em {{ $slice->date }}
+                                                        @if ($slice->status === 'open' && (int) $slice->remaining_quantity === (int) $slice->plan->quantity && $slice->plan->total_paletes)
                                                             · {{ $slice->plan->total_paletes }} pal.
                                                         @endif
                                                     </small>
                                                 @endforeach
                                                 @if ($openPlans->count() > 3)
-                                                    <small class="text-muted">+ {{ $openPlans->count() - 3 }} entrega(s)</small>
+                                                    <small class="text-muted">+ {{ $openPlans->count() - 3 }} aberta(s)</small>
                                                 @endif
                                             @else
                                                 {{ $item->delivery_date ? date('d/m/Y', strtotime($item->delivery_date)) : '—' }}

@@ -4,27 +4,24 @@ Estado curto para um chat novo. Confira o git antes de confiar neste arquivo (`g
 
 ## Onde paramos
 
-- **Git:** `master` = `origin/master`, working tree **limpa** (após este fechamento). **Já no GitHub.** **Não precisa Pode subir** se a tree continuar limpa.
-- **Último deploy de código (produto):** `ad2744d` — entregas planejadas baixam na ordem; data prevista flexível (exceto domingo); relatório por fatia; botão Topo; painel `v1.0.8`.
-- **Último push de docs/contexto:** `07505aa` — STATUS, CONTEXTO, AGENTS e regra Cursor para retomada.
-- **Deploy em produção:** no servidor, `./deploy.sh` (puxa o que ainda não entrou). Este chat **não** confirmou a execução no VPS.
-- **Versão no painel:** `v1.0.8` (`HomeController::systemInfo()`).
+- **Git:** após este fechamento, `master` deve estar alinhada com `origin/master`.
+- **Tag de retorno:** `pre-ux-fatias-baixadas-e6b049b` aponta para `e6b049b` (estado antes desta publicação).
+- **Último deploy de código (produto):** marcação de fatias já baixadas/parciais no editor e resumo no Detalhes do pedido; painel `v1.0.9`.
+- **Backup produção (pré-deploy):** `database/database.sqlite.backup.pre_ux_fatias_20261121` no servidor.
+- **Versão no painel:** `v1.0.9` (`HomeController::systemInfo()`).
 
 ## O que já está no código
 
-- Quantidade entregue desconta a partir da primeira entrega planejada (`app/Reports/PendingDeliveryRows.php`: `openPlans`, `describe`, `expand`).
-- Telas: Entregas por produto, Relatório de entregas (tela/CSV/PDF) e Detalhes do pedido usam a mesma conta.
-- Entregar produto mostra, antes de confirmar, o que encerra e o que fica pela metade.
-- Data prevista editável, inclusive antes da previsão mínima; domingo bloqueado.
-- Skill do projeto: `.cursor/skills/pode-subir`. **Não** há skill `se-atualize-contexto` neste repo (existe em outros projetos seus).
+- Quantidade entregue desconta a partir da primeira entrega planejada (`PendingDeliveryRows::openPlans` / `planStatuses`).
+- Editor de entregas marca fatias cobertas (“Já baixada”) e parciais; Detalhes do pedido separa abertas e baixadas.
+- Telas: Entregas por produto, Relatório de entregas e Detalhes do pedido usam a mesma conta.
+- Skill do projeto: `.cursor/skills/pode-subir`.
 
 ## Próximo passo sugerido
 
-1. Confirmar no servidor se `./deploy.sh` já rodou após `ad2744d` (e puxar docs se ainda não).
-2. Validar no ar: pedido com várias entregas → entrega parcial/múltipla → três telas + texto antes de confirmar.
-3. Se quiser retomada automática no chat novo, criar `.cursor/skills/se-atualize-contexto` apontando para este arquivo.
+1. Validar no ar: editar item com baixas (ex. pedido #5392) e conferir badges Já baixada / Parcial.
+2. Confirmar na lista e no Detalhes do pedido o resumo de fatias abertas.
 
 ## Pendências
 
 - Nenhuma pendência de código aberta nesta máquina.
-- Deploy em produção: confirmar fora deste chat.

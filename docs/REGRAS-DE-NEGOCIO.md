@@ -22,7 +22,7 @@ No item do pedido, a quantidade por entrega define quantas saídas serão criada
 
 A data prevista pode ser qualquer dia, inclusive antes da previsão mínima. Domingo não entra. Quando uma data muda, as entregas seguintes passam para o próximo dia útil.
 
-O que já foi entregue é a quantidade pedida menos o saldo. A conta começa na primeira entrega planejada. Entrega coberta por inteiro sai de Entregas por produto, do Relatório de entregas e do resumo em Detalhes do pedido. Se sobrar um pedaço, ela continua na data planejada, só com o restante. A data digitada na confirmação fica na entrega já feita. Excluir essa entrega devolve o saldo e as datas planejadas voltam. Pedido sem divisão continua com uma linha e o saldo diminuindo. Antes de confirmar, a tela Entregar produto diz quais entregas aquela quantidade encerra e o que fica pela metade.
+O que já foi entregue é a quantidade pedida menos o saldo. A conta começa na primeira entrega planejada. Entrega coberta por inteiro sai de Entregas por produto, do Relatório de entregas e do resumo em Detalhes do pedido. Se sobrar um pedaço, ela continua na data planejada, só com o restante. A data digitada na confirmação fica na entrega já feita. Excluir essa entrega devolve o saldo e as datas planejadas voltam. Pedido sem divisão continua com uma linha e o saldo diminuindo. Antes de confirmar, a tela Entregar produto diz quais entregas aquela quantidade encerra e o que fica pela metade. Na edição do produto do pedido, as fatias cobertas aparecem como “Já baixada” (somente leitura) e a parcial mostra o que ainda falta; os registros do plano continuam no banco. Data antiga com saldo ainda pendente continua na lista — é atraso, não baixa.
 
 ## Carga
 

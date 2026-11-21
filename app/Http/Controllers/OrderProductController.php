@@ -263,8 +263,24 @@ class OrderProductController extends Controller
             }
         }
 
-        $deliveryPlan = $order_product->deliveryPlans->map(function ($plan) {
+        $saldoProduto = Order_product::where('order_id', $order_product->order_id)
+            ->where('product_id', $order_product->product_id)
+            ->select(
+                DB::raw('SUM(quant) as saldo'),
+                DB::raw('SUM(CASE WHEN quant > 0 THEN quant ELSE 0 END) as saldo_inicial')
+            )
+            ->groupBy('product_id')
+            ->first();
+
+        $planStatuses = PendingDeliveryRows::planStatuses(
+            $order_product->deliveryPlans,
+            (float) ($saldoProduto->saldo_inicial ?? $order_product->quant),
+            (float) ($saldoProduto->saldo ?? $order_product->quant)
+        )->keyBy(fn ($slice) => $slice->plan->id);
+
+        $deliveryPlan = $order_product->deliveryPlans->map(function ($plan) use ($planStatuses) {
             $carga = $plan->carga ?? [];
+            $status = $planStatuses->get($plan->id);
 
             return [
                 'id' => $plan->id,
@@ -273,6 +289,8 @@ class OrderProductController extends Controller
                 'pallet_capacity' => $this->inferPalletCapacity($carga, (int) $plan->quantity),
                 'palete_tipo' => array_map('intval', array_keys($carga)),
                 'palete_quant' => array_map('intval', array_values($carga)),
+                'status' => $status->status ?? 'open',
+                'remaining_quantity' => (int) ($status->remaining_quantity ?? $plan->quantity),
             ];
         })->values()->all();
 
