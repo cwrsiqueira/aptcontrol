@@ -16,7 +16,7 @@ O banco local é o arquivo `database/database.sqlite`. Ele não entra no Git.
 
 - Models em `app/` (`Product`, `Order`, `Order_product`, `OrderProductDeliveryPlan`, `Client`, `Seller`, `Truck`, `Load`, `LoadItem`, `Zone`, `PurchaseOrder` e os demais). Não há pasta `app/Models`.
 - Controllers em `app/Http/Controllers`.
-- Relatório de entregas pendentes e fatias abertas: `app/Reports/PendingDeliveryRows.php` (`openPlans`, `describe`, `expand`).
+- Relatório de entregas pendentes e fatias abertas: `app/Reports/PendingDeliveryRows.php` (`planStatuses`, `openPlans`, `describe`, `expand`).
 - Telas em `resources/views`.
 - Rotas em `routes/web.php`. Quase todas exigem login (`auth`).
 - Ajuda comum em `App\Helpers\Helper`: `get_permissions`, `day_delivery_calc`, `day_delivery_recalc`, `saveLog`, `cargaTotalPaletes`.
@@ -28,7 +28,7 @@ O pedido usa `order_number` (texto) como chave lógica. Em `order_products`, a c
 
 - **Produtos** — cadastro, lista paginada, estoque e entregas do produto (`cc_product`).
 - **Estoque** — lançamentos em `product_stocks`. O saldo atual do produto acompanha esses lançamentos.
-- **Pedidos** — capa do pedido, itens, entregas parciais e romaneio.
+- **Pedidos** — capa do pedido, itens, entregas parciais e romaneio. No Detalhes, o resumo separa fatias já baixadas e ainda abertas (`planStatuses`). Na edição do item, fatias cobertas aparecem como “Já baixada” / parcial.
 - **Entregas por produto** — o que ainda falta sair, com data, zona, bairro e montagem de carga. Fatias abertas usam `PendingDeliveryRows::openPlans`. Há botão Topo ao descer a lista.
 - **Logística** — caminhões, zonas, bairros e cargas.
 - **Clientes, categorias e vendedores.**

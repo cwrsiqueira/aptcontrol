@@ -17,7 +17,7 @@ Contexto completo, regras de negócio, segurança e deploy: [AGENTS.md](../../AG
 ## Estrutura
 - Models em app/ (Product, Order, Order_product, OrderProductDeliveryPlan, Client, Seller, etc.)
 - Helper: App\Helpers\Helper (get_permissions, day_delivery_calc, saveLog, cargaTotalPaletes)
-- Fatias abertas / relatório: App\Reports\PendingDeliveryRows (openPlans, describe, expand)
+- Fatias abertas / relatório: App\Reports\PendingDeliveryRows (planStatuses, openPlans, describe, expand)
 - Permissões: slugs em permission_items, checagem via Helper::get_permissions() ou Auth::user()->is_admin
 - Skills: `.cursor/skills/pode-subir` (“Pode subir”). Status curto: [docs/STATUS_PROJETO.md](../../docs/STATUS_PROJETO.md)
 
@@ -94,7 +94,8 @@ Contexto completo, regras de negócio, segurança e deploy: [AGENTS.md](../../AG
 
 ## Versão atual
 
-**v1.0.8** — painel em `HomeController::systemInfo()` (texto para o usuário final, sem jargão)
+**v1.0.9** — painel em `HomeController::systemInfo()` (texto para o usuário final, sem jargão)
 
 - v1.0.6–1.0.7: ver histórico Git; changelog do painel, compras, lista de produtos
 - v1.0.8: baixa das entregas na ordem, data prevista flexível, relatório por fatia, botão Topo
+- v1.0.9: editor marca Já baixada / parcial; Detalhes do pedido separa fatias abertas e baixadas
