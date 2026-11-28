@@ -4,23 +4,24 @@ Estado curto para um chat novo. Confira o git antes de confiar neste arquivo (`g
 
 ## Onde paramos
 
-- **Git:** `master` = `origin/master` no código de produto (`0a661ad` — soft delete + sábado). **Instalação do kit de contexto** ainda local (sem commit desta etapa).
-- **Deploy em produção:** `v1.0.10` (soft delete + bloqueio de sábado) — confirmar se `./deploy.sh` já rodou no servidor.
-- **Kit:** `docs/padroes/` versão **1.5.0**; skills `encerrar-sessao`, `se-atualize-contexto`, etc.
+- **Git:** `master` alinhada com `origin/master` após o push desta rodada. Confira com `git log -1 --oneline`.
+- **Deploy em produção:** **pendente** — rodar `./deploy.sh` no servidor (v1.0.10 produto/sábado + v1.0.11 segurança + `composer install` pelo Dompdf).
+- **Versão no painel (após deploy):** `v1.0.11`.
 
 ## O que já está no código
 
-- Soft delete de produto; sábado/domingo sem entrega; fatias/baixa (v1.0.9+).
-- Docs de IA alinhados ao kit (`AGENTS.md`, `CLAUDE.md`, `DOMINIO.md`, …).
+- Soft delete de produto; sábado/domingo sem entrega.
+- Auto-cadastro público desligado; `confirmed_user` fora do fillable.
+- `cc_product` 404 para produto soft-deleted; testes de abuso (`SecurityHardeningTest`).
+- Dompdf ≥ 3.1.6; kit de contexto em `docs/padroes/`.
 
 ## Próximo passo sugerido
 
-1. Salvar a instalação do kit no GitHub (etapa 6 / “Pode subir” desta instalação).
-2. Se ainda não rodou: `./deploy.sh` no servidor para `v1.0.10`.
-3. Excluir TIJOLAO METADE na lista e validar sábado bloqueado.
+1. No servidor: `./deploy.sh`.
+2. Conferir que `/register` não abre.
+3. Excluir TIJOLAO METADE e validar bloqueio de sábado.
 
 ## Pendências
 
-- Commit/push dos docs do kit.
-- Confirmar deploy `v1.0.10` em produção.
-- Decisão pendente: prioridade de layout no celular (`docs/DOMINIO.md`).
+- Deploy em produção.
+- Demais advisories Composer (fora Dompdf) em janela de manutenção.

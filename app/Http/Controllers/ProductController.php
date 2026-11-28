@@ -227,6 +227,9 @@ class ProductController extends Controller
             return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
+        // Soft-deleted some da lista e não abre por URL direta.
+        Product::query()->findOrFail($id);
+
         $checks = (array) $request->input('por_favorito', []); // 1 = A, 2 = L
         $entregar = (int) $request->input('entregar', 0);
 

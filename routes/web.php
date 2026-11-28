@@ -18,7 +18,8 @@ Route::get('/', function () {
 | Autenticação
 |--------------------------------------------------------------------------
 */
-Auth::routes();
+// Sistema interno: sem auto-cadastro público. Usuários entram pelo painel de permissões.
+Auth::routes(['register' => false]);
 
 /*
 |--------------------------------------------------------------------------

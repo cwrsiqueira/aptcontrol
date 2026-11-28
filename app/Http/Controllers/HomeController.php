@@ -11,9 +11,10 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.10',
+            'version'    => 'v1.0.11',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
+                'O cadastro aberto pela internet foi desligado. Novos usuários só entram pelo controle interno de permissões.',
                 'Dá para excluir um produto mesmo quando ele já entrou em pedidos: ele some da lista, mas o histórico dos pedidos continua intacto.',
                 'Não há entrega no sábado nem no domingo. O sistema pula esses dias no cálculo e no agendamento.',
                 'Na edição do produto do pedido, as entregas já cobertas pela baixa aparecem como “Já baixada” e a parcial mostra o que ainda falta naquela data.',

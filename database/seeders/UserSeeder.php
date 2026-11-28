@@ -11,16 +11,19 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
-        // Admin padrão
-        User::firstOrCreate(
+        // Admin padrão (confirmed_user fora do fillable)
+        $admin = User::firstOrCreate(
             ['email' => 'admin@email.com'],
             [
                 'name' => 'Administrador',
                 'password' => Hash::make('12345678'), // altere depois!
                 'email_verified_at' => now(),
                 'remember_token' => Str::random(10),
-                'confirmed_user' => 1, // 1 = admin (no seu código, libera o painel/menu)
             ]
         );
+        if ((int) $admin->confirmed_user !== 1) {
+            $admin->confirmed_user = 1;
+            $admin->save();
+        }
     }
 }

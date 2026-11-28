@@ -2,6 +2,12 @@
 
 Registro curto do porquê de escolhas importantes.
 
+## Endurecimento de acesso (2026-11)
+
+- **Decisão:** desligar `/register`; tirar `confirmed_user` do `$fillable`; Dompdf ≥ 3.1.6.
+- **Por quê:** revisão de segurança — sistema interno em produção não deve aceitar auto-cadastro nem promoção a admin via formulário.
+- **Consequência:** novos usuários só pelo fluxo interno; testes em `SecurityHardeningTest`.
+
 ## Soft delete de produto (2026-11)
 
 - **Decisão:** excluir produto marca `deleted_at` e libera o nome com sufixo; não apaga linhas de pedido.

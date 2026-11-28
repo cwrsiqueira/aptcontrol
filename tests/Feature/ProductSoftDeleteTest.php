@@ -22,10 +22,9 @@ class ProductSoftDeleteTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::create([
+        $this->user = $this->makeUser([
             'name' => 'Administrador',
             'email' => 'admin-soft-delete@example.com',
-            'password' => Hash::make('12345678'),
             'confirmed_user' => 1,
         ]);
     }

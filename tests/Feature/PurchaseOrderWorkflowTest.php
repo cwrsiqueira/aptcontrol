@@ -23,10 +23,9 @@ class PurchaseOrderWorkflowTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::create([
+        $this->admin = $this->makeUser([
             'name' => 'Administrador',
             'email' => 'compras-admin@example.com',
-            'password' => Hash::make('12345678'),
             'confirmed_user' => 1,
         ]);
     }
@@ -200,10 +199,9 @@ class PurchaseOrderWorkflowTest extends TestCase
     public function test_approver_can_open_a_quote_attachment(): void
     {
         Storage::fake('local');
-        $approver = User::create([
+        $approver = $this->makeUser([
             'name' => 'Aprovador de Compras',
             'email' => 'aprovador-anexo@example.com',
-            'password' => Hash::make('12345678'),
             'confirmed_user' => 2,
         ]);
 
@@ -328,10 +326,9 @@ class PurchaseOrderWorkflowTest extends TestCase
 
     public function test_user_without_approval_permission_cannot_decide(): void
     {
-        $user = User::create([
+        $user = $this->makeUser([
             'name' => 'Usuário de Compras',
             'email' => 'compras-user@example.com',
-            'password' => Hash::make('12345678'),
             'confirmed_user' => 2,
         ]);
 

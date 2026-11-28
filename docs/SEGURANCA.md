@@ -104,3 +104,8 @@ Itens para acompanhar (não corrigidos nesta instalação do kit). Gravidade est
 3. **Uso no celular incerto** — telas antigas (Bootstrap 4) podem ser difíceis no telefone; risco operacional, não de invasão.
 4. **Anexo de orçamento** — já há validação e permissão; manter disciplina (não afrouxar tipo/tamanho/disco).
 5. **Auditoria completa OWASP do legado** — este guia orienta código novo; varredura rota a rota ainda não foi fechada como checklist formal.
+6. ~~**Cadastro público**~~ — **corrigida em 28/11/2026**: `Auth::routes(['register' => false])`.
+7. ~~**`confirmed_user` em `$fillable`**~~ — **corrigida em 28/11/2026**: removido do fillable; atribuição só explícita.
+8. **Dependências Composer com advisories** — Dompdf atualizado para ≥3.1.6 (28/11/2026). Outros avisos transitivos do ecossistema Laravel podem permanecer; revisar em janelas de manutenção.
+9. ~~**Teste de abuso na exclusão de produto**~~ — **corrigida em 28/11/2026**: `SecurityHardeningTest`.
+10. ~~**`cc_product` soft-deleted**~~ — **corrigida em 28/11/2026**: `findOrFail` respeita soft delete (404).

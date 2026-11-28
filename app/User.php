@@ -16,8 +16,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'confirmed_user', // <- inclui para permitir seed/updates
     ];
+
+    // confirmed_user NÃO entra em $fillable (evita mass assignment de admin).
+    // Atribua só no servidor: $user->confirmed_user = …; $user->save();
 
     /**
      * Campos ocultos em arrays/JSON.
