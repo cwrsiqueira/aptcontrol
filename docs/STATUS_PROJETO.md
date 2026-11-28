@@ -4,7 +4,7 @@ Estado curto para um chat novo. Confira o git antes de confiar neste arquivo (`g
 
 ## Onde paramos
 
-- **Git:** `master` = `origin/master` (último push de docs: `134f882`). Working tree limpa após o push. **Já no GitHub.** Confira com `git log -1 --oneline`.
+- **Git:** `master` = `origin/master`, working tree limpa. **Já no GitHub.** Confira com `git log -1 --oneline` (não confie em hash fixo neste arquivo).
 - **Deploy em produção:** **feito** (confirmado pelo usuário em 23/11/2026). Painel deve mostrar `v1.0.9`.
 - **Último código de produto:** `ca3737f` — fatias já baixadas/parciais no editor e resumo no Detalhes do pedido.
 - **Tag de retorno (pré-UX):** `pre-ux-fatias-baixadas-e6b049b` → `e6b049b`.
