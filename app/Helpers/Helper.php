@@ -34,6 +34,33 @@ class Helper
         return $user_permissions;
     }
 
+    /** Sábado (6) e domingo (0) não são dias de entrega. */
+    public static function isNonDeliveryDay(string $date): bool
+    {
+        $weekday = date('w', strtotime($date . ' 12:00:00'));
+
+        return $weekday === '0' || $weekday === '6';
+    }
+
+    /** Empurra a data para o próximo dia útil (pula sábado e domingo). */
+    public static function nextBusinessDay(string $date): string
+    {
+        $current = date('Y-m-d', strtotime($date . ' 12:00:00'));
+
+        while (self::isNonDeliveryDay($current)) {
+            $current = date('Y-m-d', strtotime($current . ' 12:00:00 +1 days'));
+        }
+
+        return $current;
+    }
+
+    public static function businessDayAfter(string $date): string
+    {
+        $next = date('Y-m-d', strtotime($date . ' 12:00:00 +1 days'));
+
+        return self::nextBusinessDay($next);
+    }
+
     public static function day_delivery_recalc($id_product)
     {
         $product = Product::find($id_product);
@@ -72,10 +99,7 @@ class Helper
                     }
 
                     $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
-
-                    if (date('w', strtotime($delivery_in)) == 0) {
-                        $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
-                    }
+                    $delivery_in = self::nextBusinessDay($delivery_in);
                 } else {
                     $complete_order = Order::where('order_number', $order_products[$i]->order_id)->first();
                     $complete_order->complete_order = 1;
@@ -101,7 +125,7 @@ class Helper
         // $daily_production = $product->daily_production_forecast != 0 ?: 1;
 
         if ($product->daily_production_forecast == 0) {
-            $delivery_in = date('Y-m-d', strtotime('+1 day'));
+            $delivery_in = self::nextBusinessDay(date('Y-m-d', strtotime('+1 day')));
             return array(
                 'quant_total' => $quant_total,
                 'delivery_in' => $delivery_in,
@@ -119,9 +143,7 @@ class Helper
             $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +1 days'));
         }
 
-        if (date('w', strtotime($delivery_in)) == 0) {
-            $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
-        }
+        $delivery_in = self::nextBusinessDay($delivery_in);
 
         return array(
             'quant_total' => $quant_total,

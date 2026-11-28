@@ -11,7 +11,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
             <div class="mr-3">
                 <h6 class="mb-1">Fracionamento e carga por entrega @includeIf('partials.change_marker')</h6>
-                <small class="text-muted">O sistema calcula quantas entregas são necessárias. A última fica com a sobra. Não há entrega no domingo, e a quantidade de cada entrega pode ser ajustada.</small>
+                <small class="text-muted">O sistema calcula quantas entregas são necessárias. A última fica com a sobra. Não há entrega no sábado nem no domingo, e a quantidade de cada entrega pode ser ajustada.</small>
             </div>
             <div class="form-group mb-0 mt-2 mt-sm-0 delivery-count-field">
                 <label for="delivery_count_summary" class="mb-1">Entregas</label>
@@ -76,14 +76,19 @@
                 return result.toISOString().slice(0, 10);
             }
 
-            function isSunday(date) {
+            function isNonDeliveryDay(date) {
                 const parts = String(date || '').split('-').map(Number);
                 if (parts.length !== 3 || parts.some(Number.isNaN)) return false;
-                return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay() === 0;
+                const day = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay();
+                return day === 0 || day === 6;
             }
 
             function nextBusinessDay(date) {
-                return isSunday(date) ? addDays(date, 1) : date;
+                let current = date;
+                while (isNonDeliveryDay(current)) {
+                    current = addDays(current, 1);
+                }
+                return current;
             }
 
             function businessDayAfter(date) {
@@ -251,7 +256,7 @@
                     ? nextBusinessDay(deliveryDate.value)
                     : businessDayAfter(previousDate);
                 const saved = /^\d{4}-\d{2}-\d{2}$/.test(savedDate || '') ? savedDate : '';
-                if (saved && !isSunday(saved)) return saved;
+                if (saved && !isNonDeliveryDay(saved)) return saved;
                 return fallbackDate;
             }
 
@@ -448,10 +453,10 @@
                     : businessDayAfter(fields[changedIndex - 1].value);
                 const chosen = fields[changedIndex].value;
 
-                if (event.manual && isSunday(chosen)) {
-                    alert('Não é possível agendar entrega no domingo.');
+                if (event.manual && isNonDeliveryDay(chosen)) {
+                    alert('Não é possível agendar entrega no sábado ou no domingo.');
                     fields[changedIndex].value = fields[changedIndex].dataset.acceptedDate || fallbackDate;
-                } else if (!chosen || isSunday(chosen)) {
+                } else if (!chosen || isNonDeliveryDay(chosen)) {
                     fields[changedIndex].value = fallbackDate;
                     fields[changedIndex].dataset.manualDate = '';
                 } else {
@@ -566,10 +571,10 @@
                 let previous = '';
                 plan.forEach((item, index) => {
                     const fallback = index === 0 ? nextBusinessDay(date) : businessDayAfter(previous);
-                    if (!item.manual || !item.date || isSunday(item.date) || used.has(item.date)) {
+                    if (!item.manual || !item.date || isNonDeliveryDay(item.date) || used.has(item.date)) {
                         item.date = fallback;
                     }
-                    while (used.has(item.date) || isSunday(item.date)) item.date = businessDayAfter(item.date);
+                    while (used.has(item.date) || isNonDeliveryDay(item.date)) item.date = businessDayAfter(item.date);
                     used.add(item.date);
                     previous = item.date;
                 });

@@ -206,21 +206,12 @@ class ProductController extends Controller
             return redirect()->to(Helper::productsIndexUrl())->withErrors(['no-access' => 'Solicite acesso ao administrador!']);
         }
 
-        $order_products = Order_product::where('product_id', $product->id)->count();
-
-        // Se você já migrou tudo para product_stocks, aqui você pode impedir exclusão se tiver lançamentos:
-        // $hasStocks = \App\ProductStock::where('product_id', $product->id)->exists();
-        // if ($hasStocks) { ... }
-
-        if ($order_products > 0) {
-            return redirect()->to(Helper::productsIndexUrl())->withErrors([
-                'cannot_exclude' => 'Produto possui pedidos vinculados e não pode ser excluído!',
-            ]);
-        }
-
         $id = $product->id;
         $name = $product->name;
 
+        // Soft delete: pedidos e estoques mantêm o product_id. Libera o nome único para novo cadastro.
+        $product->name = $name . ' [excluído #' . $id . ']';
+        $product->save();
         $product->delete();
 
         Helper::saveLog(Auth::user()->id, 'Deleção', $id, $name, 'Produtos');

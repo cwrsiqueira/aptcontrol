@@ -60,7 +60,7 @@ class AjaxController extends Controller
             $quant_total = $quant_total + $quant;
 
             if ($product->daily_production_forecast == 0) {
-                $delivery_in = date('Y-m-d', strtotime('+1 day'));
+                $delivery_in = Helper::nextBusinessDay(date('Y-m-d', strtotime('+1 day')));
                 echo json_encode($delivery_in);
                 return false;
             }
@@ -72,13 +72,10 @@ class AjaxController extends Controller
                 }
 
                 $delivery_in = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (ceil($days_necessary)) . ' days'));
-
-                if (date('w', strtotime($delivery_in)) == 0) {
-                    $delivery_in = date('Y-m-d', strtotime($delivery_in . ' +1 days'));
-                }
             } else {
                 $delivery_in = date('Y-m-d', strtotime('+1 day'));
             }
+            $delivery_in = Helper::nextBusinessDay($delivery_in);
             echo json_encode($delivery_in);
         }
     }

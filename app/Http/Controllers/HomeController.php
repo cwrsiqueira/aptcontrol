@@ -11,14 +11,16 @@ class HomeController extends Controller
     private function systemInfo()
     {
         return [
-            'version'    => 'v1.0.9',
+            'version'    => 'v1.0.10',
             'updated_at' => Carbon::now()->format('d/m/Y'),
             'updates'    => [
+                'Dá para excluir um produto mesmo quando ele já entrou em pedidos: ele some da lista, mas o histórico dos pedidos continua intacto.',
+                'Não há entrega no sábado nem no domingo. O sistema pula esses dias no cálculo e no agendamento.',
                 'Na edição do produto do pedido, as entregas já cobertas pela baixa aparecem como “Já baixada” e a parcial mostra o que ainda falta naquela data.',
                 'Nos detalhes do pedido, o resumo separa quantas entregas já foram baixadas e quantas ainda estão abertas.',
                 'Ao registrar uma entrega, a quantidade sai da primeira entrega planejada. A que fecha some das telas; a que sobra continua na mesma data, só com o que falta.',
                 'Antes de confirmar, a tela mostra quais entregas aquela quantidade encerra e o que fica pela metade.',
-                'A data prevista de cada entrega pode ser o dia que você precisar, inclusive antes da previsão mínima. Domingo continua bloqueado.',
+                'A data prevista de cada entrega pode ser o dia que você precisar, inclusive antes da previsão mínima. Sábado e domingo continuam bloqueados.',
                 'O relatório de entregas mostra cada entrega programada, com a quantidade e a data dela.',
                 'Em Entregas por produto, o botão Topo aparece ao descer a lista e volta para o início.',
                 'No cadastro do item do pedido, informe quantos produtos saem em cada entrega. O sistema calcula o número de entregas e deixa na última o que sobrar.',

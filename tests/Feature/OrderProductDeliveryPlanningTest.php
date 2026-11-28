@@ -67,7 +67,7 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $found = 0;
 
         while (true) {
-            if (!$date->isSunday()) {
+            if (!$date->isSaturday() && !$date->isSunday()) {
                 if ($found === $offset) {
                     return $date->toDateString();
                 }
@@ -120,9 +120,9 @@ class OrderProductDeliveryPlanningTest extends TestCase
             'product_name' => $this->product->name,
             'quant' => '10',
             'quantity_per_delivery' => 5,
-            'delivery_date' => '2026-10-10',
+            'delivery_date' => '2026-10-09',
             'delivery_plan' => [
-                ['quantity' => 5, 'date' => '2026-10-10'],
+                ['quantity' => 5, 'date' => '2026-10-09'],
                 ['quantity' => 5, 'date' => '2026-10-11'],
             ],
         ]);
@@ -131,21 +131,40 @@ class OrderProductDeliveryPlanningTest extends TestCase
         $this->assertDatabaseCount('order_products', 0);
     }
 
-    public function test_skips_sunday_when_the_next_delivery_is_calculated(): void
+    public function test_rejects_a_saturday_delivery(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('order_products.store'), [
+            'order' => $this->order->id,
+            'product_name' => $this->product->name,
+            'quant' => '10',
+            'quantity_per_delivery' => 5,
+            'delivery_date' => '2026-10-09',
+            'delivery_plan' => [
+                ['quantity' => 5, 'date' => '2026-10-09'],
+                ['quantity' => 5, 'date' => '2026-10-10'],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('delivery_plan.1.date');
+        $this->assertDatabaseCount('order_products', 0);
+    }
+
+    public function test_skips_weekend_when_the_next_delivery_is_calculated(): void
     {
         $this->actingAs($this->user)->post(route('order_products.store'), [
             'order' => $this->order->id,
             'product_name' => $this->product->name,
             'quant' => '10',
             'quantity_per_delivery' => 5,
-            'delivery_date' => '2026-10-10',
+            'delivery_date' => '2026-10-09',
         ])->assertRedirect();
 
         $dates = Order_product::first()->deliveryPlans()->orderBy('sequence')->pluck('delivery_date')
             ->map(fn ($date) => $date->toDateString())
             ->all();
 
-        $this->assertSame(['2026-10-10', '2026-10-12'], $dates);
+        // Sexta + próximo dia útil = segunda (pula sábado e domingo).
+        $this->assertSame(['2026-10-09', '2026-10-12'], $dates);
     }
 
     public function test_saves_custom_delivery_quantities(): void
@@ -1068,11 +1087,12 @@ class OrderProductDeliveryPlanningTest extends TestCase
     public function test_large_multi_slice_partial_delivery_hides_closed_plans_and_marks_editor(): void
     {
         $perDelivery = 7752;
+        // Datas fixas longe da previsão mínima da tela (amanhã útil), para o assert não colidir com o chip de previsão.
         $dates = [
-            $this->upcomingWeekday(0),
-            $this->upcomingWeekday(1),
-            $this->upcomingWeekday(2),
-            $this->upcomingWeekday(3),
+            '2026-12-14',
+            '2026-12-15',
+            '2026-12-16',
+            '2026-12-17',
         ];
         $labels = array_map(fn ($date) => date('d/m/Y', strtotime($date)), $dates);
         $item = $this->plannedProduct('PED-5392', 'Tijolao multi', $perDelivery * 4, $dates, $perDelivery);

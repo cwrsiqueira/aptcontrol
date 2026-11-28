@@ -20,7 +20,7 @@ A tela de entregas do produto lista pedido em aberto com saldo ainda positivo. D
 
 No item do pedido, a quantidade por entrega define quantas saídas serão criadas. O sistema reparte o total e deixa o resto na última. Cada entrega tem quantidade, data prevista e paletes. A capacidade do palete é informada na entrega; a sobra ocupa mais um palete. `Helper::cargaTotalPaletes` soma os paletes e usa o menor valor entre tipo e quantidade para corrigir inversão de digitação.
 
-A data prevista pode ser qualquer dia, inclusive antes da previsão mínima. Domingo não entra. Quando uma data muda, as entregas seguintes passam para o próximo dia útil.
+A data prevista pode ser qualquer dia, inclusive antes da previsão mínima. Sábado e domingo não entram. Quando uma data muda, as entregas seguintes passam para o próximo dia útil.
 
 O que já foi entregue é a quantidade pedida menos o saldo. A conta começa na primeira entrega planejada. Entrega coberta por inteiro sai de Entregas por produto, do Relatório de entregas e do resumo em Detalhes do pedido. Se sobrar um pedaço, ela continua na data planejada, só com o restante. A data digitada na confirmação fica na entrega já feita. Excluir essa entrega devolve o saldo e as datas planejadas voltam. Pedido sem divisão continua com uma linha e o saldo diminuindo. Antes de confirmar, a tela Entregar produto diz quais entregas aquela quantidade encerra e o que fica pela metade. Na edição do produto do pedido, as fatias cobertas aparecem como “Já baixada” (somente leitura) e a parcial mostra o que ainda falta; os registros do plano continuam no banco. Data antiga com saldo ainda pendente continua na lista — é atraso, não baixa.
 
@@ -48,3 +48,5 @@ O pedido de compra passa por orçamento, aprovação e finalização. Quem vê, 
 ## Lista de produtos
 
 A lista pagina de 10 em 10, com `page` e, na busca, `q`. Cadastrar, estoque, entregas, editar, o nome do produto e excluir levam a origem em `from_page` e `from_q`, porque a tela de estoque já usa `page` e `q` para a própria lista. Voltar, cancelar, salvar e o redirect de excluir reabrem `products.index` com essa origem. A busca da própria lista, e o botão Limpar busca, continuam na primeira página.
+
+Excluir produto é soft delete (`deleted_at`): o cadastro some da lista e dos selects, mas pedidos, estoques e cargas mantêm o `product_id`. O nome recebe sufixo `[excluído #id]` para liberar o nome único. Em pedidos e estoque, o relacionamento carrega o produto com `withTrashed`.

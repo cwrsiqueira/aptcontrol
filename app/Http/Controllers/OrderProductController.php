@@ -712,20 +712,20 @@ class OrderProductController extends Controller
         return date('Y-m-d', strtotime($date . ' 12:00:00 +' . $days . ' days'));
     }
 
-    private function isSunday(string $date): bool
+    private function isNonDeliveryDay(string $date): bool
     {
-        return date('w', strtotime($date . ' 12:00:00')) === '0';
+        return Helper::isNonDeliveryDay($date);
     }
 
-    // Domingo calculado passa para a segunda-feira.
+    // Sábado e domingo calculados passam para o próximo dia útil.
     private function nextBusinessDay(string $date): string
     {
-        return $this->isSunday($date) ? $this->dateAfter($date, 1) : $date;
+        return Helper::nextBusinessDay($date);
     }
 
     private function businessDayAfter(string $date): string
     {
-        return $this->nextBusinessDay($this->dateAfter($date, 1));
+        return Helper::businessDayAfter($date);
     }
 
     private function submittedQuantities(array $submitted): array
@@ -823,10 +823,10 @@ class OrderProductController extends Controller
             }
 
             foreach ($deliveryPlan as $index => $item) {
-                if (!empty($item['date']) && $this->isSunday($item['date'])) {
+                if (!empty($item['date']) && $this->isNonDeliveryDay($item['date'])) {
                     $validator->errors()->add(
                         "delivery_plan.{$index}.date",
-                        'Não é possível agendar entrega no domingo.'
+                        'Não é possível agendar entrega no sábado ou no domingo.'
                     );
                 }
             }

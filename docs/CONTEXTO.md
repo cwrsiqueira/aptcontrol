@@ -19,7 +19,8 @@ O banco local é o arquivo `database/database.sqlite`. Ele não entra no Git.
 - Relatório de entregas pendentes e fatias abertas: `app/Reports/PendingDeliveryRows.php` (`planStatuses`, `openPlans`, `describe`, `expand`).
 - Telas em `resources/views`.
 - Rotas em `routes/web.php`. Quase todas exigem login (`auth`).
-- Ajuda comum em `App\Helpers\Helper`: `get_permissions`, `day_delivery_calc`, `day_delivery_recalc`, `saveLog`, `cargaTotalPaletes`.
+- Ajuda comum em `App\Helpers\Helper`: `get_permissions`, `day_delivery_calc`, `day_delivery_recalc`, `isNonDeliveryDay`, `nextBusinessDay`, `saveLog`, `cargaTotalPaletes`.
+- Produto usa soft delete (`deleted_at`); pedidos/estoque resolvem o nome com `withTrashed`.
 - Fechar rodada: skill `.cursor/skills/pode-subir` (“Pode subir”).
 
 O pedido usa `order_number` (texto) como chave lógica. Em `order_products`, a coluna `order_id` guarda esse número, não o id numérico da tabela `orders`.
