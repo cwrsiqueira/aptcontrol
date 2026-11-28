@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./.env.local)",
+      "Read(./**/.env.local)",
+      "Read(./.env.production)",
+      "Read(./**/.env.production)",
+      "Read(./.env.development)",
+      "Read(./.env.staging)",
+      "Read(./.dev.vars)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
+    ]
+  }
+}

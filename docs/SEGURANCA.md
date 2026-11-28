@@ -94,3 +94,13 @@ Não faça o servidor buscar uma URL montada pelo usuário. Se no futuro houver 
 ## O que não entra neste guia
 
 Senha, usuário de produção, host e caminho de pasta do servidor não são escritos aqui. Se uma alteração precisar disso, o valor fica no `.env` do servidor, não no repositório.
+
+## Lacunas conhecidas
+
+Itens para acompanhar (não corrigidos nesta instalação do kit). Gravidade estimada:
+
+1. **Produção no dia a dia** — qualquer mudança mal testada afeta operação real. Mitigação: `php artisan test` + `./deploy.sh` só no servidor; preferir mudanças pequenas.
+2. **`APP_DEBUG`** — se ficar `true` em produção, erro pode vazar caminho e detalhe interno. Conferir `.env` do servidor (`false`).
+3. **Uso no celular incerto** — telas antigas (Bootstrap 4) podem ser difíceis no telefone; risco operacional, não de invasão.
+4. **Anexo de orçamento** — já há validação e permissão; manter disciplina (não afrouxar tipo/tamanho/disco).
+5. **Auditoria completa OWASP do legado** — este guia orienta código novo; varredura rota a rota ainda não foi fechada como checklist formal.

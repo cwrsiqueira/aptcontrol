@@ -1,0 +1,17 @@
+---
+description: Regras do projeto e padrões comuns (segurança, simplicidade, testes)
+alwaysApply: true
+---
+
+Leia o `AGENTS.md` da raiz antes de agir. Ele é a fonte das regras deste projeto e diz qual doc ler para cada tipo de tarefa (`docs/` e `docs/padroes/`).
+
+Resumo do que nunca muda:
+
+- O servidor decide: toda entrada é validada no backend; identidade, papel, dono e preço vêm da sessão e do banco.
+- Nenhum segredo no cliente, no Git, nos docs, nos logs ou em comandos.
+- Simples primeiro, sem dependência nova sem aprovação.
+- Discorde quando houver opção melhor; confirme antes de agir se a resposta for ambígua; em conversa longa, sugira "Encerre a sessão" e um chat novo.
+- Pedido grande: divida em etapas e peça "sim" antes de cada uma. Relatório final de até 5 linhas.
+- Toda regra de negócio e rota sensível com teste, incluindo caso de abuso.
+- Sem commit nem push sem "Pode subir".
+- Português do Brasil em tudo que é para pessoas.

@@ -21,7 +21,8 @@ O banco local é o arquivo `database/database.sqlite`. Ele não entra no Git.
 - Rotas em `routes/web.php`. Quase todas exigem login (`auth`).
 - Ajuda comum em `App\Helpers\Helper`: `get_permissions`, `day_delivery_calc`, `day_delivery_recalc`, `isNonDeliveryDay`, `nextBusinessDay`, `saveLog`, `cargaTotalPaletes`.
 - Produto usa soft delete (`deleted_at`); pedidos/estoque resolvem o nome com `withTrashed`.
-- Fechar rodada: skill `.cursor/skills/pode-subir` (“Pode subir”).
+- Skills: `.cursor/skills/pode-subir` (“Pode subir”), `encerrar-sessao`, `se-atualize-contexto`, `revisar-seguranca`, `auditar-contexto`.
+- Padrões do kit: `docs/padroes/` (versão em `docs/padroes/VERSAO.txt`).
 
 O pedido usa `order_number` (texto) como chave lógica. Em `order_products`, a coluna `order_id` guarda esse número, não o id numérico da tabela `orders`.
 
